@@ -11,7 +11,7 @@ const brands = [
 ];
 
 const utilityLinks = [
-  'Ship to: United States',
+  'Ship to: 🇺🇸 United States | English',
   'Español',
   'Groups',
   'Store Locator',

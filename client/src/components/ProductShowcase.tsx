@@ -7,23 +7,23 @@ const showcaseProducts = [
   {
     id: 1,
     title: "HYPOTHESIS™",
-    subtitle: "Jessa Mora",
-    description: "New Jumpsuit",
+    subtitle: "Performance Collection",
+    description: "New Jumpsuit Style",
     details: "Nothing to match, just add shoes.",
-    buttonText: "Shop Jumpsuit",
+    buttonText: "Shop Hypothesis",
     image: femaleWorkerImage,
     background: "bg-gradient-to-r from-green-600 to-green-700",
     textColor: "text-white"
   },
   {
     id: 2,
-    title: "Soft Cleaning",
-    subtitle: "",
-    description: "Professional Collection",
-    details: "Comfort meets performance in our premium line.",
-    buttonText: "Shop Collection",
+    title: "Cherokee Scrubs",
+    subtitle: "Achieve Collection",
+    description: "Professional Performance",
+    details: "Comfort meets durability in our best-selling line.",
+    buttonText: "Shop Cherokee",
     image: maleWorkerImage,
-    background: "bg-gradient-to-r from-pink-100 to-pink-200",
+    background: "bg-gradient-to-r from-gray-100 to-gray-200",
     textColor: "text-gray-800"
   }
 ];
@@ -34,7 +34,7 @@ export default function ProductShowcase() {
       {/* Sale Banner */}
       <div className="bg-primary text-primary-foreground text-center py-3 mb-8">
         <p className="text-sm font-medium" data-testid="sale-banner">
-          20% off Spotlight Sale
+          Limited Time: Up to 50% off Select Items - Shop Sale Now!
         </p>
       </div>
 

@@ -4,43 +4,156 @@ import { ChevronDown } from 'lucide-react';
 const categories = [
   {
     name: 'WOMEN',
-    subcategories: ['Scrub Tops', 'Scrub Bottoms', 'Lab Coats', 'Jackets', 'Dresses']
+    subcategories: [
+      'Shop All Women\'s Scrubs',
+      'Tops',
+      'Solid Tops',
+      'Fashion Scrub Tops',
+      'Print Tops',
+      'Bottoms',
+      'Solid Bottoms',
+      'Print Bottoms',
+      'Petite Scrubs',
+      'Plus Size Scrubs',
+      'Jackets',
+      'Solid Jackets',
+      'Knit Jackets',
+      'Print Jackets',
+      'Fleece Jackets',
+      'Lab Coats'
+    ]
   },
   {
     name: 'MEN',
-    subcategories: ['Scrub Tops', 'Scrub Bottoms', 'Lab Coats', 'Jackets']
+    subcategories: [
+      'Shop All Men',
+      'Tops',
+      'Solid Tops',
+      'Print Tops',
+      'Bottoms',
+      'Solid Bottoms',
+      'Print Bottoms',
+      'Big & Tall Scrubs',
+      'Jackets & Outerwear',
+      'Lab Coats'
+    ]
   },
   {
     name: 'UA EXCLUSIVE',
-    subcategories: ['New Arrivals', 'Best Sellers', 'Limited Edition']
+    subcategories: [
+      'Shop All UA Scrubs',
+      'UA Performance Collection',
+      'UA Butter-Soft Original',
+      'UA Stretch',
+      'UA Classic',
+      'UA Jackets',
+      'Solid Jackets',
+      'Print Jackets',
+      'Lab Coats',
+      'Just Reduced Sale'
+    ]
   },
   {
     name: 'BRANDS',
-    subcategories: ['Cherokee', 'Dickies', 'WonderWink', 'Barco One']
+    subcategories: [
+      'Barco Scrubs',
+      'Barco One Performance Knit',
+      'Cherokee Scrubs',
+      'Cherokee Achieve',
+      'Cherokee Atmos',
+      'Dickies Scrubs',
+      'WonderWink Scrubs',
+      'Greys Anatomy',
+      'Healing Hands',
+      'Hypothesis',
+      'Koi Scrubs',
+      'Landau Scrubs',
+      'Skechers By Barco'
+    ]
   },
   {
     name: 'COLOR',
-    subcategories: ['Navy', 'Royal Blue', 'Black', 'White', 'Gray', 'Green']
+    subcategories: [
+      'Shop All Solid Colors',
+      'Navy Blue',
+      'Royal Blue', 
+      'Ceil Blue',
+      'Black',
+      'White',
+      'Gray',
+      'Wine',
+      'Hunter Green',
+      'Purple',
+      'Pink',
+      'Red'
+    ]
   },
   {
     name: 'PRINTS',
-    subcategories: ['Floral', 'Animal', 'Geometric', 'Holiday']
+    subcategories: [
+      'Shop All Prints',
+      'New Print Arrivals',
+      'Holiday Prints',
+      'Floral Prints',
+      'Animal Prints',
+      'Geometric Prints',
+      'Character Prints',
+      'Nature Prints',
+      'Sport Prints'
+    ]
   },
   {
     name: 'FOOTWEAR',
-    subcategories: ['Athletic', 'Clogs', 'Nursing Shoes', 'Boots']
+    subcategories: [
+      'View All Footwear',
+      'Athletic Shoes',
+      'Clogs',
+      'Nursing Shoes',
+      'Slip-Resistant Shoes',
+      'Comfort Shoes',
+      'Boots',
+      'Crocs',
+      'Sketchers',
+      'Footwear Sale'
+    ]
   },
   {
     name: 'ACCESSORIES',
-    subcategories: ['Stethoscopes', 'Badges', 'Lanyards', 'Bags']
+    subcategories: [
+      'View All Accessories',
+      'Stethoscopes',
+      'ID Badge Holders',
+      'Lanyards',
+      'Compression Socks',
+      'Medical Bags',
+      'Watches',
+      'Scissors',
+      'Penlight',
+      'Accessories Sale'
+    ]
   },
   {
     name: 'NEW & TRENDING',
-    subcategories: ['New Arrivals', 'Trending Now', 'Customer Favorites']
+    subcategories: [
+      'New Arrivals',
+      'Trending Now',
+      'Customer Favorites',
+      'Best Sellers',
+      'Featured Collections',
+      'Seasonal Trends'
+    ]
   },
   {
     name: 'SALE',
-    subcategories: ['Clearance', 'Up to 50% Off', 'Final Sale'],
+    subcategories: [
+      'Current Limited Time Sale',
+      'Clearance Items',
+      'Up to 50% Off',
+      '$7.99 or Less Printed Scrubs',
+      'Discount Print Scrubs', 
+      '$14.99 or Less Printed Scrubs',
+      'Final Sale'
+    ],
     highlight: true
   }
 ];

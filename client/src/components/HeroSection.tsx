@@ -10,14 +10,14 @@ export default function HeroSection() {
     <div className="relative" data-testid="hero-section">
       {/* Promotional Banners */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4">
-        {/* Left Banner - Spotlight Sale */}
+        {/* Left Banner - Limited Time Sale */}
         <div className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground rounded-lg p-6 relative overflow-hidden">
           <div className="relative z-10">
             <h3 className="text-lg font-bold mb-2" data-testid="banner-title-spotlight">
-              20% off Spotlight Sale
+              Limited Time Sale
             </h3>
             <p className="text-sm mb-4" data-testid="banner-subtitle-spotlight">
-              Featured styles from Cherokee, Barco One, and more
+              Up to 50% off select scrubs & accessories
             </p>
             <CountdownTimer />
           </div>
@@ -28,19 +28,19 @@ export default function HeroSection() {
           />
         </div>
 
-        {/* Center Banner - Medical Equipment */}
+        {/* Center Banner - New Arrivals */}
         <div className="bg-muted rounded-lg p-6 text-center relative overflow-hidden">
           <div className="relative z-10">
             <h3 className="text-xl font-bold text-foreground mb-2" data-testid="banner-title-echoes">
-              20% off Echoes of Autumn Color Drop
+              New Fall Collection
             </h3>
             <p className="text-muted-foreground text-sm mb-4">
-              New seasonal colors for fall
+              Latest styles in seasonal colors
             </p>
             <Button 
               variant="default" 
               data-testid="button-shop-echoes"
-              onClick={() => console.log('Shop Echoes clicked')}
+              onClick={() => console.log('Shop New Arrivals clicked')}
               className="hover-elevate"
             >
               Shop Now
@@ -53,17 +53,17 @@ export default function HeroSection() {
           />
         </div>
 
-        {/* Right Banner - Great Deals */}
-        <div className="bg-gradient-to-r from-accent to-accent/80 rounded-lg p-6 relative overflow-hidden">
+        {/* Right Banner - Clearance */}
+        <div className="bg-gradient-to-r from-secondary to-secondary/80 rounded-lg p-6 relative overflow-hidden">
           <div className="relative z-10">
-            <h3 className="text-lg font-bold text-accent-foreground mb-2" data-testid="banner-title-deals">
-              Up to 50% off Great Deals
+            <h3 className="text-lg font-bold text-secondary-foreground mb-2" data-testid="banner-title-deals">
+              Clearance Sale
             </h3>
-            <p className="text-accent-foreground/80 text-sm mb-4">
-              20% off Fall Prints
+            <p className="text-secondary-foreground/80 text-sm mb-4">
+              $7.99 or less printed scrubs
             </p>
-            <p className="text-accent-foreground text-sm font-medium">
-              Shop Halloween Shop and 1512-3
+            <p className="text-secondary-foreground text-sm font-medium">
+              Final markdowns - while supplies last
             </p>
           </div>
           <img 
