@@ -22,8 +22,9 @@ export default function MainHeader() {
         </span>
       </div>
 
-      {/* Search Bar */}
-      <div className="flex-1 max-w-xl mx-8">
+      {/* Account & Cart with Search */}
+      <div className="flex items-center space-x-4">
+        {/* Search Bar - moved to right, smaller */}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -34,14 +35,10 @@ export default function MainHeader() {
               setSearchQuery(e.target.value);
               console.log('Search:', e.target.value);
             }}
-            className="pl-10 bg-muted/50 border-border focus:ring-primary"
+            className="pl-10 w-64 bg-muted/50 border-border focus:ring-primary"
             data-testid="search-input"
           />
         </div>
-      </div>
-
-      {/* Account & Cart */}
-      <div className="flex items-center space-x-4">
         <Button 
           variant="ghost" 
           size="icon" 

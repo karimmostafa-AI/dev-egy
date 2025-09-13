@@ -23,7 +23,7 @@ export default function TopNavigationBar() {
   const [activeBrand, setActiveBrand] = useState('ua');
 
   return (
-    <div className="bg-muted text-muted-foreground text-sm h-10 flex items-center justify-between px-4 border-b" data-testid="top-navigation">
+    <div className="bg-black text-white text-sm h-10 flex items-center justify-between px-4 border-b" data-testid="top-navigation">
       <div className="flex items-center space-x-6">
         {brands.map((brand) => (
           <button
@@ -35,8 +35,8 @@ export default function TopNavigationBar() {
             }}
             className={`px-3 py-1 rounded-md transition-colors hover-elevate ${
               activeBrand === brand.id 
-                ? 'bg-background text-foreground font-medium' 
-                : 'hover:bg-accent/20'
+                ? 'bg-white text-black font-medium' 
+                : 'hover:bg-white/20'
             }`}
           >
             {brand.name}
@@ -50,7 +50,7 @@ export default function TopNavigationBar() {
             key={index}
             data-testid={`utility-link-${index}`}
             onClick={() => console.log(`Clicked: ${link}`)}
-            className="hover:text-foreground transition-colors hover-elevate px-2 py-1 rounded"
+            className="hover:text-white transition-colors hover-elevate px-2 py-1 rounded"
           >
             {link}
           </button>
