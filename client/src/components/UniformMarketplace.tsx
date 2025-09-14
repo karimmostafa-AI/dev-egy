@@ -31,11 +31,11 @@ export default function UniformMarketplace() {
         {/* Header */}
         <div className="text-center mb-8">
           <h2 className="text-3xl font-bold mb-2">
-            <span className="text-primary">The Uniform</span><br />
+            <span className="text-primary">The Medical</span><br />
             <span className="text-foreground">Marketplace</span>
           </h2>
           <p className="text-muted-foreground text-lg">
-            Great brands, styles and values. Curated for you.
+            Premium Egyptian brands, styles and quality. Curated for you.
           </p>
         </div>
 

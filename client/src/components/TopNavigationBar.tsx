@@ -2,16 +2,14 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 
 const brands = [
-  { id: 'butter-soft', name: 'Butter-Soft', logo: true },
-  { id: 'easy-stretch', name: 'Easy Stretch', logo: true },
-  { id: 'hypothesis', name: 'HYPOTHESIS', logo: true },
-  { id: 'resurge', name: 'ReSurge', logo: true },
-  { id: 'whisperlite', name: 'Whisperlite', logo: true },
+  { id: 'seen', name: 'Seen', logo: true },
+  { id: 'hleo', name: 'Hleo', logo: true },
+  { id: 'omaima', name: 'Omaima', logo: true },
 ];
 
 const utilityLinks = [
-  'Ship to: 🇺🇸 United States | English',
-  'Español',
+  'Ship to: 🇪🇬 Egypt | العربية',
+  'English',
   'Groups',
   'Store Locator',
   'Tracking',

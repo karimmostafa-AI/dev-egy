@@ -15,42 +15,42 @@ interface CarouselItem {
 const carouselItems: CarouselItem[] = [
   {
     id: 1,
-    title: "Hypothesis Scrubs",
-    subtitle: "Echoes of Autumn Collection",
+    title: "Seen Collection",
+    subtitle: "Desert Rose Series",
     image: "/api/placeholder/400/300",
-    link: "#hypothesis",
+    link: "#seen",
     category: "Featured"
   },
   {
     id: 2,
-    title: "ReSurge Scrubs",
-    subtitle: "Performance Collection",
+    title: "Hleo Scrubs",
+    subtitle: "Professional Line",
     image: "/api/placeholder/400/300", 
-    link: "#resurge",
+    link: "#hleo",
     category: "Featured"
   },
   {
     id: 3,
-    title: "Easy Stretch",
-    subtitle: "Comfort Scrubs",
+    title: "Omaima",
+    subtitle: "Comfort Collection",
     image: "/api/placeholder/400/300",
-    link: "#easy-stretch", 
+    link: "#omaima", 
     category: "Featured"
   },
   {
     id: 4,
-    title: "Fall Prints",
-    subtitle: "Seasonal Collection",
+    title: "Winter Collection",
+    subtitle: "Seasonal Styles",
     image: "/api/placeholder/400/300",
     link: "#prints",
     category: "Seasonal"
   },
   {
     id: 5,
-    title: "Men's Hypothesis",
-    subtitle: "Professional Line",
+    title: "Men's Professional",
+    subtitle: "Executive Line",
     image: "/api/placeholder/400/300",
-    link: "#mens-hypothesis",
+    link: "#mens-professional",
     category: "Men's"
   }
 ];

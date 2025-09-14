@@ -15,10 +15,10 @@ export default function MainHeader() {
           data-testid="logo"
           onClick={() => console.log('Logo clicked')}
         >
-          UA
+          DE
         </div>
         <span className="ml-2 text-lg font-semibold text-foreground" data-testid="brand-name">
-          Uniform Advantage
+          DEV Egypt
         </span>
       </div>
 
