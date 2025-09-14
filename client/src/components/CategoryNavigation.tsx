@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useLocation } from 'wouter';
 import { ChevronDown } from 'lucide-react';
 
 const categories = [
@@ -160,6 +161,47 @@ const categories = [
 
 export default function CategoryNavigation() {
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
+  const [location, setLocation] = useLocation();
+
+  // Map subcategories to their corresponding routes
+  const getRouteForSubcategory = (subcategory: string, categoryName: string) => {
+    const normalizedSubcategory = subcategory.toLowerCase();
+    const normalizedCategory = categoryName.toLowerCase();
+    
+    // Handle main category pages
+    if (normalizedSubcategory.includes('shop all men')) {
+      return '/mens-products';
+    }
+    if (normalizedSubcategory.includes('shop all women')) {
+      return '/womens-products';
+    }
+    
+    // For other subcategories, we can extend this mapping later
+    // For now, route to the main category page
+    if (normalizedCategory === 'men') {
+      return '/mens-products';
+    }
+    if (normalizedCategory === 'women') {
+      return '/womens-products';
+    }
+    
+    return '/';
+  };
+
+  const handleCategoryClick = (categoryName: string) => {
+    const normalizedCategory = categoryName.toLowerCase();
+    if (normalizedCategory === 'men') {
+      setLocation('/mens-products');
+    } else if (normalizedCategory === 'women') {
+      setLocation('/womens-products');
+    }
+  };
+
+  const handleSubcategoryClick = (subcategory: string, categoryName: string) => {
+    const route = getRouteForSubcategory(subcategory, categoryName);
+    setLocation(route);
+    setHoveredCategory(null); // Close the dropdown after navigation
+  };
 
   return (
     <div className="bg-background border-b h-12 relative" data-testid="category-navigation">
@@ -173,7 +215,7 @@ export default function CategoryNavigation() {
           >
             <button
               data-testid={`category-${category.name.toLowerCase().replace(/\s+/g, '-')}`}
-              onClick={() => console.log(`Category clicked: ${category.name}`)}
+              onClick={() => handleCategoryClick(category.name)}
               className={`px-4 py-3 text-sm font-medium transition-colors hover-elevate flex items-center space-x-1 ${
                 category.highlight 
                   ? 'text-destructive hover:text-destructive-foreground' 
@@ -194,7 +236,7 @@ export default function CategoryNavigation() {
                   <button
                     key={subcategory}
                     data-testid={`subcategory-${subcategory.toLowerCase().replace(/\s+/g, '-')}`}
-                    onClick={() => console.log(`Subcategory clicked: ${subcategory}`)}
+                    onClick={() => handleSubcategoryClick(subcategory, category.name)}
                     className="block w-full text-left px-4 py-2 text-sm text-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
                   >
                     {subcategory}
