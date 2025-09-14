@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useLocation } from 'wouter';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -17,153 +18,14 @@ import MainHeader from '@/components/MainHeader';
 import CategoryNavigation from '@/components/CategoryNavigation';
 import ProductFilters from '@/components/ProductFilters';
 import Footer from '@/components/Footer';
+import { sampleProducts, Product } from '@/data/products';
 import maleWorkerImage from '@assets/generated_images/Male_healthcare_worker_sitting_40871523.png';
 
-interface Product {
-  id: number;
-  name: string;
-  brand: string;
-  price: number;
-  originalPrice?: number;
-  rating: number;
-  reviewCount: number;
-  image: string;
-  isOnSale?: boolean;
-  isNew?: boolean;
-  colors: string[];
-  sizes: string[];
-}
-
-// Comprehensive men's medical uniform product catalog
-const sampleProducts: Product[] = [
-  {
-    id: 1,
-    name: "Cherokee Revolution V-Neck Top",
-    brand: "Cherokee",
-    price: 2499,
-    originalPrice: 2999,
-    rating: 4.8,
-    reviewCount: 342,
-    image: maleWorkerImage,
-    isOnSale: true,
-    colors: ["Black", "Navy", "White", "Hunter Green"],
-    sizes: ["S", "M", "L", "XL", "2XL"]
-  },
-  {
-    id: 2,
-    name: "Barco One Athletic Jogger Pants",
-    brand: "Barco",
-    price: 3299,
-    rating: 4.9,
-    reviewCount: 286,
-    image: maleWorkerImage,
-    isNew: true,
-    colors: ["Black", "Charcoal", "Navy", "White"],
-    sizes: ["M", "L", "XL", "2XL", "3XL"]
-  },
-  {
-    id: 3,
-    name: "WonderWink Renew Cargo Top",
-    brand: "WonderWink",
-    price: 2199,
-    originalPrice: 2799,
-    rating: 4.7,
-    reviewCount: 198,
-    image: maleWorkerImage,
-    isOnSale: true,
-    colors: ["White", "Navy", "Black", "Royal Blue"],
-    sizes: ["S", "M", "L", "XL"]
-  },
-  {
-    id: 4,
-    name: "Healing Hands Purple Label Top",
-    brand: "Healing Hands",
-    price: 3599,
-    rating: 4.9,
-    reviewCount: 124,
-    image: maleWorkerImage,
-    colors: ["Black", "Navy", "White"],
-    sizes: ["M", "L", "XL", "2XL"]
-  },
-  {
-    id: 5,
-    name: "Greys Anatomy Classic Fit Scrub Set",
-    brand: "Greys Anatomy",
-    price: 4599,
-    rating: 4.6,
-    reviewCount: 156,
-    image: maleWorkerImage,
-    colors: ["Navy", "Black", "White", "Hunter Green"],
-    sizes: ["S", "M", "L", "XL", "2XL"]
-  },
-  {
-    id: 6,
-    name: "Dickies Dynamix Cargo Pants",
-    brand: "Dickies",
-    price: 2899,
-    originalPrice: 3299,
-    rating: 4.8,
-    reviewCount: 267,
-    image: maleWorkerImage,
-    isOnSale: true,
-    colors: ["Black", "Navy", "Charcoal", "White"],
-    sizes: ["M", "L", "XL", "2XL", "3XL"]
-  },
-  {
-    id: 7,
-    name: "Landau Stretch V-Neck Scrub Top",
-    brand: "Landau",
-    price: 2699,
-    rating: 4.7,
-    reviewCount: 89,
-    image: maleWorkerImage,
-    isNew: true,
-    colors: ["Navy", "Black", "White", "Royal Blue"],
-    sizes: ["S", "M", "L", "XL"]
-  },
-  {
-    id: 8,
-    name: "Koi Lite Peace Cargo Pants",
-    brand: "Koi",
-    price: 2999,
-    originalPrice: 3499,
-    rating: 4.6,
-    reviewCount: 145,
-    image: maleWorkerImage,
-    isOnSale: true,
-    colors: ["Black", "Navy", "White", "Hunter Green"],
-    sizes: ["S", "M", "L", "XL", "2XL"]
-  },
-  {
-    id: 9,
-    name: "UA Butter-Soft Men's V-Neck",
-    brand: "Uniform Advantage",
-    price: 1999,
-    originalPrice: 2499,
-    rating: 4.8,
-    reviewCount: 445,
-    image: maleWorkerImage,
-    isOnSale: true,
-    colors: ["Black", "Navy", "White", "Royal Blue"],
-    sizes: ["S", "M", "L", "XL", "2XL", "3XL"]
-  },
-  {
-    id: 10,
-    name: "FIGS Technical Collection Top",
-    brand: "FIGS",
-    price: 3899,
-    rating: 4.9,
-    reviewCount: 298,
-    image: maleWorkerImage,
-    isNew: true,
-    colors: ["Black", "Navy", "White"],
-    sizes: ["M", "L", "XL", "2XL"]
-  }
-];
 
 const PRODUCTS_PER_PAGE = 8;
 
 export default function MensProducts() {
+  const [location, setLocation] = useLocation();
   const [filteredProducts, setFilteredProducts] = useState(sampleProducts);
   const [appliedFilters, setAppliedFilters] = useState<Record<string, string[]>>({});
   const [currentPage, setCurrentPage] = useState(1);
@@ -317,7 +179,7 @@ export default function MensProducts() {
             <Card
               key={product.id}
               className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer group"
-              onClick={() => console.log(`View product ${product.id}`)}
+              onClick={() => setLocation(`/product/${product.id}`)}
               data-testid={`product-card-${product.id}`}
             >
               {/* Product Image */}
