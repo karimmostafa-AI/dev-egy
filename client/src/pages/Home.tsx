@@ -2,7 +2,9 @@ import TopNavigationBar from '@/components/TopNavigationBar';
 import MainHeader from '@/components/MainHeader';
 import CategoryNavigation from '@/components/CategoryNavigation';
 import HeroSection from '@/components/HeroSection';
-import ProductShowcase from '@/components/ProductShowcase';
+import ProductCarousel from '@/components/ProductCarousel';
+import UniformMarketplace from '@/components/UniformMarketplace';
+import SocialFeed from '@/components/SocialFeed';
 import Footer from '@/components/Footer';
 
 export default function Home() {
@@ -19,7 +21,9 @@ export default function Home() {
       {/* Main Content */}
       <main data-testid="main-content">
         <HeroSection />
-        <ProductShowcase />
+        <ProductCarousel />
+        <UniformMarketplace />
+        <SocialFeed />
       </main>
 
       {/* Footer */}

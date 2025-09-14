@@ -2,12 +2,11 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 
 const brands = [
-  { id: 'ua', name: 'Uniform Advantage', active: true },
-  { id: 'butter-soft', name: 'Butter-Soft' },
-  { id: 'easy', name: 'EASY' },
-  { id: 'hypothesis', name: 'HYPOTHESIS' },
-  { id: 'resources', name: 'RESOURCES' },
-  { id: 'wink', name: 'WINK SCRUBS' },
+  { id: 'butter-soft', name: 'Butter-Soft', logo: true },
+  { id: 'easy-stretch', name: 'Easy Stretch', logo: true },
+  { id: 'hypothesis', name: 'HYPOTHESIS', logo: true },
+  { id: 'resurge', name: 'ReSurge', logo: true },
+  { id: 'whisperlite', name: 'Whisperlite', logo: true },
 ];
 
 const utilityLinks = [
@@ -20,7 +19,7 @@ const utilityLinks = [
 ];
 
 export default function TopNavigationBar() {
-  const [activeBrand, setActiveBrand] = useState('ua');
+  const [activeBrand, setActiveBrand] = useState('');
 
   return (
     <div className="bg-black text-white text-sm h-10 flex items-center justify-between px-4 border-b" data-testid="top-navigation">
@@ -33,10 +32,10 @@ export default function TopNavigationBar() {
               setActiveBrand(brand.id);
               console.log(`Switched to brand: ${brand.name}`);
             }}
-            className={`px-3 py-1 rounded-md transition-colors hover-elevate ${
+            className={`px-3 py-1 text-xs font-medium transition-colors hover-elevate ${
               activeBrand === brand.id 
-                ? 'bg-white text-black font-medium' 
-                : 'hover:bg-white/20'
+                ? 'bg-white text-black' 
+                : 'text-white/90 hover:bg-white/20 hover:text-white'
             }`}
           >
             {brand.name}

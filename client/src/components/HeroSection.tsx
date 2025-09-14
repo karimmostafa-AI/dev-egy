@@ -1,11 +1,23 @@
+import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import CountdownTimer from './CountdownTimer';
+import EmailSignupModal from './EmailSignupModal';
 import femaleWorkerImage from '@assets/generated_images/Female_healthcare_worker_in_scrubs_c9f74238.png';
 import maleWorkerImage from '@assets/generated_images/Male_healthcare_worker_sitting_40871523.png';
 import medicalInstruments from '@assets/generated_images/Medical_instruments_on_white_background_46c995af.png';
 
 export default function HeroSection() {
+  const [showSignupModal, setShowSignupModal] = useState(false);
+
+  // Show modal after 3 seconds to simulate the Uniform Advantage behavior
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowSignupModal(true);
+    }, 3000);
+    
+    return () => clearTimeout(timer);
+  }, []);
   return (
     <div className="relative" data-testid="hero-section">
       {/* Promotional Banners */}
@@ -74,7 +86,11 @@ export default function HeroSection() {
         </div>
       </div>
 
-      {/* Newsletter Modal would appear here */}
+      {/* Email Signup Modal */}
+      <EmailSignupModal 
+        isOpen={showSignupModal} 
+        onClose={() => setShowSignupModal(false)} 
+      />
     </div>
   );
 }
