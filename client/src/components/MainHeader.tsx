@@ -7,35 +7,40 @@ export default function MainHeader() {
   const [searchQuery, setSearchQuery] = useState('');
 
   return (
-    <div className="bg-background border-b h-16 flex items-center justify-between px-4" data-testid="main-header">
+    <div className="bg-background border-b h-20 flex items-center justify-between px-6" data-testid="main-header">
       {/* Logo */}
       <div className="flex items-center">
         <div 
-          className="bg-primary text-primary-foreground px-4 py-2 rounded font-bold text-lg cursor-pointer hover-elevate"
+          className="bg-primary text-primary-foreground px-3 py-2 rounded font-bold text-xl cursor-pointer hover-elevate"
           data-testid="logo"
           onClick={() => console.log('Logo clicked')}
         >
-          DE
+          UA
         </div>
-        <span className="ml-2 text-lg font-semibold text-foreground" data-testid="brand-name">
-          DEV Egypt
-        </span>
+        <div className="ml-3">
+          <div className="text-lg font-bold text-foreground" data-testid="brand-name">
+            Uniform Advantage
+          </div>
+          <div className="text-xs text-muted-foreground">
+            Scrubs & Medical Uniforms that Don't Conform
+          </div>
+        </div>
       </div>
 
       {/* Account & Cart with Search */}
       <div className="flex items-center space-x-4">
         {/* Search Bar - moved to right, styled to match original */}
-        <div className="relative">
-          <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <div className="relative flex-1 max-w-2xl mx-8">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
           <Input
             type="search"
-            placeholder="Search keywords(etc)"
+            placeholder="Search for scrubs, uniforms, brands..."
             value={searchQuery}
             onChange={(e) => {
               setSearchQuery(e.target.value);
               console.log('Search:', e.target.value);
             }}
-            className="h-10 w-80 pl-7 pr-3 py-2 text-sm font-light bg-background border border-border rounded-md text-foreground focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+            className="h-12 w-full pl-10 pr-4 py-3 text-base bg-background border-2 border-border rounded-lg text-foreground focus:ring-2 focus:ring-primary focus:border-primary transition-all placeholder:text-muted-foreground"
             data-testid="search-input"
           />
         </div>

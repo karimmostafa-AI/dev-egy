@@ -1,3 +1,4 @@
+import PromotionalBanner from '@/components/PromotionalBanner';
 import TopNavigationBar from '@/components/TopNavigationBar';
 import MainHeader from '@/components/MainHeader';
 import CategoryNavigation from '@/components/CategoryNavigation';
@@ -12,8 +13,9 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Three-tier Navigation Structure */}
+      {/* Four-tier Navigation Structure - UA Style */}
       <div className="sticky top-0 z-40 bg-background">
+        <PromotionalBanner />
         <TopNavigationBar />
         <MainHeader />
         <CategoryNavigation />
