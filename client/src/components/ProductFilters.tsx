@@ -54,11 +54,16 @@ const filterGroups: FilterGroup[] = [
     id: 'brand',
     name: 'Brand',
     options: [
-      { id: 'seen', name: 'Seen', count: 95 },
-      { id: 'hleo', name: 'Hleo', count: 78 },
-      { id: 'omaima', name: 'Omaima', count: 120 },
-      { id: 'cairo-medical', name: 'Cairo Medical', count: 65 },
-      { id: 'alexandria', name: 'Alexandria', count: 42 }
+      { id: 'cherokee', name: 'Cherokee', count: 1 },
+      { id: 'barco', name: 'Barco', count: 1 },
+      { id: 'wonderwink', name: 'WonderWink', count: 1 },
+      { id: 'healing-hands', name: 'Healing Hands', count: 1 },
+      { id: 'greys-anatomy', name: 'Greys Anatomy', count: 1 },
+      { id: 'dickies', name: 'Dickies', count: 1 },
+      { id: 'landau', name: 'Landau', count: 1 },
+      { id: 'koi', name: 'Koi', count: 1 },
+      { id: 'uniform-advantage', name: 'Uniform Advantage', count: 1 },
+      { id: 'figs', name: 'FIGS', count: 1 }
     ]
   },
   {
