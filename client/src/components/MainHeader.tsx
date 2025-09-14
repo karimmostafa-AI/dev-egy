@@ -26,7 +26,7 @@ export default function MainHeader() {
       <div className="flex items-center space-x-4">
         {/* Search Bar - moved to right, styled to match original */}
         <div className="relative">
-          <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             type="search"
             placeholder="Search keywords(etc)"
@@ -35,7 +35,7 @@ export default function MainHeader() {
               setSearchQuery(e.target.value);
               console.log('Search:', e.target.value);
             }}
-            className="h-10 w-80 pl-7 pr-3 py-2 text-sm font-light bg-white border border-gray-300 rounded-md text-gray-600 focus:ring-2 focus:ring-black focus:border-black transition-all"
+            className="h-10 w-80 pl-7 pr-3 py-2 text-sm font-light bg-background border border-border rounded-md text-foreground focus:ring-2 focus:ring-primary focus:border-primary transition-all"
             data-testid="search-input"
           />
         </div>

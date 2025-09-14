@@ -16,65 +16,65 @@
 
   --background: 0 0% 100%;
 
-  --foreground: 220 15% 15%;
+  --foreground: 0 0% 15%;
 
-  --border: 210 15% 88%;
+  --border: 0 0% 90%;
 
-  --card: 210 5% 98%;
+  --card: 0 0% 99%;
 
-  --card-foreground: 220 15% 15%;
+  --card-foreground: 0 0% 15%;
 
-  --card-border: 210 10% 92%;
+  --card-border: 0 0% 92%;
 
-  --sidebar: 210 8% 95%;
+  --sidebar: 0 0% 95%;
 
-  --sidebar-foreground: 220 15% 15%;
+  --sidebar-foreground: 0 0% 15%;
 
-  --sidebar-border: 210 12% 90%;
+  --sidebar-border: 0 0% 90%;
 
-  --sidebar-primary: 220 85% 25%;
+  --sidebar-primary: 0 0% 0%;
 
-  --sidebar-primary-foreground: 210 20% 98%;
+  --sidebar-primary-foreground: 0 0% 98%;
 
-  --sidebar-accent: 210 15% 88%;
+  --sidebar-accent: 0 0% 88%;
 
-  --sidebar-accent-foreground: 220 20% 20%;
+  --sidebar-accent-foreground: 0 0% 20%;
 
-  --sidebar-ring: 220 85% 25%;
+  --sidebar-ring: 0 0% 0%;
 
-  --popover: 210 8% 95%;
+  --popover: 0 0% 95%;
 
-  --popover-foreground: 220 15% 15%;
+  --popover-foreground: 0 0% 15%;
 
-  --popover-border: 210 15% 88%;
+  --popover-border: 0 0% 88%;
 
   --primary: 0 0% 0%;
 
   --primary-foreground: 0 0% 100%;
 
-  --secondary: 0 84% 60%;
+  --secondary: 0 84% 45%;
 
   --secondary-foreground: 0 0% 100%;
 
-  --muted: 210 10% 92%;
+  --muted: 0 0% 92%;
 
-  --muted-foreground: 220 10% 45%;
+  --muted-foreground: 0 0% 45%;
 
-  --accent: 210 15% 88%;
+  --accent: 0 0% 95%;
 
-  --accent-foreground: 220 20% 25%;
+  --accent-foreground: 0 0% 15%;
 
-  --destructive: 0 84% 60%;
+  --destructive: 0 84% 45%;
 
   --destructive-foreground: 0 0% 100%;
 
-  --input: 210 20% 80%;
+  --input: 0 0% 80%;
   --ring: 0 0% 0%;
-  --chart-1: 220 85% 25%;
-  --chart-2: 195 75% 30%;
-  --chart-3: 160 60% 35%;
-  --chart-4: 45 85% 40%;
-  --chart-5: 285 75% 45%;
+  --chart-1: 0 0% 25%;
+  --chart-2: 0 0% 35%;
+  --chart-3: 0 84% 45%;
+  --chart-4: 0 0% 45%;
+  --chart-5: 0 0% 55%;
 
   --font-sans: Open Sans, sans-serif;
   --font-serif: Georgia, serif;
@@ -132,67 +132,68 @@
   --elevate-1: rgba(255,255,255, .04);
   --elevate-2: rgba(255,255,255, .09);
 
-  --background: 220 45% 8%;
+  --background: 0 0% 8%;
 
-  --foreground: 210 20% 88%;
+  --foreground: 0 0% 88%;
 
-  --border: 210 15% 18%;
+  --border: 0 0% 18%;
 
-  --card: 220 45% 10%;
+  --card: 0 0% 10%;
 
-  --card-foreground: 210 20% 88%;
+  --card-foreground: 0 0% 88%;
 
-  --card-border: 210 15% 20%;
+  --card-border: 0 0% 20%;
 
-  --sidebar: 220 45% 12%;
+  --sidebar: 0 0% 12%;
 
-  --sidebar-foreground: 210 20% 88%;
+  --sidebar-foreground: 0 0% 88%;
 
-  --sidebar-border: 210 15% 22%;
+  --sidebar-border: 0 0% 22%;
 
-  --sidebar-primary: 220 85% 25%;
+  --sidebar-primary: 0 0% 0%;
 
-  --sidebar-primary-foreground: 210 20% 98%;
+  --sidebar-primary-foreground: 0 0% 98%;
 
-  --sidebar-accent: 220 20% 25%;
+  --sidebar-accent: 0 0% 25%;
 
-  --sidebar-accent-foreground: 210 20% 85%;
+  --sidebar-accent-foreground: 0 0% 85%;
 
-  --sidebar-ring: 220 85% 25%;
+  --sidebar-ring: 0 0% 0%;
 
-  --popover: 220 45% 15%;
+  --popover: 0 0% 15%;
 
-  --popover-foreground: 210 20% 88%;
+  --popover-foreground: 0 0% 88%;
 
-  --popover-border: 210 15% 25%;
+  --popover-border: 0 0% 25%;
 
   --primary: 0 0% 0%;
 
   --primary-foreground: 0 0% 100%;
 
-  --secondary: 0 84% 60%;
+  --secondary: 0 84% 45%;
 
-  --secondary-foreground: 210 20% 85%;
+  --secondary-foreground: 0 0% 100%;
 
-  --muted: 220 15% 22%;
+  --muted: 0 0% 22%;
 
-  --muted-foreground: 210 15% 65%;
+  --muted-foreground: 0 0% 65%;
 
-  --accent: 220 15% 20%;
+  --accent: 0 0% 20%;
 
-  --accent-foreground: 210 20% 85%;
+  --accent-foreground: 0 0% 85%;
 
-  --destructive: 0 84% 60%;
+
+  --destructive: 0 84% 45%;
 
   --destructive-foreground: 0 0% 100%;
 
-  --input: 210 20% 35%;
+  --input: 0 0% 35%;
   --ring: 0 0% 0%;
-  --chart-1: 220 85% 55%;
-  --chart-2: 195 75% 60%;
-  --chart-3: 160 60% 65%;
-  --chart-4: 45 85% 70%;
-  --chart-5: 285 75% 75%;
+  --chart-1: 0 0% 55%;
+  --chart-2: 0 0% 65%;
+  --chart-3: 0 84% 55%;
+  --chart-4: 0 0% 70%;
+  --chart-5: 0 0% 75%;
 
   --shadow-2xs: 0px 2px 0px 0px hsl(220 45% 8% / 0.00);
   --shadow-xs: 0px 2px 0px 0px hsl(220 45% 8% / 0.00);
