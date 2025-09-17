@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Search, User, ShoppingCart } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Link } from 'wouter';
+import { Search, User, ShoppingCart, BookOpen } from 'lucide-react';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
 export default function MainHeader() {
@@ -10,16 +11,17 @@ export default function MainHeader() {
     <div className="bg-background border-b h-20 flex items-center justify-between px-6" data-testid="main-header">
       {/* Logo */}
       <div className="flex items-center">
-        <div 
-          className="bg-primary text-primary-foreground px-3 py-2 rounded font-bold text-xl cursor-pointer hover-elevate"
-          data-testid="logo"
-          onClick={() => console.log('Logo clicked')}
-        >
-          UA
-        </div>
+        <Link href="/">
+          <div 
+            className="bg-primary text-primary-foreground px-3 py-2 rounded font-bold text-xl cursor-pointer hover-elevate"
+            data-testid="logo"
+          >
+            DE
+          </div>
+        </Link>
         <div className="ml-3">
           <div className="text-lg font-bold text-foreground" data-testid="brand-name">
-            Uniform Advantage
+            DEV Egypt
           </div>
           <div className="text-xs text-muted-foreground">
             Scrubs & Medical Uniforms that Don't Conform
@@ -44,15 +46,20 @@ export default function MainHeader() {
             data-testid="search-input"
           />
         </div>
-        <Button 
-          variant="ghost" 
-          size="icon" 
+        <Link 
+          href="/blog"
+          className={buttonVariants({ variant: "ghost", size: "icon" }) + " hover-elevate"}
+          data-testid="blog-button"
+        >
+          <BookOpen className="h-5 w-5" />
+        </Link>
+        <Link 
+          href="/account"
+          className={buttonVariants({ variant: "ghost", size: "icon" }) + " hover-elevate"}
           data-testid="account-button"
-          onClick={() => console.log('Account clicked')}
-          className="hover-elevate"
         >
           <User className="h-5 w-5" />
-        </Button>
+        </Link>
         <Button 
           variant="ghost" 
           size="icon" 

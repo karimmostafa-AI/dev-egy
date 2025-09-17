@@ -6,7 +6,7 @@ import { randomUUID } from "crypto";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
 }
 
@@ -21,15 +21,24 @@ export class MemStorage implements IStorage {
     return this.users.get(id);
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
+  async getUserByEmail(email: string): Promise<User | undefined> {
     return Array.from(this.users.values()).find(
-      (user) => user.username === username,
+      (user) => user.email === email,
     );
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = randomUUID();
-    const user: User = { ...insertUser, id };
+    const now = new Date();
+    // Create a mock password hash since we don't have the actual hashing logic here
+    const passwordHash = `hashed_${insertUser.password || 'default'}`;
+    const user: User = { 
+      ...insertUser,
+      id,
+      passwordHash,
+      createdAt: now,
+      updatedAt: now
+    } as User;
     this.users.set(id, user);
     return user;
   }

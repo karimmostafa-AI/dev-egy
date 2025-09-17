@@ -1,10 +1,7 @@
 import { useState } from 'react';
-import { ChevronDown, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 interface FilterOption {
   id: string;
@@ -18,36 +15,16 @@ interface FilterGroup {
   options: FilterOption[];
 }
 
+// Mock data, in a real app this would come from the API based on the product list
 const filterGroups: FilterGroup[] = [
   {
-    id: 'sale',
-    name: 'Sale',
+    id: 'category',
+    name: 'Category',
     options: [
-      { id: 'limited-time', name: 'Limited Time Sale', count: 45 },
-      { id: 'clearance', name: 'Clearance', count: 128 },
-      { id: 'all-sale', name: 'All Sale', count: 180 }
-    ]
-  },
-  {
-    id: 'color',
-    name: 'Color',
-    options: [
-      { id: 'black', name: 'Black', count: 320 },
-      { id: 'white', name: 'White', count: 195 },
-      { id: 'red', name: 'Red', count: 85 },
-      { id: 'navy', name: 'Navy', count: 240 },
-      { id: 'blue', name: 'Blue', count: 180 }
-    ]
-  },
-  {
-    id: 'size',
-    name: 'Size',
-    options: [
-      { id: 'xs', name: 'XS', count: 150 },
-      { id: 's', name: 'S', count: 280 },
-      { id: 'm', name: 'M', count: 320 },
-      { id: 'l', name: 'L', count: 275 },
-      { id: 'xl', name: 'XL', count: 225 }
+      { id: 'tops', name: 'Scrub Tops', count: 185 },
+      { id: 'pants', name: 'Scrub Pants', count: 140 },
+      { id: 'sets', name: 'Scrub Sets', count: 65 },
+      { id: 'jackets', name: 'Jackets & Lab Coats', count: 95 },
     ]
   },
   {
@@ -58,54 +35,37 @@ const filterGroups: FilterGroup[] = [
       { id: 'barco', name: 'Barco', count: 1 },
       { id: 'wonderwink', name: 'WonderWink', count: 1 },
       { id: 'healing-hands', name: 'Healing Hands', count: 1 },
-      { id: 'greys-anatomy', name: 'Greys Anatomy', count: 1 },
-      { id: 'dickies', name: 'Dickies', count: 1 },
-      { id: 'landau', name: 'Landau', count: 1 },
-      { id: 'koi', name: 'Koi', count: 1 },
-      { id: 'uniform-advantage', name: 'Uniform Advantage', count: 1 },
-      { id: 'figs', name: 'FIGS', count: 1 }
     ]
   },
   {
-    id: 'category',
-    name: 'Category',
+    id: 'color',
+    name: 'Color',
     options: [
-      { id: 'tops', name: 'Scrub Tops', count: 185 },
-      { id: 'pants', name: 'Scrub Pants', count: 140 },
-      { id: 'sets', name: 'Scrub Sets', count: 65 },
-      { id: 'jackets', name: 'Jackets & Lab Coats', count: 95 },
-      { id: 'accessories', name: 'Accessories', count: 215 }
+      { id: 'black', name: 'Black', count: 320 },
+      { id: 'white', name: 'White', count: 195 },
+      { id: 'red', name: 'Red', count: 85 },
+      { id: 'navy', name: 'Navy', count: 240 },
     ]
-  }
-];
-
-const sortOptions = [
-  { id: 'best-match', name: 'Best Match' },
-  { id: 'trending', name: 'Trending Now' },
-  { id: 'price-low', name: 'Price Low to High' },
-  { id: 'price-high', name: 'Price High to Low' },
-  { id: 'newest', name: 'Newest First' },
-  { id: 'rating', name: 'Customer Rating' }
+  },
+  {
+    id: 'size',
+    name: 'Size',
+    options: [
+      { id: 'xs', name: 'XS', count: 150 },
+      { id: 's', name: 'S', count: 280 },
+      { id: 'm', name: 'M', count: 320 },
+    ]
+  },
 ];
 
 interface ProductFiltersProps {
-  itemCount: number;
+  itemCount?: number;
   onFilterChange?: (filters: Record<string, string[]>) => void;
   onSortChange?: (sort: string) => void;
 }
 
 export default function ProductFilters({ itemCount, onFilterChange, onSortChange }: ProductFiltersProps) {
   const [selectedFilters, setSelectedFilters] = useState<Record<string, string[]>>({});
-  const [expandedGroups, setExpandedGroups] = useState<string[]>(['sale', 'color']);
-  const [sortBy, setSortBy] = useState('best-match');
-
-  const toggleGroup = (groupId: string) => {
-    setExpandedGroups(prev => 
-      prev.includes(groupId) 
-        ? prev.filter(id => id !== groupId)
-        : [...prev, groupId]
-    );
-  };
 
   const toggleFilter = (groupId: string, optionId: string) => {
     setSelectedFilters(prev => {
@@ -129,74 +89,59 @@ export default function ProductFilters({ itemCount, onFilterChange, onSortChange
     onFilterChange?.({});
   };
 
-  const handleSortChange = (value: string) => {
-    setSortBy(value);
-    onSortChange?.(value);
-  };
-
   const getActiveFilterCount = () => {
     return Object.values(selectedFilters).flat().length;
   };
 
   return (
-    <div className="w-full" data-testid="product-filters">
-      {/* Header with item count and sort */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-        <div className="flex items-center gap-4">
-          <h2 className="text-2xl font-bold">
-            {itemCount.toLocaleString()} Items
-          </h2>
-          {getActiveFilterCount() > 0 && (
-            <Badge variant="secondary" className="px-3">
-              {getActiveFilterCount()} filters applied
-            </Badge>
+    <div className="w-full p-4 bg-card border rounded-lg" data-testid="product-filters">
+      <div className="flex justify-between items-center mb-4">
+        <div>
+          <h3 className="font-bold text-lg">Filters</h3>
+          {itemCount !== undefined && (
+            <p className="text-sm text-muted-foreground">{itemCount} products</p>
           )}
         </div>
-        
-        <div className="flex items-center gap-4">
-          <Select value={sortBy} onValueChange={handleSortChange}>
-            <SelectTrigger className="w-48" data-testid="sort-select">
-              <SelectValue placeholder="Sort By" />
-            </SelectTrigger>
-            <SelectContent>
-              {sortOptions.map((option) => (
-                <SelectItem key={option.id} value={option.id}>
-                  {option.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          
+        {getActiveFilterCount() > 0 && (
           <Button 
-            variant="outline" 
+            variant="link"
+            className="text-sm p-0 h-auto" 
             onClick={clearAllFilters}
-            disabled={getActiveFilterCount() === 0}
             data-testid="clear-filters"
           >
             Clear All
           </Button>
-        </div>
+        )}
       </div>
 
-      {/* Filters */}
-      <div className="grid grid-cols-1 lg:grid-cols-6 gap-6">
+      {/* Sort Options */}
+      {onSortChange && (
+        <div className="mb-4">
+          <label htmlFor="sort" className="block text-sm font-medium mb-1">
+            Sort by
+          </label>
+          <select
+            id="sort"
+            className="w-full p-2 border rounded-md bg-background"
+            onChange={(e) => onSortChange(e.target.value)}
+          >
+            <option value="best-match">Best Match</option>
+            <option value="price-low-high">Price: Low to High</option>
+            <option value="price-high-low">Price: High to Low</option>
+            <option value="newest">Newest Arrivals</option>
+            <option value="rating">Customer Rating</option>
+          </select>
+        </div>
+      )}
+
+      <Accordion type="multiple" defaultValue={['category', 'brand']} className="w-full">
         {filterGroups.map((group) => (
-          <Card key={group.id} className="p-4">
-            <button
-              onClick={() => toggleGroup(group.id)}
-              className="flex items-center justify-between w-full mb-3 hover:text-primary transition-colors"
-              data-testid={`filter-group-${group.id}`}
-            >
-              <h3 className="font-semibold text-sm">{group.name}</h3>
-              <ChevronDown 
-                className={`h-4 w-4 transition-transform ${
-                  expandedGroups.includes(group.id) ? 'rotate-180' : ''
-                }`} 
-              />
-            </button>
-            
-            {expandedGroups.includes(group.id) && (
-              <div className="space-y-2 max-h-48 overflow-y-auto">
+          <AccordionItem value={group.id} key={group.id}>
+            <AccordionTrigger className="font-semibold text-sm">
+              {group.name}
+            </AccordionTrigger>
+            <AccordionContent>
+              <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
                 {group.options.map((option) => (
                   <div key={option.id} className="flex items-center space-x-2">
                     <Checkbox
@@ -207,26 +152,20 @@ export default function ProductFilters({ itemCount, onFilterChange, onSortChange
                     />
                     <label
                       htmlFor={`${group.id}-${option.id}`}
-                      className="text-sm cursor-pointer flex-1 flex justify-between"
+                      className="text-sm cursor-pointer flex-1 flex justify-between items-center"
                     >
                       <span>{option.name}</span>
-                      <span className="text-muted-foreground">({option.count})</span>
+                      <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded-sm">
+                        {option.count}
+                      </span>
                     </label>
                   </div>
                 ))}
               </div>
-            )}
-          </Card>
+            </AccordionContent>
+          </AccordionItem>
         ))}
-      </div>
-
-      {/* Mobile Filter Button */}
-      <div className="lg:hidden mt-4">
-        <Button variant="outline" className="w-full" data-testid="mobile-filter-toggle">
-          <Filter className="h-4 w-4 mr-2" />
-          Filter & Sort ({getActiveFilterCount()})
-        </Button>
-      </div>
+      </Accordion>
     </div>
   );
 }

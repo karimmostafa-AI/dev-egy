@@ -2,11 +2,9 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 
 const brands = [
-  { id: 'butter-soft', name: 'Butter Soft', logo: true },
-  { id: 'easy-stretch', name: 'Easy Stretch', logo: true },
-  { id: 'hypothesis', name: 'Hypothesis', logo: true },
-  { id: 'resurge', name: 'ReSurge', logo: true },
-  { id: 'whisperlite', name: 'WhisperLite', logo: true },
+  { id: 'seen', name: 'SEEN', logo: true },
+  { id: 'hleo', name: 'HLEO', logo: true },
+  { id: 'omaima', name: 'OMAIMA', logo: true },
 ];
 
 const utilityLinks = [

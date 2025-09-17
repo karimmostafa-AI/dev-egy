@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { useLocation } from 'wouter';
+import { useLocation, Link } from 'wouter';
 import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
@@ -211,7 +211,7 @@ export default function Cart() {
                       {shipping === 0 ? (
                         <span className="text-green-600">FREE</span>
                       ) : (
-                        `$${(shipping / 100).toFixed(2)}`
+                        `${(shipping / 100).toFixed(2)}`
                       )}
                     </span>
                   </div>
@@ -242,10 +242,10 @@ export default function Cart() {
                 </div>
 
                 {/* Checkout Button */}
-                <Button className="w-full mt-6" size="lg">
+                <Link href="/checkout" className={buttonVariants({ size: 'lg' }) + " w-full mt-6"}>
                   <CreditCard className="w-4 h-4 mr-2" />
                   Checkout
-                </Button>
+                </Link>
               </Card>
 
               {/* Shipping Info */}

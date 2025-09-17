@@ -1,4 +1,4 @@
-import maleWorkerImage from '@assets/generated_images/Male_healthcare_worker_sitting_40871523.png';
+// import maleWorkerImage from '@assets/generated_images/Male_healthcare_worker_sitting_40871523.png';
 
 export interface Product {
   id: number;
@@ -34,7 +34,7 @@ export const sampleProducts: Product[] = [
     originalPrice: 2999,
     rating: 4.8,
     reviewCount: 267,
-    image: maleWorkerImage,
+    image: "/images/scrub-top.jpg",
     isOnSale: true,
     colors: ["Navy", "Black", "Royal Blue", "White"],
     sizes: ["S", "M", "L", "XL", "2XL"]
@@ -47,7 +47,7 @@ export const sampleProducts: Product[] = [
     originalPrice: 3999,
     rating: 4.7,
     reviewCount: 189,
-    image: maleWorkerImage,
+    image: "/images/scrub-pants.jpg",
     isOnSale: true,
     colors: ["Black", "Navy", "Pewter", "White"],
     sizes: ["S", "M", "L", "XL", "2XL", "3XL"]
@@ -59,7 +59,7 @@ export const sampleProducts: Product[] = [
     price: 2799,
     rating: 4.5,
     reviewCount: 298,
-    image: maleWorkerImage,
+    image: "/images/scrub-pants.jpg",
     colors: ["Black", "Navy", "Hunter Green", "Wine"],
     sizes: ["XS", "S", "M", "L", "XL", "2XL"]
   },
@@ -71,7 +71,7 @@ export const sampleProducts: Product[] = [
     originalPrice: 2699,
     rating: 4.9,
     reviewCount: 412,
-    image: maleWorkerImage,
+    image: "/images/scrub-top.jpg",
     isOnSale: true,
     colors: ["Black", "Navy", "Royal Blue", "White", "Wine"],
     sizes: ["S", "M", "L", "XL", "2XL"]
@@ -83,7 +83,7 @@ export const sampleProducts: Product[] = [
     price: 3299,
     rating: 4.6,
     reviewCount: 156,
-    image: maleWorkerImage,
+    image: "/images/scrub-set.jpg",
     isNew: true,
     colors: ["Black", "Navy", "Pewter"],
     sizes: ["M", "L", "XL", "2XL"]
@@ -96,7 +96,7 @@ export const sampleProducts: Product[] = [
     originalPrice: 2399,
     rating: 4.4,
     reviewCount: 224,
-    image: maleWorkerImage,
+    image: "/images/scrub-top.jpg",
     isOnSale: true,
     colors: ["Black", "Navy", "Hunter Green", "White"],
     sizes: ["S", "M", "L", "XL", "2XL", "3XL"]
@@ -108,7 +108,7 @@ export const sampleProducts: Product[] = [
     price: 2699,
     rating: 4.3,
     reviewCount: 187,
-    image: maleWorkerImage,
+    image: "/images/scrub-pants.jpg",
     colors: ["Black", "Navy", "Charcoal"],
     sizes: ["S", "M", "L", "XL", "2XL"]
   },
@@ -120,7 +120,7 @@ export const sampleProducts: Product[] = [
     originalPrice: 3499,
     rating: 4.6,
     reviewCount: 145,
-    image: maleWorkerImage,
+    image: "/images/scrub-pants.jpg",
     isOnSale: true,
     colors: ["Black", "Navy", "White", "Hunter Green"],
     sizes: ["S", "M", "L", "XL", "2XL"]
@@ -133,7 +133,7 @@ export const sampleProducts: Product[] = [
     originalPrice: 2499,
     rating: 4.8,
     reviewCount: 445,
-    image: maleWorkerImage,
+    image: "/images/scrub-top.jpg",
     isOnSale: true,
     colors: ["Black", "Navy", "White", "Royal Blue"],
     sizes: ["S", "M", "L", "XL", "2XL", "3XL"]
@@ -145,7 +145,7 @@ export const sampleProducts: Product[] = [
     price: 3899,
     rating: 4.9,
     reviewCount: 298,
-    image: maleWorkerImage,
+    image: "/images/scrub-top.jpg",
     isNew: true,
     colors: ["Black", "Navy", "White"],
     sizes: ["M", "L", "XL", "2XL"]
