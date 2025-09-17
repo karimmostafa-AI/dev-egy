@@ -45,7 +45,10 @@ export class OrderService {
         return order;
       });
     } catch (error) {
-      throw new Error(`Failed to create order: ${error.message}`);
+      if (error instanceof Error) {
+        throw new Error(`Failed to create order: ${error.message}`);
+      }
+      throw new Error("Failed to create order due to an unexpected error.");
     }
   }
 
@@ -55,7 +58,10 @@ export class OrderService {
       const order = await db.select().from(orders).where(eq(orders.id, id)).limit(1);
       return order[0];
     } catch (error) {
-      throw new Error(`Failed to get order by ID: ${error.message}`);
+      if (error instanceof Error) {
+        throw new Error(`Failed to get order by ID: ${error.message}`);
+      }
+      throw new Error("Failed to get order by ID due to an unexpected error.");
     }
   }
 
@@ -70,7 +76,10 @@ export class OrderService {
       
       return order[0];
     } catch (error) {
-      throw new Error(`Failed to get order status: ${error.message}`);
+      if (error instanceof Error) {
+        throw new Error(`Failed to get order status: ${error.message}`);
+      }
+      throw new Error("Failed to get order status due to an unexpected error.");
     }
   }
 }

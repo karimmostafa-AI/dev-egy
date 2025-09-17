@@ -72,7 +72,10 @@ export class CheckoutService {
         };
       });
     } catch (error) {
-      throw new Error(`Failed to process checkout: ${error.message}`);
+      if (error instanceof Error) {
+        throw new Error(`Failed to process checkout: ${error.message}`);
+      }
+      throw new Error("Failed to process checkout due to an unexpected error.");
     }
   }
 
@@ -87,7 +90,10 @@ export class CheckoutService {
         expiresAt: new Date(Date.now() + 30 * 60 * 1000) // 30 minutes from now
       };
     } catch (error) {
-      throw new Error(`Failed to get checkout session: ${error.message}`);
+      if (error instanceof Error) {
+        throw new Error(`Failed to get checkout session: ${error.message}`);
+      }
+      throw new Error("Failed to get checkout session due to an unexpected error.");
     }
   }
 }

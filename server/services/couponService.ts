@@ -80,7 +80,10 @@ export class CouponService {
         newTotal: (cartTotal - discount).toString()
       };
     } catch (error) {
-      throw new Error(`Failed to apply coupon: ${error.message}`);
+      if (error instanceof Error) {
+        throw new Error(`Failed to apply coupon: ${error.message}`);
+      }
+      throw new Error("Failed to apply coupon due to an unexpected error.");
     }
   }
 }

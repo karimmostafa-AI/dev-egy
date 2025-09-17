@@ -115,7 +115,10 @@ export class CartService {
         .returning();
       return updatedItem;
     } catch (error) {
-      throw new Error(`Failed to update cart item quantity: ${error.message}`);
+      if (error instanceof Error) {
+        throw new Error(`Failed to update cart item quantity: ${error.message}`);
+      }
+      throw new Error("Failed to update cart item quantity due to an unexpected error.");
     }
   }
 
@@ -124,7 +127,10 @@ export class CartService {
     try {
       await db.delete(cartItems).where(eq(cartItems.id, itemId));
     } catch (error) {
-      throw new Error(`Failed to remove item from cart: ${error.message}`);
+      if (error instanceof Error) {
+        throw new Error(`Failed to remove item from cart: ${error.message}`);
+      }
+      throw new Error("Failed to remove item from cart due to an unexpected error.");
     }
   }
 

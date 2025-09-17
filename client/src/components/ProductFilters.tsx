@@ -59,10 +59,12 @@ const filterGroups: FilterGroup[] = [
 ];
 
 interface ProductFiltersProps {
+  itemCount?: number;
   onFilterChange?: (filters: Record<string, string[]>) => void;
+  onSortChange?: (sort: string) => void;
 }
 
-export default function ProductFilters({ onFilterChange }: ProductFiltersProps) {
+export default function ProductFilters({ itemCount, onFilterChange, onSortChange }: ProductFiltersProps) {
   const [selectedFilters, setSelectedFilters] = useState<Record<string, string[]>>({});
 
   const toggleFilter = (groupId: string, optionId: string) => {
@@ -94,7 +96,12 @@ export default function ProductFilters({ onFilterChange }: ProductFiltersProps) 
   return (
     <div className="w-full p-4 bg-card border rounded-lg" data-testid="product-filters">
       <div className="flex justify-between items-center mb-4">
-        <h3 className="font-bold text-lg">Filters</h3>
+        <div>
+          <h3 className="font-bold text-lg">Filters</h3>
+          {itemCount !== undefined && (
+            <p className="text-sm text-muted-foreground">{itemCount} products</p>
+          )}
+        </div>
         {getActiveFilterCount() > 0 && (
           <Button 
             variant="link"
@@ -106,6 +113,26 @@ export default function ProductFilters({ onFilterChange }: ProductFiltersProps) 
           </Button>
         )}
       </div>
+
+      {/* Sort Options */}
+      {onSortChange && (
+        <div className="mb-4">
+          <label htmlFor="sort" className="block text-sm font-medium mb-1">
+            Sort by
+          </label>
+          <select
+            id="sort"
+            className="w-full p-2 border rounded-md bg-background"
+            onChange={(e) => onSortChange(e.target.value)}
+          >
+            <option value="best-match">Best Match</option>
+            <option value="price-low-high">Price: Low to High</option>
+            <option value="price-high-low">Price: High to Low</option>
+            <option value="newest">Newest Arrivals</option>
+            <option value="rating">Customer Rating</option>
+          </select>
+        </div>
+      )}
 
       <Accordion type="multiple" defaultValue={['category', 'brand']} className="w-full">
         {filterGroups.map((group) => (

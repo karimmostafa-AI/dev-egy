@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useLocation } from 'wouter';
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -50,7 +50,7 @@ export default function WomensProducts() {
   const { data, isLoading, error } = useQuery({
     queryKey: ['products', 'womens', { page: currentPage, sortBy, applied: appliedFilters }],
     queryFn: () => fetchProducts({ page: currentPage, sortBy, applied: appliedFilters }),
-    keepPreviousData: true,
+    placeholderData: keepPreviousData,
   });
 
   const currentProducts = data?.products || [];

@@ -33,7 +33,10 @@ export class UserService {
       const user = await db.select().from(users).where(eq(users.id, id)).limit(1);
       return user[0];
     } catch (error) {
-      throw new Error(`Failed to get user by ID: ${error.message}`);
+      if (error instanceof Error) {
+        throw new Error(`Failed to get user by ID: ${error.message}`);
+      }
+      throw new Error("Failed to get user by ID due to an unexpected error.");
     }
   }
 
@@ -43,7 +46,10 @@ export class UserService {
       const user = await db.select().from(users).where(eq(users.email, email)).limit(1);
       return user[0];
     } catch (error) {
-      throw new Error(`Failed to get user by email: ${error.message}`);
+      if (error instanceof Error) {
+        throw new Error(`Failed to get user by email: ${error.message}`);
+      }
+      throw new Error("Failed to get user by email due to an unexpected error.");
     }
   }
 
@@ -56,7 +62,10 @@ export class UserService {
       }).where(eq(users.id, id)).returning();
       return user;
     } catch (error) {
-      throw new Error(`Failed to update user: ${error.message}`);
+      if (error instanceof Error) {
+        throw new Error(`Failed to update user: ${error.message}`);
+      }
+      throw new Error("Failed to update user due to an unexpected error.");
     }
   }
 
@@ -70,7 +79,10 @@ export class UserService {
       }).where(eq(users.id, id)).returning();
       return user;
     } catch (error) {
-      throw new Error(`Failed to update user password: ${error.message}`);
+      if (error instanceof Error) {
+        throw new Error(`Failed to update user password: ${error.message}`);
+      }
+      throw new Error("Failed to update user password due to an unexpected error.");
     }
   }
 
@@ -79,7 +91,10 @@ export class UserService {
     try {
       await db.delete(users).where(eq(users.id, id));
     } catch (error) {
-      throw new Error(`Failed to delete user: ${error.message}`);
+      if (error instanceof Error) {
+        throw new Error(`Failed to delete user: ${error.message}`);
+      }
+      throw new Error("Failed to delete user due to an unexpected error.");
     }
   }
 
@@ -89,7 +104,10 @@ export class UserService {
       const userAddresses = await db.select().from(addresses).where(eq(addresses.userId, userId));
       return userAddresses;
     } catch (error) {
-      throw new Error(`Failed to get user addresses: ${error.message}`);
+      if (error instanceof Error) {
+        throw new Error(`Failed to get user addresses: ${error.message}`);
+      }
+      throw new Error("Failed to get user addresses due to an unexpected error.");
     }
   }
 
@@ -99,7 +117,10 @@ export class UserService {
       const [address] = await db.insert(addresses).values(addressData).returning();
       return address;
     } catch (error) {
-      throw new Error(`Failed to create address: ${error.message}`);
+      if (error instanceof Error) {
+        throw new Error(`Failed to create address: ${error.message}`);
+      }
+      throw new Error("Failed to create address due to an unexpected error.");
     }
   }
 
@@ -109,7 +130,10 @@ export class UserService {
       const address = await db.select().from(addresses).where(eq(addresses.id, id)).limit(1);
       return address[0];
     } catch (error) {
-      throw new Error(`Failed to get address by ID: ${error.message}`);
+      if (error instanceof Error) {
+        throw new Error(`Failed to get address by ID: ${error.message}`);
+      }
+      throw new Error("Failed to get address by ID due to an unexpected error.");
     }
   }
 
@@ -122,7 +146,10 @@ export class UserService {
       }).where(eq(addresses.id, id)).returning();
       return address;
     } catch (error) {
-      throw new Error(`Failed to update address: ${error.message}`);
+      if (error instanceof Error) {
+        throw new Error(`Failed to update address: ${error.message}`);
+      }
+      throw new Error("Failed to update address due to an unexpected error.");
     }
   }
 
@@ -131,7 +158,10 @@ export class UserService {
     try {
       await db.delete(addresses).where(eq(addresses.id, id));
     } catch (error) {
-      throw new Error(`Failed to delete address: ${error.message}`);
+      if (error instanceof Error) {
+        throw new Error(`Failed to delete address: ${error.message}`);
+      }
+      throw new Error("Failed to delete address due to an unexpected error.");
     }
   }
 
@@ -141,7 +171,10 @@ export class UserService {
       const userOrders = await db.select().from(orders).where(eq(orders.userId, userId));
       return userOrders;
     } catch (error) {
-      throw new Error(`Failed to get user orders: ${error.message}`);
+      if (error instanceof Error) {
+        throw new Error(`Failed to get user orders: ${error.message}`);
+      }
+      throw new Error("Failed to get user orders due to an unexpected error.");
     }
   }
 
@@ -177,7 +210,10 @@ export class UserService {
         }))
       };
     } catch (error) {
-      throw new Error(`Failed to get user wishlist: ${error.message}`);
+      if (error instanceof Error) {
+        throw new Error(`Failed to get user wishlist: ${error.message}`);
+      }
+      throw new Error("Failed to get user wishlist due to an unexpected error.");
     }
   }
 
@@ -215,7 +251,10 @@ export class UserService {
       
       return wishlistItem;
     } catch (error) {
-      throw new Error(`Failed to add item to wishlist: ${error.message}`);
+      if (error instanceof Error) {
+        throw new Error(`Failed to add item to wishlist: ${error.message}`);
+      }
+      throw new Error("Failed to add item to wishlist due to an unexpected error.");
     }
   }
 
@@ -240,7 +279,10 @@ export class UserService {
         userId: item[0].wishlist.userId
       };
     } catch (error) {
-      throw new Error(`Failed to get wishlist item by ID: ${error.message}`);
+      if (error instanceof Error) {
+        throw new Error(`Failed to get wishlist item by ID: ${error.message}`);
+      }
+      throw new Error("Failed to get wishlist item by ID due to an unexpected error.");
     }
   }
 
@@ -249,7 +291,10 @@ export class UserService {
     try {
       await db.delete(wishlistItems).where(eq(wishlistItems.id, id));
     } catch (error) {
-      throw new Error(`Failed to remove item from wishlist: ${error.message}`);
+      if (error instanceof Error) {
+        throw new Error(`Failed to remove item from wishlist: ${error.message}`);
+      }
+      throw new Error("Failed to remove item from wishlist due to an unexpected error.");
     }
   }
 }

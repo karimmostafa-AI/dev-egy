@@ -115,7 +115,10 @@ export class SearchService {
         brands: brandsList
       };
     } catch (error) {
-      throw new Error(`Failed to perform search: ${error.message}`);
+      if (error instanceof Error) {
+        throw new Error(`Failed to perform search: ${error.message}`);
+      }
+      throw new Error("Failed to perform search due to an unexpected error.");
     }
   }
 }

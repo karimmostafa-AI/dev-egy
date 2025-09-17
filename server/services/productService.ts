@@ -55,7 +55,7 @@ export class ProductService {
       }
 
       // Build query for counting total
-      let countQuery = db.select({ count: products.id }).from(products);
+      let countQuery: any = db.select({ count: products.id }).from(products);
       
       // Apply conditions to count query
       if (conditions.length > 0) {
@@ -66,7 +66,7 @@ export class ProductService {
       const totalCount = countResult.length > 0 ? countResult[0].count : 0;
       
       // Build query for products
-      let query = db.select().from(products);
+      let query: any = db.select().from(products);
       
       // Join with categories and brands if needed
       if (category || brand) {
@@ -104,11 +104,14 @@ export class ProductService {
       query = query.limit(limit).offset(offset);
       
       // Execute query
-      const result = await query;
+      const result: any = await query;
       
       return { products: result, totalCount };
     } catch (error) {
-      throw new Error(`Failed to get products: ${error.message}`);
+      if (error instanceof Error) {
+        throw new Error(`Failed to get products: ${error.message}`);
+      }
+      throw new Error("Failed to get products due to an unexpected error.");
     }
   }
 
@@ -118,7 +121,10 @@ export class ProductService {
       const product = await db.select().from(products).where(eq(products.id, id)).limit(1);
       return product[0];
     } catch (error) {
-      throw new Error(`Failed to get product by ID: ${error.message}`);
+      if (error instanceof Error) {
+        throw new Error(`Failed to get product by ID: ${error.message}`);
+      }
+      throw new Error("Failed to get product by ID due to an unexpected error.");
     }
   }
 
@@ -128,7 +134,10 @@ export class ProductService {
       const product = await db.select().from(products).where(eq(products.slug, slug)).limit(1);
       return product[0];
     } catch (error) {
-      throw new Error(`Failed to get product by slug: ${error.message}`);
+      if (error instanceof Error) {
+        throw new Error(`Failed to get product by slug: ${error.message}`);
+      }
+      throw new Error("Failed to get product by slug due to an unexpected error.");
     }
   }
 
@@ -138,7 +147,10 @@ export class ProductService {
       const [product] = await db.insert(products).values(productData).returning();
       return product;
     } catch (error) {
-      throw new Error(`Failed to create product: ${error.message}`);
+      if (error instanceof Error) {
+        throw new Error(`Failed to create product: ${error.message}`);
+      }
+      throw new Error("Failed to create product due to an unexpected error.");
     }
   }
 
@@ -148,7 +160,10 @@ export class ProductService {
       const [product] = await db.update(products).set(productData).where(eq(products.id, id)).returning();
       return product;
     } catch (error) {
-      throw new Error(`Failed to update product: ${error.message}`);
+      if (error instanceof Error) {
+        throw new Error(`Failed to update product: ${error.message}`);
+      }
+      throw new Error("Failed to update product due to an unexpected error.");
     }
   }
 
@@ -157,7 +172,10 @@ export class ProductService {
     try {
       await db.delete(products).where(eq(products.id, id));
     } catch (error) {
-      throw new Error(`Failed to delete product: ${error.message}`);
+      if (error instanceof Error) {
+        throw new Error(`Failed to delete product: ${error.message}`);
+      }
+      throw new Error("Failed to delete product due to an unexpected error.");
     }
   }
 
@@ -198,7 +216,10 @@ export class ProductService {
         }
       };
     } catch (error) {
-      throw new Error(`Failed to get product reviews: ${error.message}`);
+      if (error instanceof Error) {
+        throw new Error(`Failed to get product reviews: ${error.message}`);
+      }
+      throw new Error("Failed to get product reviews due to an unexpected error.");
     }
   }
 
@@ -217,7 +238,10 @@ export class ProductService {
       
       return review;
     } catch (error) {
-      throw new Error(`Failed to add product review: ${error.message}`);
+      if (error instanceof Error) {
+        throw new Error(`Failed to add product review: ${error.message}`);
+      }
+      throw new Error("Failed to add product review due to an unexpected error.");
     }
   }
 }

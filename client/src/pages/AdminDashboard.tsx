@@ -276,6 +276,120 @@ export default function AdminDashboard() {
   );
 }
 
+// Define interfaces for data structures
+interface OrderStatusDistributionItem {
+  name: string;
+  value: number;
+}
+
+interface BrandData {
+  name: string;
+  sales: string;
+  change: string;
+}
+
+interface WishlistProduct {
+  name: string;
+  wishlist: string;
+  category: string;
+}
+
+interface SellingProduct {
+  name: string;
+  sales: string;
+  revenue: string;
+}
+
+interface Order {
+  id: string;
+  date: string;
+  customer: string;
+  amount: number;
+  status: string;
+  paymentMethod: string;
+  brand: string;
+}
+
+interface Product {
+  id: string;
+  name: string;
+  sku: string;
+  price: string;
+  inventoryQuantity: number;
+  isAvailable: boolean;
+  category?: {
+    name: string;
+  };
+  images?: Array<{
+    url: string;
+  }>;
+}
+
+interface Category {
+  id: string;
+  name: string;
+  description: string;
+  productsCount: number;
+  parentId?: string;
+}
+
+interface Refund {
+  id: string;
+  date: string;
+  customer: string;
+  brand: string;
+  amount: number;
+  status: string;
+  paymentStatus: string;
+}
+
+interface Customer {
+  id: string;
+  name: string;
+  email: string;
+  createdAt: string;
+}
+
+interface Coupon {
+  id: string;
+  code: string;
+  type: string;
+  value: number;
+  minimumAmount: number;
+  usageLimit: number;
+  usedCount: number;
+  isActive: boolean;
+  startDate: string;
+  endDate: string;
+}
+
+interface BlogPost {
+  id: string;
+  title: string;
+  excerpt: string;
+  isPublished: boolean;
+  publishedAt: string;
+}
+
+interface Review {
+  id: string;
+  productName: string;
+  userName: string;
+  rating: number;
+  title: string;
+  isApproved: boolean;
+  createdAt: string;
+}
+
+interface Collection {
+  id: string;
+  name: string;
+  description: string;
+  isPublished: boolean;
+  productsCount: number;
+  image: string;
+}
+
 function DashboardContent() {
   // Colors for charts
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
@@ -536,9 +650,9 @@ function DashboardContent() {
                     dataKey="value"
                     label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                   >
-                    {orderStatusDistribution.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
+                    {orderStatusDistribution.map((entry: OrderStatusDistributionItem, index: number) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
                   </Pie>
                   <Tooltip />
                   <Legend />
@@ -570,7 +684,7 @@ function DashboardContent() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {recentOrders.map((order: any, index: number) => (
+              {recentOrders.map((order: Order, index: number) => (
                 <TableRow key={index}>
                   <TableCell className="font-medium">{order.id}</TableCell>
                   <TableCell>{order.date}</TableCell>
@@ -618,7 +732,7 @@ function DashboardContent() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {topBrands.map((brand, index) => (
+                {topBrands.map((brand: BrandData, index: number) => (
                   <TableRow key={index}>
                     <TableCell className="font-medium">{brand.name}</TableCell>
                     <TableCell>{brand.sales}</TableCell>
@@ -650,7 +764,7 @@ function DashboardContent() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {wishlistProducts.map((product, index) => (
+                {wishlistProducts.map((product: WishlistProduct, index: number) => (
                   <TableRow key={index}>
                     <TableCell className="font-medium">{product.name}</TableCell>
                     <TableCell>{product.wishlist}</TableCell>
@@ -683,7 +797,7 @@ function DashboardContent() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {topSellingProducts.map((product, index) => (
+                {topSellingProducts.map((product: SellingProduct, index: number) => (
                   <TableRow key={index}>
                     <TableCell className="font-medium">{product.name}</TableCell>
                     <TableCell>{product.sales}</TableCell>
@@ -820,7 +934,7 @@ function OrderManagement() {
                 </TableHeader>
                 <TableBody>
                   {orders.length > 0 ? (
-                    orders.map((order: any, index: number) => (
+                    orders.map((order: Order, index: number) => (
                       <TableRow key={index}>
                         <TableCell className="font-medium">{order.id}</TableCell>
                         <TableCell>{order.date}</TableCell>
@@ -955,7 +1069,7 @@ function ProductManagement() {
             </TableHeader>
             <TableBody>
               {products.length > 0 ? (
-                products.map((product: any, index: number) => (
+                products.map((product: Product, index: number) => (
                   <TableRow key={index}>
                     <TableCell>
                       <div className="flex items-center space-x-3">
@@ -1099,7 +1213,7 @@ function CategoryManagement() {
             </TableHeader>
             <TableBody>
               {filteredCategories.length > 0 ? (
-                filteredCategories.map((category: any, index: number) => (
+                filteredCategories.map((category: Category, index: number) => (
                   <TableRow key={index}>
                     <TableCell>
                       <div className="flex items-center space-x-3">
@@ -1206,7 +1320,7 @@ function SubCategoryManagement() {
             </TableHeader>
             <TableBody>
               {filteredSubCategories.length > 0 ? (
-                filteredSubCategories.map((subcategory: any, index: number) => (
+                filteredSubCategories.map((subcategory: Category, index: number) => (
                   <TableRow key={index}>
                     <TableCell>
                       <div className="flex items-center space-x-3">
@@ -1215,7 +1329,7 @@ function SubCategoryManagement() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      {categoriesData?.find((cat: any) => cat.id === subcategory.parentId)?.name || "Unknown"}
+                      {categoriesData?.find((cat: Category) => cat.id === subcategory.parentId)?.name || "Unknown"}
                     </TableCell>
                     <TableCell>{subcategory.description || "No description"}</TableCell>
                     <TableCell>{subcategory.productsCount || 0}</TableCell>
@@ -1297,7 +1411,7 @@ function RefundManagement() {
             </TableHeader>
             <TableBody>
               {refunds.length > 0 ? (
-                refunds.map((refund: any, index: number) => (
+                refunds.map((refund: Refund, index: number) => (
                   <TableRow key={index}>
                     <TableCell className="font-medium">{refund.id}</TableCell>
                     <TableCell>{refund.date}</TableCell>
@@ -1418,7 +1532,7 @@ function CustomerManagement() {
             </TableHeader>
             <TableBody>
               {customers.length > 0 ? (
-                customers.map((customer: any, index: number) => (
+                customers.map((customer: Customer, index: number) => (
                   <TableRow key={index}>
                     <TableCell>
                       <div className="flex items-center space-x-3">
@@ -1540,12 +1654,12 @@ function CouponManagement() {
             </TableHeader>
             <TableBody>
               {coupons.length > 0 ? (
-                coupons.map((coupon: any, index: number) => (
+                coupons.map((coupon: Coupon, index: number) => (
                   <TableRow key={index}>
                     <TableCell className="font-medium">{coupon.code}</TableCell>
                     <TableCell>{coupon.type}</TableCell>
-                    <TableCell>{coupon.type === 'percentage' ? `${coupon.value}%` : `$${coupon.value}`}</TableCell>
-                    <TableCell>{coupon.minimumAmount ? `$${coupon.minimumAmount}` : 'N/A'}</TableCell>
+                    <TableCell>{coupon.type === 'percentage' ? `${coupon.value}%` : `${coupon.value}`}</TableCell>
+                    <TableCell>{coupon.minimumAmount ? `${coupon.minimumAmount}` : 'N/A'}</TableCell>
                     <TableCell>{coupon.usedCount}/{coupon.usageLimit || '∞'}</TableCell>
                     <TableCell>
                       <Badge className={coupon.isActive ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}>
@@ -1665,7 +1779,7 @@ function BlogPostManagement() {
             </TableHeader>
             <TableBody>
               {blogPosts.length > 0 ? (
-                blogPosts.map((post: any, index: number) => (
+                blogPosts.map((post: BlogPost, index: number) => (
                   <TableRow key={index}>
                     <TableCell className="font-medium">{post.title}</TableCell>
                     <TableCell>{post.excerpt || "No excerpt"}</TableCell>
@@ -1799,7 +1913,7 @@ function ReviewManagement() {
             </TableHeader>
             <TableBody>
               {reviews.length > 0 ? (
-                reviews.map((review: any, index: number) => (
+                reviews.map((review: Review, index: number) => (
                   <TableRow key={index}>
                     <TableCell className="font-medium">{review.productName}</TableCell>
                     <TableCell>{review.userName}</TableCell>
@@ -1924,7 +2038,7 @@ function CollectionManagement() {
             </TableHeader>
             <TableBody>
               {collections.length > 0 ? (
-                collections.map((collection: any, index: number) => (
+                collections.map((collection: Collection, index: number) => (
                   <TableRow key={index}>
                     <TableCell>
                       <div className="flex items-center space-x-3">

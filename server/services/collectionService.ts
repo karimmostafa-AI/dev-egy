@@ -23,7 +23,10 @@ export class CollectionService {
         }
       };
     } catch (error) {
-      throw new Error(`Failed to get collections: ${error.message}`);
+      if (error instanceof Error) {
+        throw new Error(`Failed to get collections: ${error.message}`);
+      }
+      throw new Error("Failed to get collections due to an unexpected error.");
     }
   }
 
@@ -33,7 +36,10 @@ export class CollectionService {
       const collection = await db.select().from(collections).where(eq(collections.id, id)).limit(1);
       return collection[0];
     } catch (error) {
-      throw new Error(`Failed to get collection by ID: ${error.message}`);
+      if (error instanceof Error) {
+        throw new Error(`Failed to get collection by ID: ${error.message}`);
+      }
+      throw new Error("Failed to get collection by ID due to an unexpected error.");
     }
   }
 
@@ -66,7 +72,10 @@ export class CollectionService {
         }
       };
     } catch (error) {
-      throw new Error(`Failed to get collection products: ${error.message}`);
+      if (error instanceof Error) {
+        throw new Error(`Failed to get collection products: ${error.message}`);
+      }
+      throw new Error("Failed to get collection products due to an unexpected error.");
     }
   }
 }

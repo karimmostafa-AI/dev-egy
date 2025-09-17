@@ -17,7 +17,18 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 
-const refundsData = [
+// Define interface for our data
+interface Refund {
+  id: string;
+  date: string;
+  customer: string;
+  brand: string;
+  amount: string;
+  status: string;
+  paymentStatus: string;
+}
+
+const refundsData: Refund[] = [
   {
     id: "#R1001",
     date: "2023-05-15",
@@ -65,7 +76,7 @@ const refundsData = [
   },
 ];
 
-const statusColors = {
+const statusColors: Record<string, string> = {
   pending: "bg-yellow-100 text-yellow-800",
   approved: "bg-green-100 text-green-800",
   rejected: "bg-red-100 text-red-800",
@@ -80,7 +91,7 @@ export default function RefundManagement() {
     refund.brand.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const getStatusBadge = (status) => {
+  const getStatusBadge = (status: string) => {
     const displayText = status.charAt(0).toUpperCase() + status.slice(1);
     return (
       <Badge className={statusColors[status] || "bg-gray-100 text-gray-800"}>
@@ -135,7 +146,7 @@ export default function RefundManagement() {
             </TableHeader>
             <TableBody>
               {filteredRefunds.length > 0 ? (
-                filteredRefunds.map((refund) => (
+                filteredRefunds.map((refund: Refund) => (
                   <TableRow key={refund.id}>
                     <TableCell className="font-medium">{refund.id}</TableCell>
                     <TableCell>{refund.date}</TableCell>

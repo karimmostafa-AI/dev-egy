@@ -27,7 +27,23 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 
-const orderStatuses = [
+// Define interfaces for our data
+interface OrderStatus {
+  value: string;
+  label: string;
+}
+
+interface Order {
+  id: string;
+  date: string;
+  customer: string;
+  brand: string;
+  amount: string;
+  status: string;
+  paymentMethod: string;
+}
+
+const orderStatuses: OrderStatus[] = [
   { value: "all", label: "All Orders" },
   { value: "pending", label: "Pending" },
   { value: "confirmed", label: "Confirmed" },
@@ -38,7 +54,7 @@ const orderStatuses = [
   { value: "cancelled", label: "Cancelled" },
 ];
 
-const ordersData = [
+const ordersData: Order[] = [
   {
     id: "#1001",
     date: "2023-05-15",
@@ -113,7 +129,7 @@ const ordersData = [
   },
 ];
 
-const statusColors = {
+const statusColors: Record<string, string> = {
   pending: "bg-yellow-100 text-yellow-800",
   confirmed: "bg-blue-100 text-blue-800",
   processing: "bg-indigo-100 text-indigo-800",
@@ -138,7 +154,7 @@ export default function OrderManagement() {
     return matchesSearch && matchesStatus;
   });
 
-  const getStatusBadge = (status) => {
+  const getStatusBadge = (status: string) => {
     const displayText = status.charAt(0).toUpperCase() + status.slice(1);
     return (
       <Badge className={statusColors[status] || "bg-gray-100 text-gray-800"}>
@@ -178,16 +194,16 @@ export default function OrderManagement() {
           
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="w-full sm:w-auto">
-                <Filter className="mr-2 h-4 w-4" aria-hidden="true" />
+              <Button variant="outline" className="flex items-center gap-2">
+                <Filter className="h-4 w-4" aria-hidden="true" />
                 Filter
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start">
-              <DropdownMenuLabel>Filter by Status</DropdownMenuLabel>
+            <DropdownMenuContent align="start" className="w-48">
+              <DropdownMenuLabel>Filter by status</DropdownMenuLabel>
               <DropdownMenuSeparator />
               {orderStatuses.map((status) => (
-                <DropdownMenuItem
+                <DropdownMenuItem 
                   key={status.value}
                   onSelect={() => setStatusFilter(status.value)}
                 >
@@ -235,7 +251,7 @@ export default function OrderManagement() {
                 </TableHeader>
                 <TableBody>
                   {filteredOrders.length > 0 ? (
-                    filteredOrders.map((order) => (
+                    filteredOrders.map((order: Order) => (
                       <TableRow key={order.id}>
                         <TableCell className="font-medium">{order.id}</TableCell>
                         <TableCell>{order.date}</TableCell>
