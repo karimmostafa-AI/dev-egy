@@ -30,19 +30,23 @@ const footerSections = [
   {
     title: 'Company',
     links: [
-      'About Uniform Advantage',
+      'About DEV Egypt',
       'Our Heritage',
       'Careers & Jobs',
       'Press & Media',
       'Store Locations',
       'Corporate Sales',
-      'Investor Relations'
+      'Investor Relations',
+      'Blog',
+      'Privacy Policy',
+      'Terms of Service'
     ]
   },
   {
     title: 'My Account',
     links: [
       'Sign In / Register',
+      'Account Dashboard',
       'Order History',
       'Wishlist & Favorites',
       'Account Settings',
@@ -100,17 +104,37 @@ export default function Footer() {
                   {section.title}
                 </h4>
                 <ul className="space-y-2">
-                  {section.links.map((link) => (
-                    <li key={link}>
-                      <button
-                        onClick={() => console.log(`Footer link clicked: ${link}`)}
-                        className="text-sm text-gray-300 hover:text-white hover:text-red-400 transition-colors text-left"
-                        data-testid={`footer-link-${link.toLowerCase().replace(/\s+/g, '-')}`}
-                      >
-                        {link}
-                      </button>
-                    </li>
-                  ))}
+                  {section.links.map((link) => {
+                    // Map specific links to their routes
+                    let href = '#';
+                    if (link === 'Blog') href = '/blog';
+                    if (link === 'Privacy Policy') href = '/privacy-policy';
+                    if (link === 'Terms of Service') href = '/terms-of-service';
+                    if (link === 'Sign In / Register') href = '/auth';
+                    if (link === 'Account Dashboard') href = '/account';
+                    
+                    return (
+                      <li key={link}>
+                        {href === '#' ? (
+                          <button
+                            onClick={() => console.log(`Footer link clicked: ${link}`)}
+                            className="text-sm text-gray-300 hover:text-white hover:text-red-400 transition-colors text-left"
+                            data-testid={`footer-link-${link.toLowerCase().replace(/\s+/g, '-')}`}
+                          >
+                            {link}
+                          </button>
+                        ) : (
+                          <a
+                            href={href}
+                            className="text-sm text-gray-300 hover:text-white hover:text-red-400 transition-colors"
+                            data-testid={`footer-link-${link.toLowerCase().replace(/\s+/g, '-')}`}
+                          >
+                            {link}
+                          </a>
+                        )}
+                      </li>
+                    );
+                  })}
                 </ul>
               </div>
             ))}
@@ -123,23 +147,23 @@ export default function Footer() {
         <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center">
           <div className="flex items-center space-x-6 mb-4 md:mb-0">
             <div className="text-sm">
-              © 2024 Uniform Advantage. All rights reserved.
+              © 2024 DEV Egypt. All rights reserved.
             </div>
             <div className="flex space-x-4 text-xs">
-              <button 
-                onClick={() => console.log('Privacy Policy clicked')}
+              <a 
+                href="/privacy-policy"
                 className="hover:text-foreground transition-colors"
                 data-testid="privacy-policy-footer"
               >
                 Privacy Policy
-              </button>
-              <button 
-                onClick={() => console.log('Terms clicked')}
+              </a>
+              <a 
+                href="/terms-of-service"
                 className="hover:text-foreground transition-colors"
                 data-testid="terms-footer"
               >
                 Terms of Service
-              </button>
+              </a>
               <button 
                 onClick={() => console.log('Accessibility clicked')}
                 className="hover:text-foreground transition-colors"

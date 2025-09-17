@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useLocation } from 'wouter';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -15,47 +16,48 @@ interface CarouselItem {
 const carouselItems: CarouselItem[] = [
   {
     id: 1,
-    title: "Seen Collection",
-    subtitle: "Desert Rose Series",
+    title: "SEEN Collection",
+    subtitle: "Premium Egyptian Design",
     image: "/api/placeholder/400/300",
-    link: "#seen",
+    link: "/brands/seen",
     category: "Featured"
   },
   {
     id: 2,
-    title: "Hleo Scrubs",
-    subtitle: "Professional Line",
+    title: "HLEO Professional",
+    subtitle: "Healthcare Hero Wear",
     image: "/api/placeholder/400/300", 
-    link: "#hleo",
+    link: "/brands/hleo",
     category: "Featured"
   },
   {
     id: 3,
-    title: "Omaima",
-    subtitle: "Comfort Collection",
+    title: "OMAIMA Comfort",
+    subtitle: "All-Day Softness",
     image: "/api/placeholder/400/300",
-    link: "#omaima", 
+    link: "/brands/omaima", 
     category: "Featured"
   },
   {
     id: 4,
-    title: "Winter Collection",
-    subtitle: "Seasonal Styles",
+    title: "Lab Coats",
+    subtitle: "Scientific Precision",
     image: "/api/placeholder/400/300",
-    link: "#prints",
-    category: "Seasonal"
+    link: "/lab-coats",
+    category: "Featured"
   },
   {
     id: 5,
-    title: "Men's Professional",
-    subtitle: "Executive Line",
+    title: "Medical Shoes",
+    subtitle: "Slip-Resistant Comfort",
     image: "/api/placeholder/400/300",
-    link: "#mens-professional",
-    category: "Men's"
+    link: "/shoes",
+    category: "Featured"
   }
 ];
 
 export default function ProductCarousel() {
+  const [location, setLocation] = useLocation();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [hoveredItem, setHoveredItem] = useState<number | null>(null);
 
@@ -93,7 +95,7 @@ export default function ProductCarousel() {
                 className="w-full flex-shrink-0 relative cursor-pointer"
                 onMouseEnter={() => setHoveredItem(item.id)}
                 onMouseLeave={() => setHoveredItem(null)}
-                onClick={() => console.log(`Navigate to ${item.link}`)}
+                onClick={() => setLocation(item.link)}
                 data-testid={`carousel-item-${item.id}`}
               >
                 <Card className="h-full bg-gradient-to-r from-blue-600 to-purple-600 text-white overflow-hidden">
@@ -111,6 +113,10 @@ export default function ProductCarousel() {
                           variant="outline" 
                           className="border-white text-white hover:bg-white hover:text-blue-600"
                           data-testid={`shop-all-${item.id}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setLocation(item.link);
+                          }}
                         >
                           Shop All
                         </Button>
@@ -120,6 +126,10 @@ export default function ProductCarousel() {
                             size="sm"
                             className="text-white hover:bg-white/20"
                             data-testid={`shop-women-${item.id}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setLocation('/womens-products');
+                            }}
                           >
                             Shop Women
                           </Button>
@@ -128,6 +138,10 @@ export default function ProductCarousel() {
                             size="sm"
                             className="text-white hover:bg-white/20"
                             data-testid={`shop-men-${item.id}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setLocation('/mens-products');
+                            }}
                           >
                             Shop Men
                           </Button>
@@ -187,7 +201,7 @@ export default function ProductCarousel() {
             <Card 
               key={`thumb-${item.id}`}
               className="h-32 cursor-pointer hover:shadow-lg transition-shadow overflow-hidden"
-              onClick={() => console.log(`Navigate to ${item.link}`)}
+              onClick={() => setLocation(item.link)}
               data-testid={`thumbnail-${item.id}`}
             >
               <div className="h-full bg-gradient-to-br from-gray-100 to-gray-200 flex flex-col justify-center items-center p-4">

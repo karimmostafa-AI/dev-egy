@@ -1,28 +1,30 @@
 import { useState } from 'react';
+import { useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const marketplaceCategories = {
   women: [
-    { name: 'Tops', description: 'Scrub tops for every style', link: '#womens-tops' },
-    { name: 'Pants', description: 'Comfortable scrub pants', link: '#womens-pants' },
-    { name: 'Jackets', description: 'Professional outerwear', link: '#womens-jackets' },
-    { name: 'Prints', description: 'Fun & colorful designs', link: '#womens-prints' },
-    { name: 'Underscrubs', description: 'Base layer comfort', link: '#womens-underscrubs' },
-    { name: 'Footwear', description: 'Professional shoes', link: '#womens-footwear' }
+    { name: 'Tops', description: 'Scrub tops for every style', link: '/womens-products' },
+    { name: 'Pants', description: 'Comfortable scrub pants', link: '/womens-products' },
+    { name: 'Jackets', description: 'Professional outerwear', link: '/womens-products' },
+    { name: 'SEEN', description: 'Premium Egyptian Design', link: '/brands/seen' },
+    { name: 'HLEO', description: 'Healthcare Hero Wear', link: '/brands/hleo' },
+    { name: 'OMAIMA', description: 'All-Day Softness', link: '/brands/omaima' }
   ],
   men: [
-    { name: 'Tops', description: 'Professional scrub tops', link: '#mens-tops' },
-    { name: 'Pants', description: 'Durable scrub pants', link: '#mens-pants' },
-    { name: 'Jackets', description: 'Men\'s outerwear', link: '#mens-jackets' },
-    { name: 'Littmann® Stethoscopes', description: 'Professional tools', link: '#stethoscopes' },
-    { name: 'Underscrubs', description: 'Comfort tees', link: '#mens-underscrubs' },
-    { name: 'Footwear', description: 'Men\'s work shoes', link: '#mens-footwear' }
+    { name: 'Tops', description: 'Professional scrub tops', link: '/mens-products' },
+    { name: 'Pants', description: 'Durable scrub pants', link: '/mens-products' },
+    { name: 'Jackets', description: 'Men\'s outerwear', link: '/mens-products' },
+    { name: 'SEEN', description: 'Premium Egyptian Design', link: '/brands/seen' },
+    { name: 'HLEO', description: 'Healthcare Hero Wear', link: '/brands/hleo' },
+    { name: 'OMAIMA', description: 'All-Day Softness', link: '/brands/omaima' }
   ]
 };
 
 export default function UniformMarketplace() {
+  const [location, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState('women');
 
   return (
@@ -64,7 +66,7 @@ export default function UniformMarketplace() {
                 <Card 
                   key={index}
                   className="p-6 hover:shadow-lg transition-shadow cursor-pointer group"
-                  onClick={() => console.log(`Navigate to ${category.link}`)}
+                  onClick={() => setLocation(category.link)}
                   data-testid={`women-category-${category.name.toLowerCase().replace(/\s+/g, '-')}`}
                 >
                   <div className="text-center">
@@ -91,7 +93,7 @@ export default function UniformMarketplace() {
                 <Card 
                   key={index}
                   className="p-6 hover:shadow-lg transition-shadow cursor-pointer group"
-                  onClick={() => console.log(`Navigate to ${category.link}`)}
+                  onClick={() => setLocation(category.link)}
                   data-testid={`men-category-${category.name.toLowerCase().replace(/\s+/g, '-').replace(/®/g, '')}`}
                 >
                   <div className="text-center">
@@ -118,7 +120,7 @@ export default function UniformMarketplace() {
           <Button 
             size="lg" 
             className="px-8"
-            onClick={() => console.log('Shop all marketplace clicked')}
+            onClick={() => setLocation('/brands/seen')}
             data-testid="shop-marketplace"
           >
             Shop The Marketplace

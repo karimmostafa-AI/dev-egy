@@ -1,4 +1,4 @@
-# Design Guidelines for Uniform Advantage Clone
+# Design Guidelines for DEV Egypt
 
 ## Design Approach
 **Reference-Based Approach**: Following established medical uniform e-commerce design patterns with focus on professional healthcare aesthetic, clean navigation, and trust-building elements.

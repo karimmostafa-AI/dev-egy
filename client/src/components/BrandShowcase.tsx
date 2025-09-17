@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useLocation } from 'wouter';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -15,7 +16,7 @@ interface Brand {
 const brands: Brand[] = [
   {
     id: 1,
-    name: "Seen",
+    name: "SEEN",
     description: "Premium Egyptian medical uniforms with modern design",
     image: "/api/placeholder/300/200",
     category: "Premium",
@@ -23,7 +24,7 @@ const brands: Brand[] = [
   },
   {
     id: 2,
-    name: "Hleo",
+    name: "HLEO",
     description: "Professional scrubs for healthcare heroes",
     image: "/api/placeholder/300/200",
     category: "Professional",
@@ -31,7 +32,7 @@ const brands: Brand[] = [
   },
   {
     id: 3,
-    name: "Omaima",
+    name: "OMAIMA",
     description: "Comfort-first medical apparel",
     image: "/api/placeholder/300/200",
     category: "Comfort",
@@ -80,6 +81,7 @@ const brands: Brand[] = [
 ];
 
 export default function BrandShowcase() {
+  const [location, setLocation] = useLocation();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [hoveredBrand, setHoveredBrand] = useState<number | null>(null);
 
@@ -142,7 +144,7 @@ export default function BrandShowcase() {
                 className="overflow-hidden cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-xl group"
                 onMouseEnter={() => setHoveredBrand(brand.id)}
                 onMouseLeave={() => setHoveredBrand(null)}
-                onClick={() => console.log(`Navigate to ${brand.name}`)}
+                onClick={() => setLocation(`/brands/${brand.name.toLowerCase()}`)}
                 data-testid={`brand-card-${brand.id}`}
               >
                 {/* Brand Image */}
@@ -186,6 +188,10 @@ export default function BrandShowcase() {
                     size="sm"
                     className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
                     data-testid={`shop-brand-${brand.id}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setLocation(`/brands/${brand.name.toLowerCase()}`);
+                    }}
                   >
                     Shop {brand.name}
                   </Button>
@@ -236,6 +242,7 @@ export default function BrandShowcase() {
                   variant="secondary" 
                   size="sm"
                   data-testid={`featured-brand-${brand.id}`}
+                  onClick={() => setLocation(`/brands/${brand.name.toLowerCase()}`)}
                 >
                   Explore Collection
                 </Button>

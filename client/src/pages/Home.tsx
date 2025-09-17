@@ -13,7 +13,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Four-tier Navigation Structure - UA Style */}
+      {/* Four-tier Navigation Structure - DEV Egypt Style */}
       <div className="sticky top-0 z-40 bg-background">
         <PromotionalBanner />
         <TopNavigationBar />

@@ -51,8 +51,8 @@ const ProductDetail: React.FC = () => {
               Home
             </button>
             <span className="text-gray-400">/</span>
-            <button onClick={() => setLocation('/mens-products')} className="text-gray-600 hover:text-black">
-              Men's
+            <button onClick={() => setLocation(`/brands/${product.brand.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`)} className="text-gray-600 hover:text-black">
+              {product.brand}
             </button>
             <span className="text-gray-400">/</span>
             <span className="text-gray-800">{product.name}</span>
