@@ -3,18 +3,65 @@ import { AuthService } from "../services/authService";
 import { db, categories, products, orders, users, orderItems, coupons, blogPosts, reviews, collections, collectionProducts } from "../db";
 import { eq, desc, and, sql } from "drizzle-orm";
 
+// Extend Request interface to include user
+interface AuthenticatedRequest extends Request {
+  user?: { userId: string; email: string };
+}
+
 const router = express.Router();
 const authService = new AuthService();
 
-// Middleware to bypass admin authentication (for development only)
-const requireAdmin = (req: Request, res: Response, next: any) => {
-  // Skip authentication for development
-  console.log("Admin authentication bypassed for development");
-  next();
+// Middleware to require admin authentication  
+const requireAdmin = async (req: AuthenticatedRequest, res: Response, next: any) => {
+  try {
+    // Get token ONLY from Authorization header (not cookies) for security
+    const authHeader = req.headers.authorization;
+    const token = authHeader && authHeader.startsWith('Bearer ') 
+      ? authHeader.substring(7) 
+      : null;
+
+    if (!token) {
+      return res.status(401).json({ 
+        error: "Authentication required",
+        details: "No token provided" 
+      });
+    }
+
+    // Verify token
+    const decoded = authService.verifyToken(token);
+    if (!decoded) {
+      return res.status(401).json({ 
+        error: "Invalid token",
+        details: "Token verification failed" 
+      });
+    }
+
+    // Check if user is admin
+    const isUserAdmin = await authService.isAdmin(decoded.userId);
+    if (!isUserAdmin) {
+      return res.status(403).json({ 
+        error: "Access denied",
+        details: "Admin privileges required" 
+      });
+    }
+
+    // Add user info to request
+    req.user = decoded;
+    next();
+  } catch (error) {
+    console.error("Admin authentication error:", error);
+    return res.status(500).json({ 
+      error: "Internal server error",
+      details: "Authentication check failed" 
+    });
+  }
 };
 
+// Apply admin authentication to ALL routes in this router
+router.use(requireAdmin);
+
 // Dashboard analytics
-router.get("/dashboard/analytics", requireAdmin, async (req, res) => {
+router.get("/dashboard/analytics", async (req, res) => {
   try {
     // Fetch real data from the database
     const totalProductsResult = await db.select({ count: sql<number>`count(*)` }).from(products);

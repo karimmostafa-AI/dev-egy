@@ -13,6 +13,7 @@ export const users = sqliteTable("users", {
   fullName: text("full_name").notNull(),
   email: text("email").notNull().unique(),
   passwordHash: text("password_hash").notNull(),
+  role: text("role").notNull().default("user"), // user, admin
   createdAt: integer("created_at", { mode: "timestamp" }).default(sql`(strftime('%s', 'now'))`),
   updatedAt: integer("updated_at", { mode: "timestamp" }).default(sql`(strftime('%s', 'now'))`),
 });
@@ -21,6 +22,7 @@ const baseInsertUserSchema = createInsertSchema(users);
 export const insertUserSchema = baseInsertUserSchema.omit({
   id: true,
   passwordHash: true,
+  role: true, // Remove role from client input - security fix
   createdAt: true,
   updatedAt: true,
 }).extend({

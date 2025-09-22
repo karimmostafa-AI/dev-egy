@@ -4,7 +4,14 @@ import { db, users } from "../db";
 import { eq } from "drizzle-orm";
 import { InsertUser } from "@shared/schema";
 
-const JWT_SECRET = process.env.JWT_SECRET || "dev-egypt-secret-key";
+const JWT_SECRET = process.env.JWT_SECRET || (() => {
+  // In development, provide a fallback but warn
+  if (process.env.NODE_ENV === "development") {
+    console.warn("WARNING: Using default JWT_SECRET in development. Set JWT_SECRET environment variable for production.");
+    return "dev-egypt-secret-key-for-development-only";
+  }
+  throw new Error("JWT_SECRET environment variable is required for security");
+})();
 const SALT_ROUNDS = 10;
 
 export class AuthService {
@@ -22,10 +29,12 @@ export class AuthService {
       const hashedPassword = await bcrypt.hash(userData.password!, SALT_ROUNDS);
       
       // Create user (excluding password from insert data and using passwordHash instead)
+      // Always set role to 'user' for security - admins must be promoted separately
       const { password, ...userDataWithoutPassword } = userData;
       const [user] = await db.insert(users).values({
         ...userDataWithoutPassword,
-        passwordHash: hashedPassword
+        passwordHash: hashedPassword,
+        role: "user" // Force role to user for security
       } as any).returning();
       
       // Generate JWT token
@@ -93,6 +102,38 @@ export class AuthService {
     } catch (error) {
       console.error("Error verifying token:", error);
       return null;
+    }
+  }
+
+  // Get user by ID with role
+  async getUserById(userId: string): Promise<{ id: string; email: string; fullName: string; role: string } | null> {
+    try {
+      const userResult = await db.select({
+        id: users.id,
+        email: users.email,
+        fullName: users.fullName,
+        role: users.role
+      }).from(users).where(eq(users.id, userId)).limit(1);
+      
+      if (userResult.length === 0) {
+        return null;
+      }
+      
+      return userResult[0];
+    } catch (error) {
+      console.error("Error getting user by ID:", error);
+      return null;
+    }
+  }
+
+  // Check if user is admin
+  async isAdmin(userId: string): Promise<boolean> {
+    try {
+      const user = await this.getUserById(userId);
+      return user?.role === "admin" || false;
+    } catch (error) {
+      console.error("Error checking admin status:", error);
+      return false;
     }
   }
 
