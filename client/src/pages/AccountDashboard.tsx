@@ -26,39 +26,9 @@ import TopNavigationBar from '@/components/TopNavigationBar';
 import MainHeader from '@/components/MainHeader';
 import CategoryNavigation from '@/components/CategoryNavigation';
 import Footer from '@/components/Footer';
-
-// Mock data for user information
-const mockUser = {
-  name: "Dr. Sarah Johnson",
-  email: "sarah.johnson@example.com",
-  joinDate: "January 2023",
-  avatar: "/images/avatar.png"
-};
-
-// Mock data for orders
-const mockOrders = [
-  {
-    id: "ORD-001",
-    date: "2023-05-15",
-    total: 89.99,
-    status: "Delivered",
-    items: 3
-  },
-  {
-    id: "ORD-002",
-    date: "2023-04-22",
-    total: 124.50,
-    status: "Delivered",
-    items: 5
-  },
-  {
-    id: "ORD-003",
-    date: "2023-03-10",
-    total: 67.25,
-    status: "Processing",
-    items: 2
-  }
-];
+import { useUserOrders } from '@/hooks/useUserOrders';
+import { useAuth } from '@/hooks/useAuth';
+import OrderHistory from '@/components/account/OrderHistory';
 
 // Mock data for saved addresses
 const mockAddresses = [
@@ -95,6 +65,10 @@ const mockWishlist = [
 export default function AccountDashboard() {
   const [location, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState("overview");
+  const { data: ordersData, isLoading, error } = useUserOrders();
+  const { user, logout } = useAuth();
+  
+  const orders = ordersData?.orders || [];
   
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -122,6 +96,11 @@ export default function AccountDashboard() {
     }
   };
 
+  const handleLogout = () => {
+    logout();
+    setLocation("/");
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Navigation */}
@@ -147,8 +126,8 @@ export default function AccountDashboard() {
               <CardHeader className="flex flex-row items-center gap-4">
                 <div className="bg-gray-200 border-2 border-dashed rounded-xl w-16 h-16" />
                 <div>
-                  <CardTitle className="text-lg">{mockUser.name}</CardTitle>
-                  <CardDescription>{mockUser.email}</CardDescription>
+                  <CardTitle className="text-lg">{user?.fullName || "User"}</CardTitle>
+                  <CardDescription>{user?.email || "user@example.com"}</CardDescription>
                 </div>
               </CardHeader>
               <CardContent>
@@ -197,7 +176,7 @@ export default function AccountDashboard() {
                   <Button 
                     variant="ghost" 
                     className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10"
-                    onClick={() => setLocation("/")}
+                    onClick={handleLogout}
                   >
                     <LogOut className="mr-2 h-4 w-4" />
                     Logout
@@ -210,14 +189,14 @@ export default function AccountDashboard() {
           {/* Main Content */}
           <div className="lg:col-span-3">
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="hidden">
+              <TabsList className="grid w-full grid-cols-5">
                 <TabsTrigger value="overview">Overview</TabsTrigger>
                 <TabsTrigger value="orders">Orders</TabsTrigger>
                 <TabsTrigger value="addresses">Addresses</TabsTrigger>
                 <TabsTrigger value="payment">Payment</TabsTrigger>
                 <TabsTrigger value="wishlist">Wishlist</TabsTrigger>
               </TabsList>
-              
+
               {/* Account Overview */}
               <TabsContent value="overview" className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -227,7 +206,7 @@ export default function AccountDashboard() {
                       <ShoppingBag className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                      <div className="text-2xl font-bold">12</div>
+                      <div className="text-2xl font-bold">{orders.length}</div>
                       <p className="text-xs text-muted-foreground">+2 from last month</p>
                     </CardContent>
                   </Card>
@@ -237,8 +216,8 @@ export default function AccountDashboard() {
                       <Heart className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                      <div className="text-2xl font-bold">8</div>
-                      <p className="text-xs text-muted-foreground">+3 from last month</p>
+                      <div className="text-2xl font-bold">{mockWishlist.length}</div>
+                      <p className="text-xs text-muted-foreground">+1 from last month</p>
                     </CardContent>
                   </Card>
                   <Card>
@@ -247,8 +226,8 @@ export default function AccountDashboard() {
                       <MapPin className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                      <div className="text-2xl font-bold">2</div>
-                      <p className="text-xs text-muted-foreground">1 default address</p>
+                      <div className="text-2xl font-bold">{mockAddresses.length}</div>
+                      <p className="text-xs text-muted-foreground">+1 from last month</p>
                     </CardContent>
                   </Card>
                 </div>
@@ -259,64 +238,46 @@ export default function AccountDashboard() {
                     <CardDescription>Your most recent orders</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-4">
-                      {mockOrders.slice(0, 3).map((order) => (
-                        <div key={order.id} className="flex items-center justify-between p-4 border rounded-lg">
-                          <div>
-                            <div className="font-medium">Order {order.id}</div>
-                            <div className="text-sm text-muted-foreground">{order.date}</div>
+                    {isLoading ? (
+                      <div className="text-center py-8">Loading orders...</div>
+                    ) : error ? (
+                      <div className="text-center py-8 text-red-500">Error loading orders: {(error as Error).message}</div>
+                    ) : (orders as unknown as Array<unknown>).length === 0 ? (
+                      <div className="text-center py-8 text-muted-foreground">No orders found</div>
+                    ) : (
+                      <div className="space-y-4">
+                        {(orders as unknown as Array<unknown>).slice(0, 3).map((order: any) => (
+                          <div key={order.id} className="flex items-center justify-between p-4 border rounded-lg">
+                            <div className="flex items-center gap-4">
+                              <div className="bg-gray-200 border-2 border-dashed rounded-xl w-16 h-16" />
+                              <div>
+                                <div className="font-medium">Order {order.orderNumber}</div>
+                                <div className="text-sm text-muted-foreground">
+                                  {new Date(order.createdAt).toLocaleDateString()} • {order.items || 1} items
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-4">
+                              <div className="text-right">
+                                <div className="font-medium">${parseFloat(order.total).toFixed(2)}</div>
+                                <div className={`text-sm flex items-center gap-1 ${getStatusClass(order.status)}`}>
+                                  {getStatusIcon(order.status)}
+                                  {order.status}
+                                </div>
+                              </div>
+                              <Button variant="outline" size="sm">View Details</Button>
+                            </div>
                           </div>
-                          <div className="text-right">
-                            <div className="font-medium">${order.total.toFixed(2)}</div>
-                            <div className="text-sm text-muted-foreground">{order.items} items</div>
-                          </div>
-                          <div className={`px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${getStatusClass(order.status)}`}>
-                            {getStatusIcon(order.status)}
-                            {order.status}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    <Button variant="outline" className="w-full mt-4" onClick={() => setActiveTab("orders")}>
-                      View All Orders
-                    </Button>
+                        ))}
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </TabsContent>
 
-              {/* My Orders */}
+              {/* Orders */}
               <TabsContent value="orders" className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>My Orders</CardTitle>
-                    <CardDescription>View your order history and track shipments</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {mockOrders.map((order) => (
-                        <div key={order.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border rounded-lg gap-4">
-                          <div className="flex items-center gap-4">
-                            <div className="bg-gray-200 border-2 border-dashed rounded-xl w-16 h-16" />
-                            <div>
-                              <div className="font-medium">Order {order.id}</div>
-                              <div className="text-sm text-muted-foreground">{order.date} • {order.items} items</div>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-4">
-                            <div className="text-right">
-                              <div className="font-medium">${order.total.toFixed(2)}</div>
-                              <div className={`text-sm flex items-center gap-1 ${getStatusClass(order.status)}`}>
-                                {getStatusIcon(order.status)}
-                                {order.status}
-                              </div>
-                            </div>
-                            <Button variant="outline" size="sm">View Details</Button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
+                <OrderHistory />
               </TabsContent>
 
               {/* Addresses */}

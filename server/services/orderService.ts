@@ -1,4 +1,4 @@
-import { db, orders, orderItems } from "../db";
+import { db, orders, orderItems, products } from "../db";
 import { eq } from "drizzle-orm";
 
 export class OrderService {
@@ -13,29 +13,35 @@ export class OrderService {
           orderNumber: `ORD-${Date.now()}`,
           status: "pending",
           subtotal: orderData.subtotal,
-          shippingCost: orderData.shippingCost || 0,
-          tax: orderData.tax || 0,
+          shippingCost: orderData.shipping,
+          tax: orderData.taxes,
           total: orderData.total,
-          currency: orderData.currency || "USD",
-          firstName: orderData.firstName,
-          lastName: orderData.lastName,
-          email: orderData.email,
-          phone: orderData.phone,
-          billingAddressId: orderData.billingAddressId,
-          shippingAddressId: orderData.shippingAddressId,
-          notes: orderData.notes,
-          paymentMethod: orderData.paymentMethod,
+          currency: "USD",
+          firstName: orderData.shippingAddress?.firstName || "",
+          lastName: orderData.shippingAddress?.lastName || "",
+          email: orderData.email || "",
+          phone: orderData.shippingAddress?.phone || "",
+          // For now, we'll use the same address for both billing and shipping
+          // In a real app, you'd want separate addresses
+          billingAddressId: null,
+          shippingAddressId: null,
+          notes: orderData.notes || "",
+          paymentMethod: "Credit Card",
           paymentStatus: "pending"
         }).returning();
         
         // Create order items
         if (orderData.items && Array.isArray(orderData.items)) {
           for (const item of orderData.items) {
+            // Get product details to store with the order item
+            const productResult = await tx.select().from(products).where(eq(products.id, item.productId)).limit(1);
+            const product = productResult[0];
+            
             await tx.insert(orderItems).values({
               orderId: order.id,
               productId: item.productId,
-              name: item.name,
-              sku: item.sku,
+              name: product?.name || "Unknown Product",
+              sku: product?.sku || "",
               price: item.price,
               quantity: item.quantity
             });

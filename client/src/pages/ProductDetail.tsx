@@ -1,19 +1,27 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useLocation } from 'wouter';
 import { Star, Heart, ShoppingCart, ChevronLeft, ChevronRight, Truck, RotateCcw, Shield, CheckCircle } from 'lucide-react';
 import { getProductDetail } from '@/data/products';
 import NotFound from '@/pages/not-found';
+import TopNavigationBar from '@/components/TopNavigationBar';
+import MainHeader from '@/components/MainHeader';
+import CategoryNavigation from '@/components/CategoryNavigation';
+import Footer from '@/components/Footer';
+import SEO from '@/components/SEO';
+import { useTrackEvent } from '@/hooks/useTracking';
 
 const ProductDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [location, setLocation] = useLocation();
+  const { trackProductView, trackAddToCart } = useTrackEvent();
   
   // Get product by ID - show NotFound if product doesn't exist
-  const product = getProductDetail(parseInt(id || '0'));
+  const product = getProductDetail(parseInt(id || '0', 10));
   
   if (!product) {
     return <NotFound />;
   }
+  
   const [selectedColor, setSelectedColor] = useState(product.colors[0]);
   const [selectedSize, setSelectedSize] = useState('');
   const [selectedImage, setSelectedImage] = useState(0);
@@ -22,13 +30,25 @@ const ProductDetail: React.FC = () => {
 
   useEffect(() => {
     window.scrollTo(0, 0);
-  }, []);
+    
+    // Track product view
+    trackProductView(product.id.toString(), product.name, product.brand);
+  }, [product.id, product.name, product.brand, trackProductView]);
 
   const handleAddToCart = () => {
     if (!selectedSize) {
       alert('Please select a size');
       return;
     }
+    
+    // Track add to cart event
+    trackAddToCart(
+      product.id.toString(), 
+      product.name, 
+      quantity, 
+      parseFloat((product.price || 0).toString())
+    );
+    
     // Add to cart logic here
     console.log('Adding to cart:', { product, selectedColor, selectedSize, quantity });
   };
@@ -43,21 +63,18 @@ const ProductDetail: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Breadcrumb */}
-      <div className="bg-gray-50 py-3">
-        <div className="max-w-7xl mx-auto px-4">
-          <nav className="flex items-center space-x-2 text-sm">
-            <button onClick={() => setLocation('/')} className="text-gray-600 hover:text-black">
-              Home
-            </button>
-            <span className="text-gray-400">/</span>
-            <button onClick={() => setLocation(`/brands/${product.brand.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`)} className="text-gray-600 hover:text-black">
-              {product.brand}
-            </button>
-            <span className="text-gray-400">/</span>
-            <span className="text-gray-800">{product.name}</span>
-          </nav>
-        </div>
+      <SEO 
+        title={`${product.name} - DEV Egypt`}
+        description={product.description}
+        keywords={`${product.name}, ${product.brand}, medical uniform, scrubs, healthcare apparel`}
+        type="product"
+      />
+      
+      {/* Navigation */}
+      <div className="sticky top-0 z-40 bg-background">
+        <TopNavigationBar />
+        <MainHeader />
+        <CategoryNavigation />
       </div>
 
       <div className="max-w-7xl mx-auto px-4 py-8">
@@ -100,117 +117,118 @@ const ProductDetail: React.FC = () => {
                     selectedImage === index ? 'border-black' : 'border-gray-200'
                   }`}
                 >
-                  <img src={image} alt={`View ${index + 1}`} className="w-full h-full object-cover" />
+                  <img
+                    src={image}
+                    alt={`${product.name} ${index + 1}`}
+                    className="w-full h-full object-cover"
+                  />
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Product Info */}
+          {/* Product Details */}
           <div className="space-y-6">
-            {/* Header */}
             <div>
-              <div className="text-sm text-gray-600 mb-1">{product.brand}</div>
-              <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-3">
-                {product.name}
-              </h1>
+              <h1 className="text-3xl font-bold">{product.name}</h1>
+              <p className="text-muted-foreground mt-1">{product.brand}</p>
               
-              {/* Rating and Reviews */}
-              <div className="flex items-center space-x-4 mb-4">
-                <div className="flex items-center">
-                  {[...Array(5)].map((_, i) => (
+              {/* Rating */}
+              <div className="flex items-center gap-2 mt-3">
+                <div className="flex">
+                  {Array.from({ length: 5 }, (_, i) => (
                     <Star
                       key={i}
-                      className={`h-4 w-4 ${
-                        i < Math.floor(product.rating)
-                          ? 'text-yellow-400 fill-current'
+                      className={`h-5 w-5 ${
+                        i < Math.floor(product.rating) 
+                          ? 'fill-yellow-400 text-yellow-400' 
                           : 'text-gray-300'
                       }`}
                     />
                   ))}
-                  <span className="ml-1 text-sm text-gray-600">{product.rating}</span>
                 </div>
-                <span className="text-sm text-gray-600">({product.reviewCount} reviews)</span>
-              </div>
-
-              {/* Price */}
-              <div className="flex items-center space-x-3 mb-4">
-                <span className="text-3xl font-bold text-gray-900">
-                  ${(product.price / 100).toFixed(2)}
+                <span className="text-sm text-muted-foreground">
+                  {product.rating} ({product.reviewCount} reviews)
                 </span>
-                {product.isOnSale && (
-                  <span className="text-xl text-gray-500 line-through">
-                    ${((product.originalPrice || 0) / 100).toFixed(2)}
+              </div>
+              
+              {/* Price */}
+              <div className="mt-4">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl font-bold text-primary">
+                    ${(product.price / 100).toFixed(2)}
                   </span>
-                )}
-                {product.isOnSale && (
-                  <span className="bg-red-100 text-red-800 px-2 py-1 rounded text-sm font-semibold">
-                    Save ${(((product.originalPrice || 0) - product.price) / 100).toFixed(2)}
-                  </span>
+                  {product.originalPrice && (
+                    <span className="text-xl text-muted-foreground line-through">
+                      ${(product.originalPrice / 100).toFixed(2)}
+                    </span>
+                  )}
+                </div>
+                {product.originalPrice && (
+                  <div className="mt-1 text-sm text-green-600 font-medium">
+                    You save ${(Math.abs(product.price - product.originalPrice) / 100).toFixed(2)} ({Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}%)
+                  </div>
                 )}
               </div>
             </div>
 
-            {/* Color Selection */}
+            {/* Colors */}
             <div>
-              <h3 className="text-lg font-semibold mb-3">Color: {selectedColor}</h3>
+              <h3 className="font-medium mb-2">Colors</h3>
               <div className="flex flex-wrap gap-2">
                 {product.colors.map((color) => (
                   <button
                     key={color}
                     onClick={() => setSelectedColor(color)}
-                    className={`px-4 py-2 border rounded-lg text-sm font-medium ${
-                      selectedColor === color
-                        ? 'border-black bg-black text-white'
-                        : 'border-gray-300 text-gray-700 hover:border-gray-400'
+                    className={`h-8 w-8 rounded-full border-2 ${
+                      selectedColor === color 
+                        ? 'border-black ring-2 ring-offset-2 ring-primary' 
+                        : 'border-gray-300'
                     }`}
-                  >
-                    {color}
-                  </button>
+                    style={{ backgroundColor: color.toLowerCase() }}
+                    aria-label={color}
+                  />
                 ))}
               </div>
             </div>
 
-            {/* Size Selection */}
+            {/* Sizes */}
             <div>
-              <h3 className="text-lg font-semibold mb-3">Size</h3>
-              <div className="grid grid-cols-3 gap-2">
+              <h3 className="font-medium mb-2">Sizes</h3>
+              <div className="flex flex-wrap gap-2">
                 {product.sizes.map((size) => (
                   <button
                     key={size}
                     onClick={() => setSelectedSize(size)}
-                    className={`py-3 border rounded-lg text-sm font-medium ${
+                    className={`h-10 w-10 rounded-md border ${
                       selectedSize === size
                         ? 'border-black bg-black text-white'
-                        : 'border-gray-300 text-gray-700 hover:border-gray-400'
+                        : 'border-gray-300 hover:border-gray-400'
                     }`}
                   >
                     {size}
                   </button>
                 ))}
               </div>
-              <button className="text-sm text-gray-600 underline mt-2">Size Guide</button>
             </div>
 
-            {/* Quantity */}
+            {/* Quantity Selector */}
             <div>
-              <h3 className="text-lg font-semibold mb-3">Quantity</h3>
-              <div className="flex items-center space-x-4">
-                <div className="flex border rounded-lg">
-                  <button
-                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="px-3 py-2 hover:bg-gray-100"
-                  >
-                    −
-                  </button>
-                  <span className="px-4 py-2 border-x">{quantity}</span>
-                  <button
-                    onClick={() => setQuantity(quantity + 1)}
-                    className="px-3 py-2 hover:bg-gray-100"
-                  >
-                    +
-                  </button>
-                </div>
+              <h3 className="font-medium mb-2">Quantity</h3>
+              <div className="flex items-center border rounded-md w-fit">
+                <button
+                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                  className="px-3 py-2 hover:bg-gray-100"
+                >
+                  −
+                </button>
+                <span className="px-4 py-2 border-x">{quantity}</span>
+                <button
+                  onClick={() => setQuantity(quantity + 1)}
+                  className="px-3 py-2 hover:bg-gray-100"
+                >
+                  +
+                </button>
               </div>
             </div>
 
@@ -240,21 +258,27 @@ const ProductDetail: React.FC = () => {
                   <Truck className="h-5 w-5 text-green-600" />
                   <div>
                     <div className="font-medium text-green-600">Free Shipping</div>
-                    <div className="text-sm text-gray-600">On orders over $75</div>
+                    <div className="text-sm text-muted-foreground">
+                      On orders over $75. Standard delivery in 3-5 business days.
+                    </div>
                   </div>
                 </div>
                 <div className="flex items-center space-x-3">
                   <RotateCcw className="h-5 w-5 text-blue-600" />
                   <div>
                     <div className="font-medium text-blue-600">Easy Returns</div>
-                    <div className="text-sm text-gray-600">30-day return policy</div>
+                    <div className="text-sm text-muted-foreground">
+                      30-day return policy
+                    </div>
                   </div>
                 </div>
                 <div className="flex items-center space-x-3">
                   <Shield className="h-5 w-5 text-purple-600" />
                   <div>
                     <div className="font-medium text-purple-600">Quality Guarantee</div>
-                    <div className="text-sm text-gray-600">Premium medical apparel</div>
+                    <div className="text-sm text-muted-foreground">
+                      Premium medical apparel
+                    </div>
                   </div>
                 </div>
               </div>
@@ -316,6 +340,8 @@ const ProductDetail: React.FC = () => {
           </div>
         </div>
       </div>
+
+      <Footer />
     </div>
   );
 };

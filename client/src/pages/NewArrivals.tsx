@@ -3,7 +3,7 @@ import { useLocation } from 'wouter';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Star, Heart, Sparkles } from 'lucide-react';
+import { Star, Heart, Search } from 'lucide-react';
 import { 
   Pagination,
   PaginationContent,
@@ -17,7 +17,11 @@ import TopNavigationBar from '@/components/TopNavigationBar';
 import MainHeader from '@/components/MainHeader';
 import CategoryNavigation from '@/components/CategoryNavigation';
 import ProductFilters from '@/components/ProductFilters';
+import SortDropdown from '@/components/product/SortDropdown';
 import Footer from '@/components/Footer';
+import { useProducts } from '@/hooks/useProducts';
+import { Skeleton } from '@/components/ui/skeleton';
+import OptimizedImage from '@/components/OptimizedImage';
 import { sampleProducts } from '@/data/products';
 
 const PRODUCTS_PER_PAGE = 8;
@@ -25,7 +29,7 @@ const PRODUCTS_PER_PAGE = 8;
 export default function NewArrivals() {
   const [location, setLocation] = useLocation();
   // Filter products to show only new arrivals
-  const newProducts = sampleProducts.filter(product => product.isNew);
+  const newProducts = sampleProducts.filter((product: any) => product.isNew);
   const [filteredProducts, setFilteredProducts] = useState(newProducts);
   const [appliedFilters, setAppliedFilters] = useState<Record<string, string[]>>({});
   const [currentPage, setCurrentPage] = useState(1);
@@ -139,9 +143,9 @@ export default function NewArrivals() {
       <div className="bg-gradient-to-r from-primary/10 to-secondary/10 py-12">
         <div className="max-w-7xl mx-auto px-4 text-center">
           <div className="flex items-center justify-center gap-2 mb-4">
-            <Sparkles className="h-8 w-8 text-primary" />
+            {/* <Sparkles className="h-8 w-8 text-primary" /> */}
             <h1 className="text-4xl font-bold">New Arrivals</h1>
-            <Sparkles className="h-8 w-8 text-primary" />
+            {/* <Sparkles className="h-8 w-8 text-primary" /> */}
           </div>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Discover the latest in medical uniforms and scrubs. Fresh styles, innovative fabrics, and cutting-edge designs for today's healthcare professionals.
@@ -163,20 +167,24 @@ export default function NewArrivals() {
 
         {/* Product Grid */}
         <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {currentProducts.map((product) => (
+          {currentProducts.map((product: any) => (
             <Card
               key={product.id}
               className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer group"
               onClick={() => setLocation(`/product/${product.id}`)}
             >
               {/* Product Image */}
-              <div className="relative h-64 bg-muted overflow-hidden">
-                <img 
-                  src={product.image} 
-                  alt={product.name}
-                  className="absolute inset-0 w-full h-full object-cover opacity-60"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                    <div className="relative h-64 bg-muted overflow-hidden">
+                      {product.images && product.images.length > 0 ? (
+                        <OptimizedImage 
+                          src={product.images[0].url} 
+                          alt={product.name}
+                          className="absolute inset-0 w-full h-full object-cover opacity-60"
+                        />
+                      ) : (
+                        <div className="bg-gray-200 border-2 border-dashed rounded-xl w-full h-full" />
+                      )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
                 
                 {/* Badges */}
                 <div className="absolute top-3 left-3 flex flex-col gap-1">
@@ -249,7 +257,7 @@ export default function NewArrivals() {
                 <div className="flex items-center gap-1 mb-3">
                   <span className="text-xs text-muted-foreground">Colors:</span>
                   <div className="flex gap-1">
-                    {product.colors.slice(0, 3).map((color, index) => (
+                    {product.colors.map((color: any, index: any) => (
                       <div
                         key={index}
                         className="w-3 h-3 rounded-full bg-gray-400 border"
@@ -367,9 +375,8 @@ export default function NewArrivals() {
         {/* Empty state */}
         {filteredProducts.length === 0 && (
           <div className="text-center py-16">
-            <Sparkles className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-xl font-semibold mb-2">No new arrivals match your filters</h3>
-            <p className="text-muted-foreground">Try adjusting your filters to see more products</p>
+            {/* <Sparkles className="h-16 w-16 text-muted-foreground mx-auto mb-4" /> */}
+            <h3 className="text-2xl font-bold text-center mb-2">No Products Found</h3>
           </div>
         )}
 

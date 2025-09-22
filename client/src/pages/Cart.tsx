@@ -1,79 +1,72 @@
-import { useState } from 'react';
-import { useLocation, Link } from 'wouter';
-import { Card } from '@/components/ui/card';
-import { Button, buttonVariants } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Separator } from '@/components/ui/separator';
-import { ShoppingCart, Plus, Minus, Trash2, CreditCard, Truck } from 'lucide-react';
-import TopNavigationBar from '@/components/TopNavigationBar';
-import MainHeader from '@/components/MainHeader';
-import CategoryNavigation from '@/components/CategoryNavigation';
-import Footer from '@/components/Footer';
-
-interface CartItem {
-  id: number;
-  name: string;
-  brand: string;
-  image: string;
-  price: number;
-  originalPrice?: number;
-  size: string;
-  color: string;
-  quantity: number;
-}
-
-// Sample cart items - in a real app this would come from state management
-const initialCartItems: CartItem[] = [
-  {
-    id: 1,
-    name: "Professional Scrub Top",
-    brand: "Uniform Advantage",
-    image: "/images/scrub-top.jpg",
-    price: 2999,
-    originalPrice: 3999,
-    size: "M",
-    color: "Navy Blue",
-    quantity: 2
-  },
-  {
-    id: 2,
-    name: "Comfort Flex Pants",
-    brand: "Easy Stretch",
-    image: "/images/scrub-pants.jpg", 
-    price: 3499,
-    size: "M",
-    color: "Black",
-    quantity: 1
-  }
-];
+import { useState, useEffect } from "react";
+import { Link, useLocation } from "wouter";
+import { 
+  ShoppingCart as ShoppingCartIcon, 
+  Trash2, 
+  Plus, 
+  Minus, 
+  CreditCard,
+  Truck,
+  RotateCcw,
+  Shield
+} from "lucide-react";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
+import TopNavigationBar from "@/components/TopNavigationBar";
+import MainHeader from "@/components/MainHeader";
+import CategoryNavigation from "@/components/CategoryNavigation";
+import Footer from "@/components/Footer";
+import { useToast } from "@/hooks/use-toast";
+import { useCart } from "@/hooks/useCart";
+import OptimizedImage from "@/components/OptimizedImage";
 
 export default function Cart() {
   const [location, setLocation] = useLocation();
-  const [cartItems, setCartItems] = useState<CartItem[]>(initialCartItems);
+  const { cartItems, isLoading, error, updateItem, removeItem } = useCart();
   const [promoCode, setPromoCode] = useState('');
 
-  const updateQuantity = (id: number, newQuantity: number) => {
+  const updateQuantity = (itemId: string, newQuantity: number) => {
     if (newQuantity <= 0) {
-      removeItem(id);
+      removeItem(itemId);
       return;
     }
     
-    setCartItems(prev => 
-      prev.map(item => 
-        item.id === id ? { ...item, quantity: newQuantity } : item
-      )
-    );
+    updateItem({ itemId, quantity: newQuantity });
   };
 
-  const removeItem = (id: number) => {
-    setCartItems(prev => prev.filter(item => item.id !== id));
+  const handleRemoveItem = (itemId: string) => {
+    removeItem(itemId);
   };
 
-  const subtotal = cartItems.reduce((total, item) => total + (item.price * item.quantity), 0);
-  const shipping = subtotal > 5000 ? 0 : 799; // Free shipping over $50
-  const tax = Math.round(subtotal * 0.0875); // 8.75% tax
+  // Calculate totals
+  const subtotal = cartItems.reduce((total, item) => {
+    const price = parseFloat(item.product?.price || '0');
+    return total + (price * item.quantity);
+  }, 0);
+  
+  const shipping = subtotal > 50 ? 0 : 7.99; // Free shipping over $50
+  const tax = subtotal * 0.0875; // 8.75% tax
   const total = subtotal + shipping + tax;
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div>Loading cart...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div>Error loading cart: {(error as Error).message}</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -88,7 +81,7 @@ export default function Cart() {
       <div className="bg-muted/30 py-8">
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex items-center gap-3">
-            <ShoppingCart className="h-8 w-8" />
+            <ShoppingCartIcon className="h-8 w-8" />
             <h1 className="text-3xl font-bold">Shopping Cart</h1>
             <Badge variant="secondary" className="ml-2">
               {cartItems.reduce((total, item) => total + item.quantity, 0)} items
@@ -101,7 +94,7 @@ export default function Cart() {
         {cartItems.length === 0 ? (
           /* Empty Cart */
           <div className="text-center py-16">
-            <ShoppingCart className="h-24 w-24 text-muted-foreground mx-auto mb-6" />
+            <ShoppingCartIcon className="h-24 w-24 text-muted-foreground mx-auto mb-6" />
             <h2 className="text-2xl font-semibold mb-4">Your cart is empty</h2>
             <p className="text-muted-foreground mb-6">
               Add some professional medical uniforms to get started
@@ -121,28 +114,21 @@ export default function Cart() {
                   <div className="flex gap-4">
                     {/* Product Image */}
                     <div className="w-20 h-20 bg-muted rounded-lg flex items-center justify-center">
-                      <img
-                        src={item.image}
-                        alt={item.name}
-                        className="w-full h-full object-cover rounded-lg opacity-60"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.style.display = 'none';
-                        }}
-                      />
+                      {/* Images are not available in cart items */}
+                      <div className="bg-gray-200 border-2 border-dashed rounded-xl w-full h-full" />
                     </div>
 
                     {/* Product Details */}
                     <div className="flex-1">
                       <div className="flex justify-between items-start mb-2">
                         <div>
-                          <h3 className="font-semibold">{item.name}</h3>
-                          <p className="text-sm text-muted-foreground">{item.brand}</p>
+                          <h3 className="font-semibold">{item.product?.name}</h3>
+                          <p className="text-sm text-muted-foreground">Unknown Brand</p>
                         </div>
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => removeItem(item.id)}
+                          onClick={() => handleRemoveItem(item.id)}
                           className="text-destructive hover:text-destructive"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -150,8 +136,7 @@ export default function Cart() {
                       </div>
 
                       <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
-                        <span>Size: {item.size}</span>
-                        <span>Color: {item.color}</span>
+                        <span>Quantity: {item.quantity}</span>
                       </div>
 
                       <div className="flex items-center justify-between">
@@ -179,11 +164,11 @@ export default function Cart() {
                         {/* Price */}
                         <div className="text-right">
                           <div className="font-semibold">
-                            ${((item.price * item.quantity) / 100).toFixed(2)}
+                            ${(parseFloat(item.product?.price || '0') * item.quantity).toFixed(2)}
                           </div>
-                          {item.originalPrice && (
+                          {item.product?.comparePrice && (
                             <div className="text-sm text-muted-foreground line-through">
-                              ${((item.originalPrice * item.quantity) / 100).toFixed(2)}
+                              ${(parseFloat(item.product.comparePrice) * item.quantity).toFixed(2)}
                             </div>
                           )}
                         </div>
@@ -202,7 +187,7 @@ export default function Cart() {
                 <div className="space-y-3">
                   <div className="flex justify-between">
                     <span>Subtotal</span>
-                    <span>${(subtotal / 100).toFixed(2)}</span>
+                    <span>${subtotal.toFixed(2)}</span>
                   </div>
                   
                   <div className="flex justify-between">
@@ -211,21 +196,21 @@ export default function Cart() {
                       {shipping === 0 ? (
                         <span className="text-green-600">FREE</span>
                       ) : (
-                        `${(shipping / 100).toFixed(2)}`
+                        `${shipping.toFixed(2)}`
                       )}
                     </span>
                   </div>
                   
                   <div className="flex justify-between">
                     <span>Tax</span>
-                    <span>${(tax / 100).toFixed(2)}</span>
+                    <span>${tax.toFixed(2)}</span>
                   </div>
                   
                   <Separator />
                   
                   <div className="flex justify-between text-lg font-semibold">
                     <span>Total</span>
-                    <span>${(total / 100).toFixed(2)}</span>
+                    <span>${total.toFixed(2)}</span>
                   </div>
                 </div>
 

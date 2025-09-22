@@ -1,7 +1,14 @@
 import { db, carts, cartItems, orders, orderItems, products } from "../db";
 import { eq } from "drizzle-orm";
+import { PaymentService } from "./paymentService";
 
 export class CheckoutService {
+  private paymentService: PaymentService;
+
+  constructor() {
+    this.paymentService = new PaymentService();
+  }
+
   // Process checkout
   async processCheckout(checkoutData: any) {
     try {
@@ -63,11 +70,15 @@ export class CheckoutService {
           });
         }
         
+        // Process payment
+        const paymentResult = await this.paymentService.processPayment(order.id, checkoutData.paymentData);
+        
         // Clear the cart
         await tx.delete(cartItems).where(eq(cartItems.cartId, checkoutData.cartId));
         
         return {
           order,
+          payment: paymentResult,
           message: "Checkout processed successfully"
         };
       });

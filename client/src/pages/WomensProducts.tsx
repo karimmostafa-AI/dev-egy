@@ -1,18 +1,17 @@
 import { useState } from 'react';
 import { useLocation } from 'wouter';
-import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Star, Heart } from 'lucide-react';
+import { Star, Heart, Search } from 'lucide-react';
 import { 
   Pagination,
   PaginationContent,
   PaginationItem,
   PaginationLink,
   PaginationNext,
-  PaginationPrevious,
-  PaginationEllipsis
+  PaginationPrevious
 } from '@/components/ui/pagination';
 import TopNavigationBar from '@/components/TopNavigationBar';
 import MainHeader from '@/components/MainHeader';
@@ -20,10 +19,24 @@ import CategoryNavigation from '@/components/CategoryNavigation';
 import ProductFilters from '@/components/ProductFilters';
 import SortDropdown from '@/components/product/SortDropdown';
 import Footer from '@/components/Footer';
-import { Product } from '@/data/products';
+import { useProducts } from '@/hooks/useProducts';
 import { Skeleton } from '@/components/ui/skeleton';
+import OptimizedImage from '@/components/OptimizedImage';
 
 const PRODUCTS_PER_PAGE = 9;
+
+interface Product {
+  id: number;
+  name: string;
+  brand: string;
+  price: number;
+  originalPrice?: number;
+  rating: number;
+  reviewCount: number;
+  images?: { url: string }[];
+  isOnSale?: boolean;
+  isNew?: boolean;
+}
 
 const fetchProducts = async (filters: any) => {
   const queryParams = new URLSearchParams({
@@ -142,9 +155,18 @@ export default function WomensProducts() {
                   className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer group"
                   onClick={() => setLocation(`/product/${product.id}`)}
                 >
-                  <div className="relative h-64 bg-muted overflow-hidden">
-                    <img src={product.image} alt={product.name} className="absolute inset-0 w-full h-full object-cover opacity-60" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                  {/* Product Image */}
+                    <div className="relative h-64 bg-muted overflow-hidden">
+                      {product.images && product.images.length > 0 ? (
+                        <OptimizedImage 
+                          src={product.images[0].url} 
+                          alt={product.name}
+                          className="absolute inset-0 w-full h-full object-cover opacity-60"
+                        />
+                      ) : (
+                        <div className="bg-gray-200 border-2 border-dashed rounded-xl w-full h-full" />
+                      )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
                     <div className="absolute top-3 left-3 flex flex-col gap-1">
                       {product.isOnSale && <Badge variant="destructive">SALE</Badge>}
                       {product.isNew && <Badge>NEW</Badge>}

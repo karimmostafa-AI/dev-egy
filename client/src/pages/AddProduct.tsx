@@ -20,6 +20,9 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
+import { useUploadImage } from "@/hooks/admin/useAdmin";
+import { handleApiError, handleSuccess } from "@/lib/errorHandler";
+import { useTrackEvent } from "@/hooks/useTracking";
 
 export default function AddProduct() {
   const [name, setName] = useState("");
@@ -36,6 +39,9 @@ export default function AddProduct() {
   const [selectedColors, setSelectedColors] = useState<string[]>([]);
   const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
   const [colorImages, setColorImages] = useState<Record<string, {file: File | null, preview: string | null}>>({});
+  
+  const uploadImageMutation = useUploadImage();
+  const { trackEvent } = useTrackEvent();
 
   const categories = [
     { id: 1, name: "Scrubs" },
@@ -138,24 +144,52 @@ export default function AddProduct() {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // In a real app, this would submit the form data to the server
-    console.log({
-      name,
-      description,
-      category,
-      subCategory,
-      brand,
-      sellingPrice,
-      discountPrice,
-      stockQuantity,
-      minimumOrder,
-      thumbnail,
-      selectedColors,
-      selectedSizes,
-      colorImages
-    });
+    
+    try {
+      // Upload thumbnail image if available
+      let thumbnailUrl = null;
+      if (thumbnail) {
+        const imageData = await uploadImageMutation.mutateAsync(thumbnail);
+        thumbnailUrl = imageData.url;
+      }
+      
+      // Upload color images if available
+      const colorImageUrls: Record<string, string> = {};
+      for (const [colorName, imageData] of Object.entries(colorImages)) {
+        if (imageData.file) {
+          const uploadedImage = await uploadImageMutation.mutateAsync(imageData.file);
+          colorImageUrls[colorName] = uploadedImage.url;
+        }
+      }
+      
+      // Prepare product data
+      const productData = {
+        name,
+        description,
+        categoryId: category,
+        brandId: brand,
+        price: parseFloat(sellingPrice),
+        comparePrice: discountPrice ? parseFloat(discountPrice) : null,
+        inventoryQuantity: parseInt(stockQuantity) || 0,
+        minimumOrder: parseInt(minimumOrder) || 1,
+        thumbnailUrl,
+        colorImageUrls,
+        selectedColors,
+        selectedSizes
+      };
+      
+      console.log("Product data to submit:", productData);
+      
+      // Track product creation
+      trackEvent('create_product', 'admin', name);
+      
+      // In a real app, you would send this to your backend API
+      handleSuccess("Product Created!", "The product has been created successfully.");
+    } catch (error) {
+      handleApiError(error, "Failed to create product");
+    }
   };
 
   return (
@@ -481,8 +515,11 @@ export default function AddProduct() {
               Cancel
             </Link>
           </Button>
-          <Button type="submit">
-            Save Product
+          <Button 
+            type="submit" 
+            disabled={uploadImageMutation.isPending}
+          >
+            {uploadImageMutation.isPending ? "Saving..." : "Save Product"}
           </Button>
         </div>
       </form>
