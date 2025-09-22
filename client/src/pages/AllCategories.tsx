@@ -5,7 +5,9 @@ import {
   Plus,
   Edit,
   Trash2,
-  Eye
+  Eye,
+  Loader2,
+  RefreshCw
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,58 +35,63 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-
-const categoriesData = [
-  {
-    id: 1,
-    name: "Scrubs",
-    thumbnail: "",
-    status: true,
-  },
-  {
-    id: 2,
-    name: "Lab Coats",
-    thumbnail: "",
-    status: true,
-  },
-  {
-    id: 3,
-    name: "Shoes",
-    thumbnail: "",
-    status: false,
-  },
-  {
-    id: 4,
-    name: "Accessories",
-    thumbnail: "",
-    status: true,
-  },
-  {
-    id: 5,
-    name: "Nursing Uniforms",
-    thumbnail: "",
-    status: true,
-  },
-];
+import { useCategories, useDeleteCategory } from "@/hooks/admin/useAdmin";
+import type { Category } from "../../shared/schema";
 
 export default function AllCategories() {
   const [searchTerm, setSearchTerm] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [categoryToDelete, setCategoryToDelete] = useState<number | null>(null);
+  const [categoryToDelete, setCategoryToDelete] = useState<string | null>(null);
 
-  const filteredCategories = categoriesData.filter(category => 
+  // Fetch categories using the real API
+  const { data: categoriesResponse, isLoading, error } = useCategories();
+  const deleteCategoryMutation = useDeleteCategory();
+
+  // Extract categories from API response
+  const categories = categoriesResponse?.categories || [];
+
+  const filteredCategories = categories.filter((category: Category) => 
     category.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleDeleteClick = (id: number) => {
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin" />
+        <span className="ml-2 text-lg">Loading categories...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
+        <p className="text-red-600 text-lg">Error loading categories: {error.message}</p>
+        <Button onClick={() => window.location.reload()} variant="outline">
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Try Again
+        </Button>
+      </div>
+    );
+  }
+
+  const handleDeleteClick = (id: string) => {
     setCategoryToDelete(id);
     setDeleteDialogOpen(true);
   };
 
   const confirmDelete = () => {
-    // In a real app, this would call an API to delete the category
-    setDeleteDialogOpen(false);
-    setCategoryToDelete(null);
+    if (categoryToDelete) {
+      deleteCategoryMutation.mutate(categoryToDelete, {
+        onSuccess: () => {
+          setDeleteDialogOpen(false);
+          setCategoryToDelete(null);
+        },
+        onError: (error) => {
+          console.error("Error deleting category:", error);
+        }
+      });
+    }
   };
 
   return (
@@ -130,44 +137,21 @@ export default function AllCategories() {
             <TableHeader>
               <TableRow>
                 <TableHead>Category ID</TableHead>
-                <TableHead>Thumbnail</TableHead>
                 <TableHead>Category Name</TableHead>
-                <TableHead>Status</TableHead>
+                <TableHead>Slug</TableHead>
+                <TableHead>Description</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredCategories.length > 0 ? (
-                filteredCategories.map((category) => (
+                filteredCategories.map((category: Category) => (
                   <TableRow key={category.id}>
-                    <TableCell className="font-medium">CAT-{category.id.toString().padStart(3, '0')}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center">
-                        {category.thumbnail ? (
-                          <img 
-                            src={category.thumbnail} 
-                            alt={category.name} 
-                            className="h-10 w-10 rounded-md object-cover"
-                          />
-                        ) : (
-                          <div className="h-10 w-10 rounded-md bg-gray-200 flex items-center justify-center">
-                            <span className="text-xs text-gray-500">No Image</span>
-                          </div>
-                        )}
-                      </div>
-                    </TableCell>
+                    <TableCell className="font-medium">{category.id.substring(0, 8)}...</TableCell>
                     <TableCell className="font-medium">{category.name}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center">
-                        <Switch 
-                          checked={category.status} 
-                          onCheckedChange={() => {}} // In a real app, this would update the status
-                          aria-label={`Toggle status for ${category.name}`}
-                        />
-                        <span className="ml-2 text-sm">
-                          {category.status ? "Active" : "Inactive"}
-                        </span>
-                      </div>
+                    <TableCell className="text-gray-600">{category.slug}</TableCell>
+                    <TableCell className="text-gray-600">
+                      {category.description || "No description"}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">

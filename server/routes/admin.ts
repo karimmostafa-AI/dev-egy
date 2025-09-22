@@ -2,6 +2,21 @@ import express, { Request, Response } from "express";
 import { AuthService } from "../services/authService";
 import { db, categories, products, orders, users, orderItems, coupons, blogPosts, reviews, collections, collectionProducts } from "../db";
 import { eq, desc, and, sql } from "drizzle-orm";
+import { 
+  insertCategorySchema, 
+  updateCategorySchema,
+  insertProductSchema,
+  updateProductSchema,
+  updateOrderSchema,
+  insertCouponSchema,
+  updateCouponSchema,
+  insertBlogPostSchema,
+  updateBlogPostSchema,
+  updateReviewSchema,
+  insertCollectionSchema,
+  updateCollectionSchema,
+  paginationSchema
+} from "../../shared/schema";
 
 // Extend Request interface to include user
 interface AuthenticatedRequest extends Request {
@@ -59,6 +74,25 @@ const requireAdmin = async (req: AuthenticatedRequest, res: Response, next: any)
 
 // Apply admin authentication to ALL routes in this router
 router.use(requireAdmin);
+
+// Helper function for standardized error responses
+const sendError = (res: Response, status: number, message: string, details?: string) => {
+  return res.status(status).json({
+    error: message,
+    details: details || undefined
+  });
+};
+
+// Helper function for standardized validation
+const validateInput = (schema: any, data: any, res: Response) => {
+  const result = schema.safeParse(data);
+  if (!result.success) {
+    const errorMessage = result.error.errors.map(err => `${err.path.join('.')}: ${err.message}`).join(', ');
+    sendError(res, 400, "Validation failed", errorMessage);
+    return null;
+  }
+  return result.data;
+};
 
 // Dashboard analytics
 router.get("/dashboard/analytics", async (req, res) => {
@@ -247,7 +281,7 @@ router.get("/dashboard/analytics", async (req, res) => {
 });
 
 // Orders management
-router.get("/orders", requireAdmin, async (req, res) => {
+router.get("/orders", async (req, res) => {
   try {
     const { status, page = 1, limit = 10 } = req.query;
     
@@ -295,7 +329,7 @@ router.get("/orders", requireAdmin, async (req, res) => {
 });
 
 // Refunds management
-router.get("/refunds", requireAdmin, async (req, res) => {
+router.get("/refunds", async (req, res) => {
   try {
     const { page = 1, limit = 10 } = req.query;
     
@@ -325,43 +359,73 @@ router.get("/refunds", requireAdmin, async (req, res) => {
 });
 
 // Categories management
-router.get("/categories", requireAdmin, async (req, res) => {
+router.get("/categories", async (req, res) => {
   try {
+    // Validate pagination query parameters
+    const paginationData = validateInput(paginationSchema, req.query, res);
+    if (!paginationData) return;
+    
+    const { page = 1, limit = 10 } = paginationData;
+    
     // Fetch categories from the database
-    console.log("Fetching categories from database...");
     const allCategories = await db.select().from(categories);
-    console.log("Categories fetched successfully:", allCategories);
-    res.json(allCategories);
+    
+    // Apply pagination
+    const pageNum = page;
+    const limitNum = limit;
+    const startIndex = (pageNum - 1) * limitNum;
+    const paginatedCategories = allCategories.slice(startIndex, startIndex + limitNum);
+    
+    res.json({
+      categories: paginatedCategories,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total: allCategories.length,
+        totalPages: Math.ceil(allCategories.length / limitNum)
+      }
+    });
   } catch (error) {
     console.error("Error fetching categories:", error);
-    res.status(500).json({ message: "Internal server error" });
+    return sendError(res, 500, "Internal server error", "Failed to fetch categories");
   }
 });
 
-router.get("/categories/:id", requireAdmin, async (req, res) => {
+router.get("/categories/:id", async (req, res) => {
   try {
     const { id } = req.params;
+    
+    if (!id) {
+      return sendError(res, 400, "Validation failed", "Category ID is required");
+    }
     
     // Fetch category from the database
     const categoryResult = await db.select().from(categories).where(eq(categories.id, id));
     
     if (categoryResult.length === 0) {
-      return res.status(404).json({ message: "Category not found" });
+      return sendError(res, 404, "Category not found", `Category with ID ${id} does not exist`);
     }
     
     res.json(categoryResult[0]);
   } catch (error) {
     console.error("Error fetching category:", error);
-    res.status(500).json({ message: "Internal server error" });
+    return sendError(res, 500, "Internal server error", "Failed to fetch category");
   }
 });
 
-router.post("/categories", requireAdmin, async (req, res) => {
+router.post("/categories", async (req, res) => {
   try {
-    const { name, description, parentId } = req.body;
+    // Validate input against Zod schema
+    const validatedData = validateInput(insertCategorySchema, req.body, res);
+    if (!validatedData) return;
     
-    // Generate slug from name
-    const slug = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    const { name, description, parentId, slug } = validatedData;
+    
+    // Check if slug already exists
+    const existingCategory = await db.select().from(categories).where(eq(categories.slug, slug));
+    if (existingCategory.length > 0) {
+      return sendError(res, 409, "Category already exists", `Category with slug '${slug}' already exists`);
+    }
     
     // Save to the database
     const [newCategory] = await db.insert(categories).values({
@@ -369,57 +433,97 @@ router.post("/categories", requireAdmin, async (req, res) => {
       description,
       parentId: parentId || null,
       slug,
-      createdAt: new Date(),
-      updatedAt: new Date()
     }).returning();
     
     res.status(201).json(newCategory);
   } catch (error) {
     console.error("Error creating category:", error);
-    res.status(500).json({ message: "Internal server error" });
+    return sendError(res, 500, "Internal server error", "Failed to create category");
   }
 });
 
-router.put("/categories/:id", requireAdmin, async (req, res) => {
+router.put("/categories/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, description, status } = req.body;
+    
+    if (!id) {
+      return sendError(res, 400, "Validation failed", "Category ID is required");
+    }
+    
+    // Validate input against Zod schema
+    const validatedData = validateInput(updateCategorySchema, req.body, res);
+    if (!validatedData) return;
+    
+    // Check if category exists
+    const existingCategory = await db.select().from(categories).where(eq(categories.id, id));
+    if (existingCategory.length === 0) {
+      return sendError(res, 404, "Category not found", `Category with ID ${id} does not exist`);
+    }
+    
+    // If slug is being updated, check for conflicts
+    if (validatedData.slug && validatedData.slug !== existingCategory[0].slug) {
+      const slugConflict = await db.select().from(categories).where(eq(categories.slug, validatedData.slug));
+      if (slugConflict.length > 0) {
+        return sendError(res, 409, "Category already exists", `Category with slug '${validatedData.slug}' already exists`);
+      }
+    }
     
     // Update in the database
     const [updatedCategory] = await db.update(categories).set({
-      name,
-      description,
+      ...validatedData,
       updatedAt: new Date()
     }).where(eq(categories.id, id)).returning();
     
     res.json(updatedCategory);
   } catch (error) {
     console.error("Error updating category:", error);
-    res.status(500).json({ message: "Internal server error" });
+    return sendError(res, 500, "Internal server error", "Failed to update category");
   }
 });
 
-router.delete("/categories/:id", requireAdmin, async (req, res) => {
+router.delete("/categories/:id", async (req, res) => {
   try {
     const { id } = req.params;
+    
+    if (!id) {
+      return sendError(res, 400, "Validation failed", "Category ID is required");
+    }
+    
+    // Check if category exists
+    const existingCategory = await db.select().from(categories).where(eq(categories.id, id));
+    if (existingCategory.length === 0) {
+      return sendError(res, 404, "Category not found", `Category with ID ${id} does not exist`);
+    }
+    
+    // Check if category has products (prevent deletion if it does)
+    const productsWithCategory = await db.select().from(products).where(eq(products.categoryId, id));
+    if (productsWithCategory.length > 0) {
+      return sendError(res, 409, "Cannot delete category", `Category has ${productsWithCategory.length} products associated with it`);
+    }
     
     // Delete from the database
     await db.delete(categories).where(eq(categories.id, id));
     
-    res.json({ message: `Category ${id} deleted successfully` });
+    res.json({ 
+      message: "Category deleted successfully",
+      deletedId: id 
+    });
   } catch (error) {
     console.error("Error deleting category:", error);
-    res.status(500).json({ message: "Internal server error" });
+    return sendError(res, 500, "Internal server error", "Failed to delete category");
   }
 });
 
 // Products management
-router.get("/products", requireAdmin, async (req, res) => {
+router.get("/products", async (req, res) => {
   try {
-    const { page = 1, limit = 10 } = req.query;
+    // Validate pagination query parameters
+    const paginationData = validateInput(paginationSchema, req.query, res);
+    if (!paginationData) return;
+    
+    const { page = 1, limit = 10 } = paginationData;
     
     // Fetch products from the database with category information
-    console.log("Fetching products from database...");
     const allProducts = await db.select({
       product: products,
       category: categories
@@ -427,17 +531,15 @@ router.get("/products", requireAdmin, async (req, res) => {
     .from(products)
     .leftJoin(categories, eq(products.categoryId, categories.id));
     
-    console.log("Products fetched successfully:", allProducts.length);
-    
     // Format products for the frontend
     const formattedProducts = allProducts.map(item => ({
       ...item.product,
       category: item.category
     }));
     
-    // Pagination
-    const pageNum = parseInt(page as string);
-    const limitNum = parseInt(limit as string);
+    // Apply pagination
+    const pageNum = page;
+    const limitNum = limit;
     const startIndex = (pageNum - 1) * limitNum;
     const paginatedProducts = formattedProducts.slice(startIndex, startIndex + limitNum);
     
@@ -452,13 +554,17 @@ router.get("/products", requireAdmin, async (req, res) => {
     });
   } catch (error) {
     console.error("Error fetching products:", error);
-    res.status(500).json({ message: "Internal server error" });
+    return sendError(res, 500, "Internal server error", "Failed to fetch products");
   }
 });
 
-router.get("/products/:id", requireAdmin, async (req, res) => {
+router.get("/products/:id", async (req, res) => {
   try {
     const { id } = req.params;
+    
+    if (!id) {
+      return sendError(res, 400, "Validation failed", "Product ID is required");
+    }
     
     // Fetch product from the database with category information
     const productResult = await db.select({
@@ -470,7 +576,7 @@ router.get("/products/:id", requireAdmin, async (req, res) => {
     .where(eq(products.id, id));
     
     if (productResult.length === 0) {
-      return res.status(404).json({ message: "Product not found" });
+      return sendError(res, 404, "Product not found", `Product with ID ${id} does not exist`);
     }
     
     // Format product for the frontend
@@ -483,66 +589,143 @@ router.get("/products/:id", requireAdmin, async (req, res) => {
     res.json(formattedProduct);
   } catch (error) {
     console.error("Error fetching product:", error);
-    res.status(500).json({ message: "Internal server error" });
+    return sendError(res, 500, "Internal server error", "Failed to fetch product");
   }
 });
 
-router.post("/products", requireAdmin, async (req, res) => {
+router.post("/products", async (req, res) => {
   try {
-    const productData = req.body;
+    // Validate input against Zod schema
+    const validatedData = validateInput(insertProductSchema, req.body, res);
+    if (!validatedData) return;
     
-    // Generate slug from name
-    const slug = productData.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    const { name, slug, sku, ...restData } = validatedData;
+    
+    // Check if slug already exists
+    const existingProductBySlug = await db.select().from(products).where(eq(products.slug, slug));
+    if (existingProductBySlug.length > 0) {
+      return sendError(res, 409, "Product already exists", `Product with slug '${slug}' already exists`);
+    }
+    
+    // Check if SKU already exists
+    const existingProductBySku = await db.select().from(products).where(eq(products.sku, sku));
+    if (existingProductBySku.length > 0) {
+      return sendError(res, 409, "Product already exists", `Product with SKU '${sku}' already exists`);
+    }
+    
+    // Validate category exists if provided
+    if (validatedData.categoryId) {
+      const categoryExists = await db.select().from(categories).where(eq(categories.id, validatedData.categoryId));
+      if (categoryExists.length === 0) {
+        return sendError(res, 400, "Invalid category", `Category with ID ${validatedData.categoryId} does not exist`);
+      }
+    }
     
     // Save to the database
     const [newProduct] = await db.insert(products).values({
-      ...productData,
+      name,
       slug,
-      createdAt: new Date(),
-      updatedAt: new Date()
+      sku,
+      ...restData,
     }).returning();
     
     res.status(201).json(newProduct);
   } catch (error) {
     console.error("Error creating product:", error);
-    res.status(500).json({ message: "Internal server error" });
+    return sendError(res, 500, "Internal server error", "Failed to create product");
   }
 });
 
-router.put("/products/:id", requireAdmin, async (req, res) => {
+router.put("/products/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const productData = req.body;
+    
+    if (!id) {
+      return sendError(res, 400, "Validation failed", "Product ID is required");
+    }
+    
+    // Validate input against Zod schema
+    const validatedData = validateInput(updateProductSchema, req.body, res);
+    if (!validatedData) return;
+    
+    // Check if product exists
+    const existingProduct = await db.select().from(products).where(eq(products.id, id));
+    if (existingProduct.length === 0) {
+      return sendError(res, 404, "Product not found", `Product with ID ${id} does not exist`);
+    }
+    
+    // If slug is being updated, check for conflicts
+    if (validatedData.slug && validatedData.slug !== existingProduct[0].slug) {
+      const slugConflict = await db.select().from(products).where(eq(products.slug, validatedData.slug));
+      if (slugConflict.length > 0) {
+        return sendError(res, 409, "Product already exists", `Product with slug '${validatedData.slug}' already exists`);
+      }
+    }
+    
+    // If SKU is being updated, check for conflicts
+    if (validatedData.sku && validatedData.sku !== existingProduct[0].sku) {
+      const skuConflict = await db.select().from(products).where(eq(products.sku, validatedData.sku));
+      if (skuConflict.length > 0) {
+        return sendError(res, 409, "Product already exists", `Product with SKU '${validatedData.sku}' already exists`);
+      }
+    }
+    
+    // Validate category exists if provided
+    if (validatedData.categoryId) {
+      const categoryExists = await db.select().from(categories).where(eq(categories.id, validatedData.categoryId));
+      if (categoryExists.length === 0) {
+        return sendError(res, 400, "Invalid category", `Category with ID ${validatedData.categoryId} does not exist`);
+      }
+    }
     
     // Update in the database
     const [updatedProduct] = await db.update(products).set({
-      ...productData,
+      ...validatedData,
       updatedAt: new Date()
     }).where(eq(products.id, id)).returning();
     
     res.json(updatedProduct);
   } catch (error) {
     console.error("Error updating product:", error);
-    res.status(500).json({ message: "Internal server error" });
+    return sendError(res, 500, "Internal server error", "Failed to update product");
   }
 });
 
-router.delete("/products/:id", requireAdmin, async (req, res) => {
+router.delete("/products/:id", async (req, res) => {
   try {
     const { id } = req.params;
+    
+    if (!id) {
+      return sendError(res, 400, "Validation failed", "Product ID is required");
+    }
+    
+    // Check if product exists
+    const existingProduct = await db.select().from(products).where(eq(products.id, id));
+    if (existingProduct.length === 0) {
+      return sendError(res, 404, "Product not found", `Product with ID ${id} does not exist`);
+    }
+    
+    // Check if product is in any orders (prevent deletion if it is)
+    const ordersWithProduct = await db.select().from(orderItems).where(eq(orderItems.productId, id));
+    if (ordersWithProduct.length > 0) {
+      return sendError(res, 409, "Cannot delete product", `Product is referenced in ${ordersWithProduct.length} order(s)`);
+    }
     
     // Delete from the database
     await db.delete(products).where(eq(products.id, id));
     
-    res.json({ message: `Product ${id} deleted successfully` });
+    res.json({ 
+      message: "Product deleted successfully",
+      deletedId: id 
+    });
   } catch (error) {
     console.error("Error deleting product:", error);
-    res.status(500).json({ message: "Internal server error" });
+    return sendError(res, 500, "Internal server error", "Failed to delete product");
   }
 });
 
 // Customer management
-router.get("/customers", requireAdmin, async (req, res) => {
+router.get("/customers", async (req, res) => {
   try {
     const { page = 1, limit = 10 } = req.query;
     
@@ -578,7 +761,7 @@ router.get("/customers", requireAdmin, async (req, res) => {
   }
 });
 
-router.get("/customers/:id", requireAdmin, async (req, res) => {
+router.get("/customers/:id", async (req, res) => {
   try {
     const { id } = req.params;
     
@@ -607,7 +790,7 @@ router.get("/customers/:id", requireAdmin, async (req, res) => {
   }
 });
 
-router.put("/customers/:id", requireAdmin, async (req, res) => {
+router.put("/customers/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const { name, email } = req.body;
@@ -639,7 +822,7 @@ router.put("/customers/:id", requireAdmin, async (req, res) => {
   }
 });
 
-router.delete("/customers/:id", requireAdmin, async (req, res) => {
+router.delete("/customers/:id", async (req, res) => {
   try {
     const { id } = req.params;
     
@@ -658,7 +841,7 @@ router.delete("/customers/:id", requireAdmin, async (req, res) => {
 });
 
 // Coupon management
-router.get("/coupons", requireAdmin, async (req, res) => {
+router.get("/coupons", async (req, res) => {
   try {
     const { page = 1, limit = 10 } = req.query;
     
@@ -701,7 +884,7 @@ router.get("/coupons", requireAdmin, async (req, res) => {
   }
 });
 
-router.post("/coupons", requireAdmin, async (req, res) => {
+router.post("/coupons", async (req, res) => {
   try {
     const couponData = req.body;
     
@@ -734,7 +917,7 @@ router.post("/coupons", requireAdmin, async (req, res) => {
   }
 });
 
-router.get("/coupons/:id", requireAdmin, async (req, res) => {
+router.get("/coupons/:id", async (req, res) => {
   try {
     const { id } = req.params;
     
@@ -769,7 +952,7 @@ router.get("/coupons/:id", requireAdmin, async (req, res) => {
   }
 });
 
-router.put("/coupons/:id", requireAdmin, async (req, res) => {
+router.put("/coupons/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const couponData = req.body;

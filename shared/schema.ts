@@ -324,6 +324,8 @@ export type UpdateBrand = z.infer<typeof updateBrandSchema>;
 export type Brand = typeof brands.$inferSelect;
 
 // Product schemas
+export const weightUnitSchema = z.enum(["g", "kg", "lb", "oz"]);
+
 export const insertProductSchema = createInsertSchema(products).omit({
   id: true,
   createdAt: true,
@@ -333,18 +335,18 @@ export const insertProductSchema = createInsertSchema(products).omit({
   slug: z.string().min(1).max(200).regex(/^[a-z0-9-]+$/, "Slug must contain only lowercase letters, numbers, and hyphens"),
   description: z.string().max(5000).optional(),
   shortDescription: z.string().max(500).optional(),
-  sku: z.string().min(1).max(50),
-  price: z.string().refine((val) => !isNaN(Number(val)) && Number(val) >= 0, "Price must be a positive number"),
-  comparePrice: z.string().refine((val) => val === "" || (!isNaN(Number(val)) && Number(val) >= 0), "Compare price must be a positive number").optional(),
-  costPerItem: z.string().refine((val) => val === "" || (!isNaN(Number(val)) && Number(val) >= 0), "Cost must be a positive number").optional(),
+  sku: z.string().min(1).max(50).regex(/^[A-Z0-9-_]+$/, "SKU must contain only uppercase letters, numbers, hyphens, and underscores"),
+  price: z.coerce.number().nonnegative("Price must be a positive number"),
+  comparePrice: z.coerce.number().nonnegative("Compare price must be a positive number").optional(),
+  costPerItem: z.coerce.number().nonnegative("Cost must be a positive number").optional(),
   categoryId: z.string().uuid().optional(),
   brandId: z.string().uuid().optional(),
   isFeatured: z.boolean().optional(),
   isAvailable: z.boolean().optional(),
-  inventoryQuantity: z.number().int().min(0).optional(),
+  inventoryQuantity: z.coerce.number().int().min(0).optional(),
   allowOutOfStockPurchases: z.boolean().optional(),
-  weight: z.string().refine((val) => val === "" || (!isNaN(Number(val)) && Number(val) >= 0), "Weight must be a positive number").optional(),
-  weightUnit: z.string().max(10).optional(),
+  weight: z.coerce.number().nonnegative("Weight must be a positive number").optional(),
+  weightUnit: weightUnitSchema.optional(),
 });
 
 export const updateProductSchema = insertProductSchema.partial();
@@ -378,8 +380,8 @@ export const insertCouponSchema = createInsertSchema(coupons).omit({
 }).extend({
   code: z.string().min(1).max(50).regex(/^[A-Z0-9-_]+$/, "Code must contain only uppercase letters, numbers, hyphens, and underscores"),
   type: z.enum(["percentage", "fixed_amount"]),
-  value: z.string().refine((val) => !isNaN(Number(val)) && Number(val) > 0, "Value must be a positive number"),
-  minimumAmount: z.string().refine((val) => val === "" || (!isNaN(Number(val)) && Number(val) >= 0), "Minimum amount must be a positive number").optional(),
+  value: z.coerce.number().positive("Value must be a positive number"),
+  minimumAmount: z.coerce.number().nonnegative("Minimum amount must be a positive number").optional(),
   usageLimit: z.number().int().min(1).optional(),
   isActive: z.boolean().optional(),
   startDate: z.number().int(),

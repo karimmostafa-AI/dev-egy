@@ -83,6 +83,7 @@ import AddProduct from "./AddProduct";
 import EditProduct from "./EditProduct";
 import AddCategory from "./AddCategory";
 import EditCategory from "./EditCategory";
+import AllCategories from "./AllCategories";
 import AddSubCategory from "./AddSubCategory";
 import EditSubCategory from "./EditSubCategory";
 import { handleApiError, handleSuccess } from "@/lib/errorHandler";
@@ -271,7 +272,7 @@ export default function AdminDashboard() {
               <Route path="/admin/products" component={ProductManagement} />
               <Route path="/admin/products/add" component={AddProduct} />
               <Route path="/admin/products/edit/:id" component={EditProduct} />
-              <Route path="/admin/categories" component={CategoryManagement} />
+              <Route path="/admin/categories" component={AllCategories} />
               <Route path="/admin/categories/add" component={AddCategory} />
               <Route path="/admin/categories/edit/:id" component={EditCategory} />
               <Route path="/admin/subcategories" component={SubCategoryManagement} />
