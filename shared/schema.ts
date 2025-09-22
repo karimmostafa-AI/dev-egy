@@ -283,3 +283,182 @@ export const blogPostCategories = sqliteTable("blog_post_categories", {
   categoryId: text("category_id").references(() => blogCategories.id).notNull(),
   createdAt: integer("created_at", { mode: "timestamp" }).default(sql`(strftime('%s', 'now'))`),
 });
+
+// ===== COMPREHENSIVE ZOD VALIDATION SCHEMAS FOR ADMIN ENDPOINTS =====
+
+// Category schemas
+export const insertCategorySchema = createInsertSchema(categories).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  name: z.string().min(1).max(100),
+  slug: z.string().min(1).max(100).regex(/^[a-z0-9-]+$/, "Slug must contain only lowercase letters, numbers, and hyphens"),
+  description: z.string().max(500).optional(),
+  parentId: z.string().uuid().optional(),
+});
+
+export const updateCategorySchema = insertCategorySchema.partial();
+
+export type InsertCategory = z.infer<typeof insertCategorySchema>;
+export type UpdateCategory = z.infer<typeof updateCategorySchema>;
+export type Category = typeof categories.$inferSelect;
+
+// Brand schemas
+export const insertBrandSchema = createInsertSchema(brands).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  name: z.string().min(1).max(100),
+  slug: z.string().min(1).max(100).regex(/^[a-z0-9-]+$/, "Slug must contain only lowercase letters, numbers, and hyphens"),
+  description: z.string().max(1000).optional(),
+  logo: z.string().url().optional(),
+  isFeatured: z.boolean().optional(),
+});
+
+export const updateBrandSchema = insertBrandSchema.partial();
+
+export type InsertBrand = z.infer<typeof insertBrandSchema>;
+export type UpdateBrand = z.infer<typeof updateBrandSchema>;
+export type Brand = typeof brands.$inferSelect;
+
+// Product schemas
+export const insertProductSchema = createInsertSchema(products).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  name: z.string().min(1).max(200),
+  slug: z.string().min(1).max(200).regex(/^[a-z0-9-]+$/, "Slug must contain only lowercase letters, numbers, and hyphens"),
+  description: z.string().max(5000).optional(),
+  shortDescription: z.string().max(500).optional(),
+  sku: z.string().min(1).max(50),
+  price: z.string().refine((val) => !isNaN(Number(val)) && Number(val) >= 0, "Price must be a positive number"),
+  comparePrice: z.string().refine((val) => val === "" || (!isNaN(Number(val)) && Number(val) >= 0), "Compare price must be a positive number").optional(),
+  costPerItem: z.string().refine((val) => val === "" || (!isNaN(Number(val)) && Number(val) >= 0), "Cost must be a positive number").optional(),
+  categoryId: z.string().uuid().optional(),
+  brandId: z.string().uuid().optional(),
+  isFeatured: z.boolean().optional(),
+  isAvailable: z.boolean().optional(),
+  inventoryQuantity: z.number().int().min(0).optional(),
+  allowOutOfStockPurchases: z.boolean().optional(),
+  weight: z.string().refine((val) => val === "" || (!isNaN(Number(val)) && Number(val) >= 0), "Weight must be a positive number").optional(),
+  weightUnit: z.string().max(10).optional(),
+});
+
+export const updateProductSchema = insertProductSchema.partial();
+
+export type InsertProduct = z.infer<typeof insertProductSchema>;
+export type UpdateProduct = z.infer<typeof updateProductSchema>;
+export type Product = typeof products.$inferSelect;
+
+// Order schemas
+export const orderStatusSchema = z.enum(["pending", "confirmed", "processing", "shipped", "delivered", "cancelled"]);
+export const paymentStatusSchema = z.enum(["pending", "paid", "failed", "refunded"]);
+
+export const updateOrderSchema = z.object({
+  status: orderStatusSchema.optional(),
+  paymentStatus: paymentStatusSchema.optional(),
+  notes: z.string().max(1000).optional(),
+  shippedAt: z.number().optional(),
+  deliveredAt: z.number().optional(),
+  cancelledAt: z.number().optional(),
+});
+
+export type UpdateOrder = z.infer<typeof updateOrderSchema>;
+export type Order = typeof orders.$inferSelect;
+
+// Coupon schemas
+export const insertCouponSchema = createInsertSchema(coupons).omit({
+  id: true,
+  usedCount: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  code: z.string().min(1).max(50).regex(/^[A-Z0-9-_]+$/, "Code must contain only uppercase letters, numbers, hyphens, and underscores"),
+  type: z.enum(["percentage", "fixed_amount"]),
+  value: z.string().refine((val) => !isNaN(Number(val)) && Number(val) > 0, "Value must be a positive number"),
+  minimumAmount: z.string().refine((val) => val === "" || (!isNaN(Number(val)) && Number(val) >= 0), "Minimum amount must be a positive number").optional(),
+  usageLimit: z.number().int().min(1).optional(),
+  isActive: z.boolean().optional(),
+  startDate: z.number().int(),
+  endDate: z.number().int().optional(),
+});
+
+export const updateCouponSchema = insertCouponSchema.partial();
+
+export type InsertCoupon = z.infer<typeof insertCouponSchema>;
+export type UpdateCoupon = z.infer<typeof updateCouponSchema>;
+export type Coupon = typeof coupons.$inferSelect;
+
+// Blog post schemas
+export const insertBlogPostSchema = createInsertSchema(blogPosts).omit({
+  id: true,
+  publishedAt: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  title: z.string().min(1).max(200),
+  slug: z.string().min(1).max(200).regex(/^[a-z0-9-]+$/, "Slug must contain only lowercase letters, numbers, and hyphens"),
+  content: z.string().min(1),
+  excerpt: z.string().max(500).optional(),
+  featuredImage: z.string().url().optional(),
+  isPublished: z.boolean().optional(),
+  authorId: z.string().uuid().optional(),
+});
+
+export const updateBlogPostSchema = insertBlogPostSchema.partial();
+
+export type InsertBlogPost = z.infer<typeof insertBlogPostSchema>;
+export type UpdateBlogPost = z.infer<typeof updateBlogPostSchema>;
+export type BlogPost = typeof blogPosts.$inferSelect;
+
+// Review schemas
+export const updateReviewSchema = z.object({
+  isApproved: z.boolean().optional(),
+});
+
+export type UpdateReview = z.infer<typeof updateReviewSchema>;
+export type Review = typeof reviews.$inferSelect;
+
+// Collection schemas
+export const insertCollectionSchema = createInsertSchema(collections).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  name: z.string().min(1).max(100),
+  slug: z.string().min(1).max(100).regex(/^[a-z0-9-]+$/, "Slug must contain only lowercase letters, numbers, and hyphens"),
+  description: z.string().max(1000).optional(),
+  image: z.string().url().optional(),
+  isPublished: z.boolean().optional(),
+});
+
+export const updateCollectionSchema = insertCollectionSchema.partial();
+
+export type InsertCollection = z.infer<typeof insertCollectionSchema>;
+export type UpdateCollection = z.infer<typeof updateCollectionSchema>;
+export type Collection = typeof collections.$inferSelect;
+
+// Collection product schemas
+export const insertCollectionProductSchema = z.object({
+  productId: z.string().uuid(),
+  sortOrder: z.number().int().min(0).optional(),
+});
+
+export type InsertCollectionProduct = z.infer<typeof insertCollectionProductSchema>;
+export type CollectionProduct = typeof collectionProducts.$inferSelect;
+
+// Pagination and query schemas
+export const paginationSchema = z.object({
+  page: z.string().transform((val) => parseInt(val) || 1).pipe(z.number().int().min(1)).optional(),
+  limit: z.string().transform((val) => parseInt(val) || 10).pipe(z.number().int().min(1).max(100)).optional(),
+});
+
+export const orderQuerySchema = paginationSchema.extend({
+  status: orderStatusSchema.optional(),
+});
+
+export type PaginationQuery = z.infer<typeof paginationSchema>;
+export type OrderQuery = z.infer<typeof orderQuerySchema>;
