@@ -16,7 +16,8 @@ import paymentRoutes from "./routes/payment";
 import blogRoutes from "./routes/blog";
 import searchRoutes from "./routes/search";
 import couponRoutes from "./routes/coupons";
-import adminRoutes from "./routes/admin";
+// Use improved admin routes with better consistency
+import adminRoutes from "./routes/adminImproved";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Add middleware to parse JSON bodies

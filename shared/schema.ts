@@ -13,7 +13,7 @@ export const users = sqliteTable("users", {
   fullName: text("full_name").notNull(),
   email: text("email").notNull().unique(),
   passwordHash: text("password_hash").notNull(),
-  role: text("role").notNull().default("user"), // user, admin
+  role: text("role").default("customer"), // 'customer', 'admin', 'super_admin', 'manager'
   createdAt: integer("created_at", { mode: "timestamp" }).default(sql`(strftime('%s', 'now'))`),
   updatedAt: integer("updated_at", { mode: "timestamp" }).default(sql`(strftime('%s', 'now'))`),
 });
@@ -39,6 +39,7 @@ export const categories = sqliteTable("categories", {
   slug: text("slug").notNull().unique(),
   description: text("description"),
   parentId: text("parent_id"),
+  image: text("image"), // Category image URL
   createdAt: integer("created_at", { mode: "timestamp" }).default(sql`(strftime('%s', 'now'))`),
   updatedAt: integer("updated_at", { mode: "timestamp" }).default(sql`(strftime('%s', 'now'))`),
 });
