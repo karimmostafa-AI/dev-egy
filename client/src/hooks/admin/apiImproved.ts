@@ -33,21 +33,21 @@ async function handleApiResponse<T>(response: Response): Promise<T> {
   return result.data;
 }
 
-// Helper to add admin headers for development
-function getAdminHeaders(): HeadersInit {
-  const headers: HeadersInit = {};
+// Helper function for paginated responses
+async function handlePaginatedResponse<T>(response: Response): Promise<PaginatedResponse<T>> {
+  const result = await response.json();
   
-  // In development, add bypass header
-  if (import.meta.env.DEV) {
-    headers['x-admin-bypass'] = 'true';
+  if (!response.ok || !result.success) {
+    throw new Error(result.error || result.message || 'An error occurred');
   }
   
-  return headers;
+  return result.data;
 }
+
 
 // Dashboard analytics
 export const fetchDashboardAnalytics = async () => {
-  const res = await apiRequest("GET", "/api/admin/dashboard/analytics", undefined, getAdminHeaders());
+  const res = await apiRequest("GET", "/api/admin/dashboard/analytics");
   return handleApiResponse(res);
 };
 
@@ -62,13 +62,18 @@ export const fetchOrders = async (params: {
   if (params.page) searchParams.append("page", params.page.toString());
   if (params.limit) searchParams.append("limit", params.limit.toString());
   
-  const res = await apiRequest("GET", `/api/admin/orders?${searchParams.toString()}`, undefined, getAdminHeaders());
-  return handleApiResponse<ApiResponse<PaginatedResponse>>(res);
+  const res = await apiRequest("GET", `/api/admin/orders?${searchParams.toString()}`);
+  return handlePaginatedResponse(res);
+};
+
+export const fetchOrder = async (id: string) => {
+  const res = await apiRequest("GET", `/api/admin/orders/${id}`);
+  return handleApiResponse(res);
 };
 
 // Update order status
 export const updateOrderStatus = async (id: string, status: string) => {
-  const res = await apiRequest("PATCH", `/api/admin/orders/${id}/status`, { status }, getAdminHeaders());
+  const res = await apiRequest("PATCH", `/api/admin/orders/${id}/status`, { status });
   return handleApiResponse(res);
 };
 
@@ -81,33 +86,33 @@ export const fetchRefunds = async (params: {
   if (params.page) searchParams.append("page", params.page.toString());
   if (params.limit) searchParams.append("limit", params.limit.toString());
   
-  const res = await apiRequest("GET", `/api/admin/refunds?${searchParams.toString()}`, undefined, getAdminHeaders());
-  return handleApiResponse<ApiResponse<PaginatedResponse>>(res);
+  const res = await apiRequest("GET", `/api/admin/refunds?${searchParams.toString()}`);
+  return handlePaginatedResponse(res);
 };
 
 // Categories
 export const fetchCategories = async () => {
-  const res = await apiRequest("GET", "/api/admin/categories", undefined, getAdminHeaders());
+  const res = await apiRequest("GET", "/api/admin/categories");
   return handleApiResponse(res);
 };
 
 export const fetchCategory = async (id: string) => {
-  const res = await apiRequest("GET", `/api/admin/categories/${id}`, undefined, getAdminHeaders());
+  const res = await apiRequest("GET", `/api/admin/categories/${id}`);
   return handleApiResponse(res);
 };
 
 export const createCategory = async (data: any) => {
-  const res = await apiRequest("POST", "/api/admin/categories", data, getAdminHeaders());
+  const res = await apiRequest("POST", "/api/admin/categories", data);
   return handleApiResponse(res);
 };
 
 export const updateCategory = async (id: string, data: any) => {
-  const res = await apiRequest("PUT", `/api/admin/categories/${id}`, data, getAdminHeaders());
+  const res = await apiRequest("PUT", `/api/admin/categories/${id}`, data);
   return handleApiResponse(res);
 };
 
 export const deleteCategory = async (id: string) => {
-  const res = await apiRequest("DELETE", `/api/admin/categories/${id}`, undefined, getAdminHeaders());
+  const res = await apiRequest("DELETE", `/api/admin/categories/${id}`);
   return handleApiResponse(res);
 };
 
@@ -122,27 +127,27 @@ export const fetchProducts = async (params: {
   if (params.limit) searchParams.append("limit", params.limit.toString());
   if (params.categoryId) searchParams.append("categoryId", params.categoryId);
   
-  const res = await apiRequest("GET", `/api/admin/products?${searchParams.toString()}`, undefined, getAdminHeaders());
-  return handleApiResponse<ApiResponse<PaginatedResponse>>(res);
+  const res = await apiRequest("GET", `/api/admin/products?${searchParams.toString()}`);
+  return handlePaginatedResponse(res);
 };
 
 export const fetchProduct = async (id: string) => {
-  const res = await apiRequest("GET", `/api/admin/products/${id}`, undefined, getAdminHeaders());
+  const res = await apiRequest("GET", `/api/admin/products/${id}`);
   return handleApiResponse(res);
 };
 
 export const createProduct = async (data: any) => {
-  const res = await apiRequest("POST", "/api/admin/products", data, getAdminHeaders());
+  const res = await apiRequest("POST", "/api/admin/products", data);
   return handleApiResponse(res);
 };
 
 export const updateProduct = async (id: string, data: any) => {
-  const res = await apiRequest("PUT", `/api/admin/products/${id}`, data, getAdminHeaders());
+  const res = await apiRequest("PUT", `/api/admin/products/${id}`, data);
   return handleApiResponse(res);
 };
 
 export const deleteProduct = async (id: string) => {
-  const res = await apiRequest("DELETE", `/api/admin/products/${id}`, undefined, getAdminHeaders());
+  const res = await apiRequest("DELETE", `/api/admin/products/${id}`);
   return handleApiResponse(res);
 };
 
@@ -155,22 +160,22 @@ export const fetchCustomers = async (params: {
   if (params.page) searchParams.append("page", params.page.toString());
   if (params.limit) searchParams.append("limit", params.limit.toString());
   
-  const res = await apiRequest("GET", `/api/admin/customers?${searchParams.toString()}`, undefined, getAdminHeaders());
-  return handleApiResponse<ApiResponse<PaginatedResponse>>(res);
+  const res = await apiRequest("GET", `/api/admin/customers?${searchParams.toString()}`);
+  return handlePaginatedResponse(res);
 };
 
 export const fetchCustomer = async (id: string) => {
-  const res = await apiRequest("GET", `/api/admin/customers/${id}`, undefined, getAdminHeaders());
+  const res = await apiRequest("GET", `/api/admin/customers/${id}`);
   return handleApiResponse(res);
 };
 
 export const updateCustomer = async (id: string, data: any) => {
-  const res = await apiRequest("PUT", `/api/admin/customers/${id}`, data, getAdminHeaders());
+  const res = await apiRequest("PUT", `/api/admin/customers/${id}`, data);
   return handleApiResponse(res);
 };
 
 export const deleteCustomer = async (id: string) => {
-  const res = await apiRequest("DELETE", `/api/admin/customers/${id}`, undefined, getAdminHeaders());
+  const res = await apiRequest("DELETE", `/api/admin/customers/${id}`);
   return handleApiResponse(res);
 };
 
@@ -183,27 +188,27 @@ export const fetchCoupons = async (params: {
   if (params.page) searchParams.append("page", params.page.toString());
   if (params.limit) searchParams.append("limit", params.limit.toString());
   
-  const res = await apiRequest("GET", `/api/admin/coupons?${searchParams.toString()}`, undefined, getAdminHeaders());
-  return handleApiResponse<ApiResponse<PaginatedResponse>>(res);
+  const res = await apiRequest("GET", `/api/admin/coupons?${searchParams.toString()}`);
+  return handlePaginatedResponse(res);
 };
 
 export const fetchCoupon = async (id: string) => {
-  const res = await apiRequest("GET", `/api/admin/coupons/${id}`, undefined, getAdminHeaders());
+  const res = await apiRequest("GET", `/api/admin/coupons/${id}`);
   return handleApiResponse(res);
 };
 
 export const createCoupon = async (data: any) => {
-  const res = await apiRequest("POST", "/api/admin/coupons", data, getAdminHeaders());
+  const res = await apiRequest("POST", "/api/admin/coupons", data);
   return handleApiResponse(res);
 };
 
 export const updateCoupon = async (id: string, data: any) => {
-  const res = await apiRequest("PUT", `/api/admin/coupons/${id}`, data, getAdminHeaders());
+  const res = await apiRequest("PUT", `/api/admin/coupons/${id}`, data);
   return handleApiResponse(res);
 };
 
 export const deleteCoupon = async (id: string) => {
-  const res = await apiRequest("DELETE", `/api/admin/coupons/${id}`, undefined, getAdminHeaders());
+  const res = await apiRequest("DELETE", `/api/admin/coupons/${id}`);
   return handleApiResponse(res);
 };
 
@@ -216,27 +221,27 @@ export const fetchBlogPosts = async (params: {
   if (params.page) searchParams.append("page", params.page.toString());
   if (params.limit) searchParams.append("limit", params.limit.toString());
   
-  const res = await apiRequest("GET", `/api/admin/blog-posts?${searchParams.toString()}`, undefined, getAdminHeaders());
-  return handleApiResponse<ApiResponse<PaginatedResponse>>(res);
+  const res = await apiRequest("GET", `/api/admin/blog-posts?${searchParams.toString()}`);
+  return handlePaginatedResponse(res);
 };
 
 export const fetchBlogPost = async (id: string) => {
-  const res = await apiRequest("GET", `/api/admin/blog-posts/${id}`, undefined, getAdminHeaders());
+  const res = await apiRequest("GET", `/api/admin/blog-posts/${id}`);
   return handleApiResponse(res);
 };
 
 export const createBlogPost = async (data: any) => {
-  const res = await apiRequest("POST", "/api/admin/blog-posts", data, getAdminHeaders());
+  const res = await apiRequest("POST", "/api/admin/blog-posts", data);
   return handleApiResponse(res);
 };
 
 export const updateBlogPost = async (id: string, data: any) => {
-  const res = await apiRequest("PUT", `/api/admin/blog-posts/${id}`, data, getAdminHeaders());
+  const res = await apiRequest("PUT", `/api/admin/blog-posts/${id}`, data);
   return handleApiResponse(res);
 };
 
 export const deleteBlogPost = async (id: string) => {
-  const res = await apiRequest("DELETE", `/api/admin/blog-posts/${id}`, undefined, getAdminHeaders());
+  const res = await apiRequest("DELETE", `/api/admin/blog-posts/${id}`);
   return handleApiResponse(res);
 };
 
@@ -253,22 +258,27 @@ export const fetchReviews = async (params: {
   if (params.productId) searchParams.append("productId", params.productId);
   if (params.isApproved !== undefined) searchParams.append("isApproved", params.isApproved.toString());
   
-  const res = await apiRequest("GET", `/api/admin/reviews?${searchParams.toString()}`, undefined, getAdminHeaders());
-  return handleApiResponse<ApiResponse<PaginatedResponse>>(res);
+  const res = await apiRequest("GET", `/api/admin/reviews?${searchParams.toString()}`);
+  return handlePaginatedResponse(res);
 };
 
 export const fetchReview = async (id: string) => {
-  const res = await apiRequest("GET", `/api/admin/reviews/${id}`, undefined, getAdminHeaders());
+  const res = await apiRequest("GET", `/api/admin/reviews/${id}`);
+  return handleApiResponse(res);
+};
+
+export const updateReview = async (id: string, data: any) => {
+  const res = await apiRequest("PUT", `/api/admin/reviews/${id}`, data);
   return handleApiResponse(res);
 };
 
 export const approveReview = async (id: string, isApproved: boolean) => {
-  const res = await apiRequest("PATCH", `/api/admin/reviews/${id}/approve`, { isApproved }, getAdminHeaders());
+  const res = await apiRequest("PATCH", `/api/admin/reviews/${id}/approve`, { isApproved });
   return handleApiResponse(res);
 };
 
 export const deleteReview = async (id: string) => {
-  const res = await apiRequest("DELETE", `/api/admin/reviews/${id}`, undefined, getAdminHeaders());
+  const res = await apiRequest("DELETE", `/api/admin/reviews/${id}`);
   return handleApiResponse(res);
 };
 
@@ -281,43 +291,43 @@ export const fetchCollections = async (params: {
   if (params.page) searchParams.append("page", params.page.toString());
   if (params.limit) searchParams.append("limit", params.limit.toString());
   
-  const res = await apiRequest("GET", `/api/admin/collections?${searchParams.toString()}`, undefined, getAdminHeaders());
-  return handleApiResponse<ApiResponse<PaginatedResponse>>(res);
+  const res = await apiRequest("GET", `/api/admin/collections?${searchParams.toString()}`);
+  return handlePaginatedResponse(res);
 };
 
 export const fetchCollection = async (id: string) => {
-  const res = await apiRequest("GET", `/api/admin/collections/${id}`, undefined, getAdminHeaders());
+  const res = await apiRequest("GET", `/api/admin/collections/${id}`);
   return handleApiResponse(res);
 };
 
 export const createCollection = async (data: any) => {
-  const res = await apiRequest("POST", "/api/admin/collections", data, getAdminHeaders());
+  const res = await apiRequest("POST", "/api/admin/collections", data);
   return handleApiResponse(res);
 };
 
 export const updateCollection = async (id: string, data: any) => {
-  const res = await apiRequest("PUT", `/api/admin/collections/${id}`, data, getAdminHeaders());
+  const res = await apiRequest("PUT", `/api/admin/collections/${id}`, data);
   return handleApiResponse(res);
 };
 
 export const deleteCollection = async (id: string) => {
-  const res = await apiRequest("DELETE", `/api/admin/collections/${id}`, undefined, getAdminHeaders());
+  const res = await apiRequest("DELETE", `/api/admin/collections/${id}`);
   return handleApiResponse(res);
 };
 
 // Collection Products
 export const fetchCollectionProducts = async (collectionId: string) => {
-  const res = await apiRequest("GET", `/api/admin/collections/${collectionId}/products`, undefined, getAdminHeaders());
+  const res = await apiRequest("GET", `/api/admin/collections/${collectionId}/products`);
   return handleApiResponse(res);
 };
 
 export const addProductToCollection = async (collectionId: string, data: any) => {
-  const res = await apiRequest("POST", `/api/admin/collections/${collectionId}/products`, data, getAdminHeaders());
+  const res = await apiRequest("POST", `/api/admin/collections/${collectionId}/products`, data);
   return handleApiResponse(res);
 };
 
 export const removeProductFromCollection = async (collectionId: string, productId: string) => {
-  const res = await apiRequest("DELETE", `/api/admin/collections/${collectionId}/products/${productId}`, undefined, getAdminHeaders());
+  const res = await apiRequest("DELETE", `/api/admin/collections/${collectionId}/products/${productId}`);
   return handleApiResponse(res);
 };
 
@@ -328,8 +338,7 @@ export const uploadImage = async (file: File) => {
   
   const res = await fetch('/api/admin/upload', {
     method: 'POST',
-    body: formData,
-    headers: getAdminHeaders()
+    body: formData
   });
   
   return handleApiResponse(res);

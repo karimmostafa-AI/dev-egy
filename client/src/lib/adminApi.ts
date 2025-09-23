@@ -223,6 +223,114 @@ class AdminApiClient {
     });
   }
 
+  async fetchReviews(params: {
+    page?: number;
+    limit?: number;
+    productId?: string;
+    isApproved?: boolean;
+  } = {}) {
+    return this.getReviews(params);
+  }
+
+  async fetchReview(reviewId: string) {
+    return this.request(`/reviews/${reviewId}`);
+  }
+
+  async updateReview(reviewId: string, reviewData: any) {
+    return this.request(`/reviews/${reviewId}`, {
+      method: 'PUT',
+      body: JSON.stringify(reviewData),
+    });
+  }
+
+  async deleteReview(reviewId: string) {
+    return this.request(`/reviews/${reviewId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Blog Posts Management
+  async fetchBlogPosts(params: { page?: number; limit?: number } = {}) {
+    const queryParams = new URLSearchParams(params as any).toString();
+    return this.request<PaginatedResponse<any>>(`/blog-posts?${queryParams}`);
+  }
+
+  async fetchBlogPost(blogPostId: string) {
+    return this.request(`/blog-posts/${blogPostId}`);
+  }
+
+  async createBlogPost(blogPostData: any) {
+    return this.request('/blog-posts', {
+      method: 'POST',
+      body: JSON.stringify(blogPostData),
+    });
+  }
+
+  async updateBlogPost(blogPostId: string, blogPostData: any) {
+    return this.request(`/blog-posts/${blogPostId}`, {
+      method: 'PUT',
+      body: JSON.stringify(blogPostData),
+    });
+  }
+
+  async deleteBlogPost(blogPostId: string) {
+    return this.request(`/blog-posts/${blogPostId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Collections Management
+  async fetchCollections(params: { page?: number; limit?: number } = {}) {
+    const queryParams = new URLSearchParams(params as any).toString();
+    return this.request<PaginatedResponse<any>>(`/collections?${queryParams}`);
+  }
+
+  async fetchCollection(collectionId: string) {
+    return this.request(`/collections/${collectionId}`);
+  }
+
+  async createCollection(collectionData: any) {
+    return this.request('/collections', {
+      method: 'POST',
+      body: JSON.stringify(collectionData),
+    });
+  }
+
+  async updateCollection(collectionId: string, collectionData: any) {
+    return this.request(`/collections/${collectionId}`, {
+      method: 'PUT',
+      body: JSON.stringify(collectionData),
+    });
+  }
+
+  async deleteCollection(collectionId: string) {
+    return this.request(`/collections/${collectionId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async fetchCollectionProducts(collectionId: string) {
+    return this.request(`/collections/${collectionId}/products`);
+  }
+
+  async addProductToCollection(collectionId: string, productData: any) {
+    return this.request(`/collections/${collectionId}/products`, {
+      method: 'POST',
+      body: JSON.stringify(productData),
+    });
+  }
+
+  async removeProductFromCollection(collectionId: string, productId: string) {
+    return this.request(`/collections/${collectionId}/products/${productId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Upload Image (alias for uploadFile)
+  async uploadImage(file: File, onProgress?: (progress: number) => void) {
+    return this.uploadFile(file, onProgress);
+  }
+
   // File Upload
   async uploadFile(file: File, onProgress?: (progress: number) => void) {
     const formData = new FormData();

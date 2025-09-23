@@ -6,7 +6,9 @@ import {
   Trash2,
   UserCheck,
   UserX,
-  Mail
+  Mail,
+  Loader2,
+  RefreshCw
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,65 +28,17 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { useCustomers, useDeleteCustomer, useUpdateCustomer } from "@/hooks/admin/useAdmin";
+import { useToast } from "@/hooks/use-toast";
 
-// Mock data for customers
-const customersData = [
-  {
-    id: 1,
-    name: "John Doe",
-    email: "john.doe@email.com",
-    phone: "+1 234 567 8900",
-    status: "active",
-    totalOrders: 12,
-    totalSpent: 1450.00,
-    joinDate: "2023-01-15",
-    avatar: "",
-  },
-  {
-    id: 2,
-    name: "Jane Smith",
-    email: "jane.smith@email.com",
-    phone: "+1 234 567 8901",
-    status: "active",
-    totalOrders: 8,
-    totalSpent: 890.50,
-    joinDate: "2023-02-22",
-    avatar: "",
-  },
-  {
-    id: 3,
-    name: "Robert Johnson",
-    email: "robert.johnson@email.com",
-    phone: "+1 234 567 8902",
-    status: "inactive",
-    totalOrders: 3,
-    totalSpent: 245.00,
-    joinDate: "2023-03-10",
-    avatar: "",
-  },
-  {
-    id: 4,
-    name: "Emily Davis",
-    email: "emily.davis@email.com",
-    phone: "+1 234 567 8903",
-    status: "active",
-    totalOrders: 15,
-    totalSpent: 2100.75,
-    joinDate: "2022-11-05",
-    avatar: "",
-  },
-  {
-    id: 5,
-    name: "Michael Wilson",
-    email: "michael.wilson@email.com",
-    phone: "+1 234 567 8904",
-    status: "blocked",
-    totalOrders: 2,
-    totalSpent: 89.99,
-    joinDate: "2023-04-18",
-    avatar: "",
-  },
-];
 
 const statusColors = {
   active: "bg-green-100 text-green-800",
@@ -94,11 +48,76 @@ const statusColors = {
 
 export default function CustomerManagement() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [customerToDelete, setCustomerToDelete] = useState<string | null>(null);
 
-  const filteredCustomers = customersData.filter(customer => 
-    customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    customer.email.toLowerCase().includes(searchTerm.toLowerCase())
+  // Fetch customers using the real API
+  const { data: customersResponse, isLoading, error, refetch } = useCustomers({ 
+    page: currentPage, 
+    limit: 10 
+  });
+  const deleteCustomerMutation = useDeleteCustomer();
+  const updateCustomerMutation = useUpdateCustomer();
+  const { toast } = useToast();
+
+  // Extract customers from API response
+  const customers = customersResponse?.data || [];
+  const pagination = customersResponse?.pagination;
+
+  const filteredCustomers = customers.filter((customer: any) => 
+    customer.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    customer.email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const handleDeleteClick = (id: string) => {
+    setCustomerToDelete(id);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (customerToDelete) {
+      deleteCustomerMutation.mutate(customerToDelete, {
+        onSuccess: () => {
+          toast({
+            title: "Customer deleted",
+            description: "Customer has been successfully deleted.",
+          });
+          setDeleteDialogOpen(false);
+          setCustomerToDelete(null);
+          refetch();
+        },
+        onError: (error) => {
+          toast({
+            title: "Error",
+            description: "Failed to delete customer. Please try again.",
+            variant: "destructive",
+          });
+        }
+      });
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin" />
+        <span className="ml-2 text-lg">Loading customers...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
+        <p className="text-red-600 text-lg">Error loading customers: {error.message}</p>
+        <Button onClick={() => refetch()} variant="outline">
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Try Again
+        </Button>
+      </div>
+    );
+  }
 
   const getStatusBadge = (status: string) => {
     const displayText = status.charAt(0).toUpperCase() + status.slice(1);
@@ -151,36 +170,36 @@ export default function CustomerManagement() {
             </TableHeader>
             <TableBody>
               {filteredCustomers.length > 0 ? (
-                filteredCustomers.map((customer) => (
+                filteredCustomers.map((customer: any) => (
                   <TableRow key={customer.id} data-testid={`row-customer-${customer.id}`}>
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <Avatar className="h-8 w-8">
-                          <AvatarImage src={customer.avatar} alt={customer.name} />
+                          <AvatarImage src={customer.avatar} alt={customer.name || customer.fullName} />
                           <AvatarFallback className="text-xs">
-                            {customer.name.split(' ').map(n => n[0]).join('')}
+                            {(customer.name || customer.fullName || customer.email || 'U').split(' ').map((n: string) => n[0]).join('').toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
                         <div>
-                          <div className="font-medium text-gray-900">{customer.name}</div>
+                          <div className="font-medium text-gray-900">{customer.name || customer.fullName || 'Unknown'}</div>
                         </div>
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="space-y-1">
                         <div className="text-sm text-gray-900">{customer.email}</div>
-                        <div className="text-sm text-gray-500">{customer.phone}</div>
+                        <div className="text-sm text-gray-500">{customer.phone || 'N/A'}</div>
                       </div>
                     </TableCell>
                     <TableCell>
-                      {getStatusBadge(customer.status)}
+                      {getStatusBadge(customer.role === 'admin' ? 'active' : (customer.status || 'active'))}
                     </TableCell>
-                    <TableCell className="text-gray-900">{customer.totalOrders}</TableCell>
+                    <TableCell className="text-gray-900">{customer.orderCount || customer.totalOrders || 0}</TableCell>
                     <TableCell className="font-medium text-gray-900">
-                      ${customer.totalSpent.toFixed(2)}
+                      ${(customer.totalSpent || 0).toFixed(2)}
                     </TableCell>
                     <TableCell className="text-gray-900">
-                      {new Date(customer.joinDate).toLocaleDateString()}
+                      {customer.createdAt ? new Date(customer.createdAt).toLocaleDateString() : (customer.joinDate ? new Date(customer.joinDate).toLocaleDateString() : 'N/A')}
                     </TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>
@@ -203,7 +222,7 @@ export default function CustomerManagement() {
                             <Mail className="mr-2 h-4 w-4" />
                             Send Email
                           </DropdownMenuItem>
-                          {customer.status === "active" ? (
+                          {(customer.role === 'admin' || customer.status === "active") ? (
                             <DropdownMenuItem>
                               <UserX className="mr-2 h-4 w-4" />
                               Deactivate
@@ -214,7 +233,11 @@ export default function CustomerManagement() {
                               Activate
                             </DropdownMenuItem>
                           )}
-                          <DropdownMenuItem className="text-red-600">
+                          <DropdownMenuItem 
+                            className="text-red-600"
+                            onClick={() => handleDeleteClick(customer.id)}
+                            data-testid={`button-delete-${customer.id}`}
+                          >
                             <Trash2 className="mr-2 h-4 w-4" />
                             Delete
                           </DropdownMenuItem>
@@ -226,7 +249,7 @@ export default function CustomerManagement() {
               ) : (
                 <TableRow>
                   <TableCell colSpan={7} className="text-center py-8 text-gray-500">
-                    No customers found
+                    {searchTerm ? 'No customers match your search' : 'No customers found'}
                   </TableCell>
                 </TableRow>
               )}
@@ -234,6 +257,38 @@ export default function CustomerManagement() {
           </Table>
         </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Customer</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this customer? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setDeleteDialogOpen(false)}
+              disabled={deleteCustomerMutation.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmDelete}
+              disabled={deleteCustomerMutation.isPending}
+              data-testid="button-confirm-delete"
+            >
+              {deleteCustomerMutation.isPending && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

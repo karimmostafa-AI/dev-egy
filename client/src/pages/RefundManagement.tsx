@@ -3,7 +3,8 @@ import {
   Search, 
   Eye,
   Check,
-  X
+  X,
+  AlertTriangle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +17,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 // Define interface for our data
 interface Refund {
@@ -85,6 +87,8 @@ const statusColors: Record<string, string> = {
 export default function RefundManagement() {
   const [searchTerm, setSearchTerm] = useState("");
 
+  // Note: This component is currently using mock data
+  // TODO: Integrate with real refunds API when backend implementation is ready
   const filteredRefunds = refundsData.filter(refund => 
     refund.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
     refund.customer.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -108,6 +112,14 @@ export default function RefundManagement() {
           Manage and process refund requests.
         </p>
       </div>
+
+      <Alert>
+        <AlertTriangle className="h-4 w-4" />
+        <AlertDescription>
+          This page is currently displaying mock data for demonstration purposes. 
+          Refunds API integration is pending backend implementation.
+        </AlertDescription>
+      </Alert>
 
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1">

@@ -6,7 +6,9 @@ import {
   Trash2,
   Eye,
   Copy,
-  Percent
+  Percent,
+  Loader2,
+  RefreshCw
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,75 +27,17 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { useCoupons, useDeleteCoupon } from "@/hooks/admin/useAdminHooks";
+import { useToast } from "@/hooks/use-toast";
 
-// Mock data for coupons
-const couponsData = [
-  {
-    id: 1,
-    code: "WELCOME10",
-    description: "Welcome discount for new customers",
-    discountType: "percentage",
-    discountValue: 10,
-    minimumOrder: 50,
-    maxUses: 100,
-    usedCount: 23,
-    status: "active",
-    startDate: "2023-01-01",
-    endDate: "2023-12-31",
-  },
-  {
-    id: 2,
-    code: "SUMMER25",
-    description: "Summer sale discount",
-    discountType: "percentage",
-    discountValue: 25,
-    minimumOrder: 100,
-    maxUses: 500,
-    usedCount: 156,
-    status: "active",
-    startDate: "2023-06-01",
-    endDate: "2023-08-31",
-  },
-  {
-    id: 3,
-    code: "FIXED20",
-    description: "Fixed amount discount",
-    discountType: "fixed",
-    discountValue: 20,
-    minimumOrder: 80,
-    maxUses: 200,
-    usedCount: 89,
-    status: "active",
-    startDate: "2023-03-15",
-    endDate: "2023-09-15",
-  },
-  {
-    id: 4,
-    code: "EXPIRED15",
-    description: "Expired promotional code",
-    discountType: "percentage",
-    discountValue: 15,
-    minimumOrder: 75,
-    maxUses: 150,
-    usedCount: 150,
-    status: "expired",
-    startDate: "2023-01-01",
-    endDate: "2023-03-31",
-  },
-  {
-    id: 5,
-    code: "INACTIVE5",
-    description: "Inactive discount code",
-    discountType: "percentage",
-    discountValue: 5,
-    minimumOrder: 30,
-    maxUses: 50,
-    usedCount: 12,
-    status: "inactive",
-    startDate: "2023-05-01",
-    endDate: "2023-11-30",
-  },
-];
 
 const statusColors = {
   active: "bg-green-100 text-green-800",
@@ -103,11 +47,75 @@ const statusColors = {
 
 export default function CouponManagement() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [couponToDelete, setCouponToDelete] = useState<string | null>(null);
 
-  const filteredCoupons = couponsData.filter(coupon => 
-    coupon.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    coupon.description.toLowerCase().includes(searchTerm.toLowerCase())
+  // Fetch coupons using the real API
+  const { data: couponsResponse, isLoading, error, refetch } = useCoupons({ 
+    page: currentPage, 
+    limit: 10 
+  });
+  const deleteCouponMutation = useDeleteCoupon();
+  const { toast } = useToast();
+
+  // Extract coupons from API response
+  const coupons = couponsResponse?.data || couponsResponse?.coupons || [];
+  const pagination = couponsResponse?.pagination;
+
+  const filteredCoupons = coupons.filter((coupon: any) => 
+    coupon.code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    coupon.description?.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const handleDeleteClick = (id: string) => {
+    setCouponToDelete(id);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (couponToDelete) {
+      deleteCouponMutation.mutate(couponToDelete, {
+        onSuccess: () => {
+          toast({
+            title: "Coupon deleted",
+            description: "Coupon has been successfully deleted.",
+          });
+          setDeleteDialogOpen(false);
+          setCouponToDelete(null);
+          refetch();
+        },
+        onError: (error) => {
+          toast({
+            title: "Error",
+            description: "Failed to delete coupon. Please try again.",
+            variant: "destructive",
+          });
+        }
+      });
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin" />
+        <span className="ml-2 text-lg">Loading coupons...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
+        <p className="text-red-600 text-lg">Error loading coupons: {error.message}</p>
+        <Button onClick={() => refetch()} variant="outline">
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Try Again
+        </Button>
+      </div>
+    );
+  }
 
   const getStatusBadge = (status: string) => {
     const displayText = status.charAt(0).toUpperCase() + status.slice(1);
@@ -175,7 +183,7 @@ export default function CouponManagement() {
             </TableHeader>
             <TableBody>
               {filteredCoupons.length > 0 ? (
-                filteredCoupons.map((coupon) => (
+                filteredCoupons.map((coupon: any) => (
                   <TableRow key={coupon.id} data-testid={`row-coupon-${coupon.id}`}>
                     <TableCell>
                       <div className="flex items-center gap-2">
@@ -194,36 +202,39 @@ export default function CouponManagement() {
                       </div>
                     </TableCell>
                     <TableCell className="max-w-xs">
-                      <div className="text-sm text-gray-900">{coupon.description}</div>
+                      <div className="text-sm text-gray-900">{coupon.description || 'No description'}</div>
                       <div className="text-xs text-gray-500">
-                        Min. order: ${coupon.minimumOrder}
+                        Min. order: ${coupon.minimumOrder || coupon.minOrderAmount || 0}
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
                         <Percent className="h-4 w-4 text-gray-500" />
                         <span className="font-medium">
-                          {formatDiscountValue(coupon.discountType, coupon.discountValue)}
+                          {formatDiscountValue(coupon.discountType || coupon.type, coupon.discountValue || coupon.value)}
                         </span>
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="text-sm">
-                        <span className="font-medium">{coupon.usedCount}</span>
-                        <span className="text-gray-500"> / {coupon.maxUses}</span>
+                        <span className="font-medium">{coupon.usedCount || coupon.usage || 0}</span>
+                        <span className="text-gray-500"> / {coupon.maxUses || coupon.maxUsage || 'Unlimited'}</span>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
-                        <div
-                          className="bg-blue-600 h-1.5 rounded-full"
-                          style={{ width: `${(coupon.usedCount / coupon.maxUses) * 100}%` }}
-                        />
-                      </div>
+                      {(coupon.maxUses || coupon.maxUsage) && (
+                        <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
+                          <div
+                            className="bg-blue-600 h-1.5 rounded-full"
+                            style={{ width: `${((coupon.usedCount || coupon.usage || 0) / (coupon.maxUses || coupon.maxUsage)) * 100}%` }}
+                          />
+                        </div>
+                      )}
                     </TableCell>
                     <TableCell>
-                      {getStatusBadge(coupon.status)}
+                      {getStatusBadge(coupon.status || (coupon.isActive ? 'active' : 'inactive'))}
                     </TableCell>
                     <TableCell className="text-gray-900">
-                      {new Date(coupon.endDate).toLocaleDateString()}
+                      {coupon.endDate ? new Date(coupon.endDate).toLocaleDateString() : 
+                       coupon.expiresAt ? new Date(coupon.expiresAt).toLocaleDateString() : 'No expiry'}
                     </TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>
@@ -246,7 +257,11 @@ export default function CouponManagement() {
                             <Copy className="mr-2 h-4 w-4" />
                             Duplicate
                           </DropdownMenuItem>
-                          <DropdownMenuItem className="text-red-600">
+                          <DropdownMenuItem 
+                            className="text-red-600"
+                            onClick={() => handleDeleteClick(coupon.id)}
+                            data-testid={`button-delete-${coupon.id}`}
+                          >
                             <Trash2 className="mr-2 h-4 w-4" />
                             Delete
                           </DropdownMenuItem>
@@ -258,7 +273,7 @@ export default function CouponManagement() {
               ) : (
                 <TableRow>
                   <TableCell colSpan={7} className="text-center py-8 text-gray-500">
-                    No coupons found
+                    {searchTerm ? 'No coupons match your search' : 'No coupons found'}
                   </TableCell>
                 </TableRow>
               )}
@@ -266,6 +281,38 @@ export default function CouponManagement() {
           </Table>
         </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Coupon</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this coupon? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setDeleteDialogOpen(false)}
+              disabled={deleteCouponMutation.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmDelete}
+              disabled={deleteCouponMutation.isPending}
+              data-testid="button-confirm-delete"
+            >
+              {deleteCouponMutation.isPending && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

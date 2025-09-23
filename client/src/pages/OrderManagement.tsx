@@ -11,7 +11,8 @@ import {
   FileSpreadsheet,
   RefreshCw,
   X,
-  ArrowLeft
+  ArrowLeft,
+  Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,22 +42,13 @@ import { format } from "date-fns";
 import { exportFilteredOrders } from "@/lib/excelExporter";
 import { generatePDFInvoice } from "@/lib/simplePdfGenerator";
 import { useToast } from "@/hooks/use-toast";
+import { useOrders } from "@/hooks/admin/useAdmin";
 import OrderDetails from "./OrderDetails";
 
 // Define interfaces for our data
 interface OrderStatus {
   value: string;
   label: string;
-}
-
-interface Order {
-  id: string;
-  date: string;
-  customer: string;
-  shop: string;
-  amount: string;
-  status: string;
-  paymentMethod: string;
 }
 
 const orderStatuses: OrderStatus[] = [
@@ -70,134 +62,6 @@ const orderStatuses: OrderStatus[] = [
   { value: "cancelled", label: "Cancelled" },
 ];
 
-const ordersData: Order[] = [
-  {
-    id: "RC000132",
-    date: "23 Sep 2025, 06:24 AM",
-    customer: "Demo Customer",
-    shop: "Echo Mart",
-    amount: "$2960",
-    status: "pending",
-    paymentMethod: "Cash Payment",
-  },
-  {
-    id: "RC000131",
-    date: "23 Sep 2025, 06:15 AM",
-    customer: "Demo Customer",
-    shop: "Razin Shop",
-    amount: "$130.25",
-    status: "pending",
-    paymentMethod: "Stripe",
-  },
-  {
-    id: "RC000130",
-    date: "23 Sep 2025, 06:14 AM",
-    customer: "Demo Customer",
-    shop: "Easy Life",
-    amount: "$1910",
-    status: "pending",
-    paymentMethod: "Stripe",
-  },
-  {
-    id: "RC000129",
-    date: "23 Sep 2025, 06:14 AM",
-    customer: "Demo Customer",
-    shop: "Razin Shop",
-    amount: "$672.47",
-    status: "pending",
-    paymentMethod: "Stripe",
-  },
-  {
-    id: "RC000128",
-    date: "23 Sep 2025, 06:12 AM",
-    customer: "Demo Customer",
-    shop: "Echo Mart",
-    amount: "$2435",
-    status: "pending",
-    paymentMethod: "Cash Payment",
-  },
-  {
-    id: "RC000127",
-    date: "23 Sep 2025, 06:12 AM",
-    customer: "Demo Customer",
-    shop: "Razin Shop",
-    amount: "$354.95",
-    status: "pending",
-    paymentMethod: "Cash Payment",
-  },
-  {
-    id: "RC000126",
-    date: "23 Sep 2025, 06:12 AM",
-    customer: "Demo Customer",
-    shop: "Easy Life",
-    amount: "$1910",
-    status: "pending",
-    paymentMethod: "Cash Payment",
-  },
-  {
-    id: "RC000125",
-    date: "04 Sep 2025, 01:00 PM",
-    customer: "Demo Customer",
-    shop: "Razin Shop",
-    amount: "$1070",
-    status: "pending",
-    paymentMethod: "Cash Payment",
-  },
-  {
-    id: "RC000124",
-    date: "03 Sep 2025, 02:30 PM",
-    customer: "John Smith",
-    shop: "Echo Mart",
-    amount: "$459.99",
-    status: "confirm",
-    paymentMethod: "Credit Card",
-  },
-  {
-    id: "RC000123",
-    date: "02 Sep 2025, 11:45 AM",
-    customer: "Sarah Wilson",
-    shop: "TechHub Store",
-    amount: "$1250.00",
-    status: "processing",
-    paymentMethod: "PayPal",
-  },
-  {
-    id: "RC000122",
-    date: "01 Sep 2025, 09:15 AM",
-    customer: "Mike Johnson",
-    shop: "Quick Shop",
-    amount: "$89.50",
-    status: "pickup",
-    paymentMethod: "Stripe",
-  },
-  {
-    id: "RC000121",
-    date: "31 Aug 2025, 04:20 PM",
-    customer: "Emily Davis",
-    shop: "Fashion Hub",
-    amount: "$320.75",
-    status: "ontheway",
-    paymentMethod: "Cash Payment",
-  },
-  {
-    id: "RC000120",
-    date: "30 Aug 2025, 12:00 PM",
-    customer: "Robert Brown",
-    shop: "Electronics Plus",
-    amount: "$999.99",
-    status: "delivered",
-    paymentMethod: "Credit Card",
-  },
-  {
-    id: "RC000119",
-    date: "29 Aug 2025, 10:30 AM",
-    customer: "Lisa Taylor",
-    shop: "Home Essentials",
-    amount: "$156.25",
-    status: "cancelled",
-    paymentMethod: "Bank Transfer",
-  },
-];
 
 const statusColors: Record<string, string> = {
   pending: "bg-blue-50 text-blue-700 border border-blue-200",
@@ -217,7 +81,6 @@ export default function OrderManagement() {
     from: Date | undefined;
     to: Date | undefined;
   }>({ from: undefined, to: undefined });
-  const [isLoading, setIsLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
   const [sortBy, setSortBy] = useState<'date' | 'amount' | 'status'>('date');
@@ -226,17 +89,24 @@ export default function OrderManagement() {
   const { toast } = useToast();
   const [viewOrderId, setViewOrderId] = useState<string | null>(null);
 
-  // Advanced filtering and sorting with pagination
+  // Fetch orders using the real API
+  const { data: ordersResponse, isLoading, error, refetch } = useOrders({ 
+    status: statusFilter !== 'all' ? statusFilter : undefined,
+    page: currentPage, 
+    limit: itemsPerPage 
+  });
+
+  // Extract orders from API response
+  const ordersData = ordersResponse?.orders || [];
+  const pagination = ordersResponse?.pagination;
+
+  // Client-side filtering for search and payment method (API handles status filter)
   const filteredAndSortedOrders = useMemo(() => {
-    let filtered = ordersData.filter(order => {
+    let filtered = ordersData.filter((order: any) => {
       // Search filter
       const matchesSearch = 
         order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        order.customer.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        order.shop.toLowerCase().includes(searchTerm.toLowerCase());
-      
-      // Status filter
-      const matchesStatus = statusFilter === "all" || order.status === statusFilter;
+        order.customer.toLowerCase().includes(searchTerm.toLowerCase());
       
       // Payment method filter
       const matchesPaymentMethod = paymentMethodFilter === "all" || order.paymentMethod === paymentMethodFilter;
@@ -249,11 +119,11 @@ export default function OrderManagement() {
         if (dateRange.to && orderDate > dateRange.to) matchesDateRange = false;
       }
       
-      return matchesSearch && matchesStatus && matchesPaymentMethod && matchesDateRange;
+      return matchesSearch && matchesPaymentMethod && matchesDateRange;
     });
 
-    // Sorting
-    filtered.sort((a, b) => {
+    // Client-side sorting (API already handles pagination)
+    filtered.sort((a: any, b: any) => {
       let comparison = 0;
       
       switch (sortBy) {
@@ -261,8 +131,8 @@ export default function OrderManagement() {
           comparison = new Date(a.date).getTime() - new Date(b.date).getTime();
           break;
         case 'amount':
-          const amountA = parseFloat(a.amount.replace('$', ''));
-          const amountB = parseFloat(b.amount.replace('$', ''));
+          const amountA = parseFloat(a.amount?.toString().replace('$', '') || '0');
+          const amountB = parseFloat(b.amount?.toString().replace('$', '') || '0');
           comparison = amountA - amountB;
           break;
         case 'status':
@@ -276,16 +146,35 @@ export default function OrderManagement() {
     });
 
     return filtered;
-  }, [ordersData, searchTerm, statusFilter, paymentMethodFilter, dateRange, sortBy, sortOrder]);
+  }, [ordersData, searchTerm, paymentMethodFilter, dateRange, sortBy, sortOrder]);
 
-  // Pagination
-  const totalPages = Math.ceil(filteredAndSortedOrders.length / itemsPerPage);
-  const paginatedOrders = filteredAndSortedOrders.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+  // Use the filtered orders directly since API handles pagination
+  const paginatedOrders = filteredAndSortedOrders;
+  const totalPages = pagination?.totalPages || 1;
 
-  const paymentMethods = [...new Set(ordersData.map(order => order.paymentMethod))];
+  const paymentMethods = [...new Set(ordersData.map((order: any) => order.paymentMethod).filter(Boolean))];
+
+  // Loading and error states
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin" />
+        <span className="ml-2 text-lg">Loading orders...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
+        <p className="text-red-600 text-lg">Error loading orders: {error.message}</p>
+        <Button onClick={() => refetch()} variant="outline">
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Try Again
+        </Button>
+      </div>
+    );
+  }
 
   // Export functionality
   const handleExportOrders = () => {

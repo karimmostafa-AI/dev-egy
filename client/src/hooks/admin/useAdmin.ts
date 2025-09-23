@@ -6,7 +6,7 @@ import { adminApi } from "../../lib/adminApi";
 export const useDashboardAnalytics = () => {
   return useQuery({
     queryKey: ["admin", "dashboard", "analytics"],
-    queryFn: adminApi.fetchDashboardAnalytics,
+    queryFn: adminApi.getDashboardAnalytics,
   });
 };
 
@@ -21,7 +21,7 @@ export const useOrders = (params: {
   
   return useQuery({
     queryKey: ["admin", "orders", paramsKey],
-    queryFn: () => adminApi.fetchOrders(params),
+    queryFn: () => adminApi.getOrders(params),
   });
 };
 
@@ -35,7 +35,8 @@ export const useRefunds = (params: {
   
   return useQuery({
     queryKey: ["admin", "refunds", paramsKey],
-    queryFn: () => adminApi.fetchRefunds(params),
+    queryFn: () => Promise.resolve({ data: [], pagination: null }),
+    enabled: false, // Disable until getRefunds is implemented
   });
 };
 
@@ -43,21 +44,21 @@ export const useRefunds = (params: {
 export const useCategories = () => {
   return useQuery({
     queryKey: ["admin", "categories"],
-    queryFn: adminApi.fetchCategories,
+    queryFn: () => adminApi.getCategories(),
   });
 };
 
 export const useCategory = (id: string) => {
   return useQuery({
     queryKey: ["admin", "categories", id],
-    queryFn: () => adminApi.fetchCategory(id),
+    queryFn: () => adminApi.getCategory(id),
   });
 };
 
 export const useCreateCategory = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: adminApi.createCategory,
+    mutationFn: adminApi.createCategory.bind(adminApi),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "categories"] });
     },
@@ -78,7 +79,7 @@ export const useUpdateCategory = () => {
 export const useDeleteCategory = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: adminApi.deleteCategory,
+    mutationFn: adminApi.deleteCategory.bind(adminApi),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "categories"] });
     },
@@ -95,21 +96,21 @@ export const useProducts = (params: {
   
   return useQuery({
     queryKey: ["admin", "products", paramsKey],
-    queryFn: () => adminApi.fetchProducts(params),
+    queryFn: () => adminApi.getProducts(params),
   });
 };
 
 export const useProduct = (id: string) => {
   return useQuery({
     queryKey: ["admin", "products", id],
-    queryFn: () => adminApi.fetchProduct(id),
+    queryFn: () => adminApi.getProduct(id),
   });
 };
 
 export const useCreateProduct = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: adminApi.createProduct,
+    mutationFn: adminApi.createProduct.bind(adminApi),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "products"] });
     },
@@ -130,7 +131,7 @@ export const useUpdateProduct = () => {
 export const useDeleteProduct = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: adminApi.deleteProduct,
+    mutationFn: adminApi.deleteProduct.bind(adminApi),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "products"] });
     },
@@ -147,14 +148,14 @@ export const useCustomers = (params: {
   
   return useQuery({
     queryKey: ["admin", "customers", paramsKey],
-    queryFn: () => adminApi.fetchCustomers(params),
+    queryFn: () => adminApi.getCustomers(params),
   });
 };
 
 export const useCustomer = (id: string) => {
   return useQuery({
     queryKey: ["admin", "customers", id],
-    queryFn: () => adminApi.fetchCustomer(id),
+    queryFn: () => adminApi.getCustomer(id),
   });
 };
 
@@ -172,7 +173,7 @@ export const useUpdateCustomer = () => {
 export const useDeleteCustomer = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: adminApi.deleteCustomer,
+    mutationFn: adminApi.deleteCustomer.bind(adminApi),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "customers"] });
     },
@@ -189,14 +190,14 @@ export const useCoupons = (params: {
   
   return useQuery({
     queryKey: ["admin", "coupons", paramsKey],
-    queryFn: () => adminApi.fetchCoupons(params),
+    queryFn: () => adminApi.getCoupons(params),
   });
 };
 
 export const useCreateCoupon = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: adminApi.createCoupon,
+    mutationFn: adminApi.createCoupon.bind(adminApi),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "coupons"] });
     },
@@ -206,7 +207,7 @@ export const useCreateCoupon = () => {
 export const useCoupon = (id: string) => {
   return useQuery({
     queryKey: ["admin", "coupons", id],
-    queryFn: () => adminApi.fetchCoupon(id),
+    queryFn: () => adminApi.getCoupon(id),
   });
 };
 
@@ -224,7 +225,7 @@ export const useUpdateCoupon = () => {
 export const useDeleteCoupon = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: adminApi.deleteCoupon,
+    mutationFn: adminApi.deleteCoupon.bind(adminApi),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "coupons"] });
     },

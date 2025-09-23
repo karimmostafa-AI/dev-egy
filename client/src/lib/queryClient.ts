@@ -12,8 +12,13 @@ export async function apiRequest(
   url: string,
   data?: unknown | undefined,
 ): Promise<Response> {
-  // Get token from localStorage
-  const token = localStorage.getItem("token");
+  // Get the appropriate token based on the URL
+  let token: string | null = null;
+  if (url.includes('/api/admin/')) {
+    token = localStorage.getItem("admin_token");
+  } else {
+    token = localStorage.getItem("token");
+  }
   
   const headers: Record<string, string> = {};
   

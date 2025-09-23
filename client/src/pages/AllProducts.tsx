@@ -9,7 +9,9 @@ import {
   Upload,
   Filter,
   Eye,
-  Edit
+  Edit,
+  Loader2,
+  RefreshCw
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -42,68 +44,101 @@ import {
   PaginationPrevious
 } from '@/components/ui/pagination';
 import { Skeleton } from '@/components/ui/skeleton';
-import TopNavigationBar from '@/components/TopNavigationBar';
-import MainHeader from '@/components/MainHeader';
-import CategoryNavigation from '@/components/CategoryNavigation';
-import Footer from '@/components/Footer';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { useProducts, useDeleteProduct } from '@/hooks/admin/useAdmin';
+import { useToast } from '@/hooks/use-toast';
 import OptimizedImage from '@/components/OptimizedImage';
 
-const productsData = [
-  {
-    id: 1,
-    name: "Men's Classic Fit Scrubs Set",
-    brand: "MediWear",
-    thumbnail: "",
-    price: 89.99,
-    discountPrice: 69.99,
-    status: true,
-  },
-  {
-    id: 2,
-    name: "Women's Slim Fit Lab Coat",
-    brand: "NursePro",
-    thumbnail: "",
-    price: 120.00,
-    discountPrice: 0,
-    status: true,
-  },
-  {
-    id: 3,
-    name: "Anti-Slip Nursing Shoes",
-    brand: "ComfortFeet",
-    thumbnail: "",
-    price: 75.50,
-    discountPrice: 59.99,
-    status: false,
-  },
-  {
-    id: 4,
-    name: "Disposable Face Masks (50 pcs)",
-    brand: "SafeGuard",
-    thumbnail: "",
-    price: 25.00,
-    discountPrice: 0,
-    status: true,
-  },
-  {
-    id: 5,
-    name: "Nurse ID Badge Holder",
-    brand: "AccessoriesPlus",
-    thumbnail: "",
-    price: 12.99,
-    discountPrice: 9.99,
-    status: true,
-  },
-];
 
 export default function AllProducts() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [productToDelete, setProductToDelete] = useState<string | null>(null);
 
-  const filteredProducts = productsData.filter(product => 
+  // Fetch products using the real API
+  const { data: productsResponse, isLoading, error, refetch } = useProducts({ 
+    page: currentPage, 
+    limit: 10 
+  });
+  const deleteProductMutation = useDeleteProduct();
+  const { toast } = useToast();
+
+  // Extract products from API response
+  const products = productsResponse?.data || [];
+  const pagination = productsResponse?.pagination;
+
+  const filteredProducts = products.filter((product: any) => 
     product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.brand.toLowerCase().includes(searchTerm.toLowerCase())
+    (product.category?.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (product.sku || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const handleDeleteClick = (id: string) => {
+    setProductToDelete(id);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (productToDelete) {
+      deleteProductMutation.mutate(productToDelete, {
+        onSuccess: () => {
+          toast({
+            title: "Product deleted",
+            description: "Product has been successfully deleted.",
+          });
+          setDeleteDialogOpen(false);
+          setProductToDelete(null);
+          refetch();
+        },
+        onError: (error) => {
+          toast({
+            title: "Error",
+            description: "Failed to delete product. Please try again.",
+            variant: "destructive",
+          });
+        }
+      });
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <Skeleton className="h-8 w-48" />
+            <Skeleton className="h-4 w-64 mt-2" />
+          </div>
+          <Skeleton className="h-10 w-32" />
+        </div>
+        <div className="space-y-4">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Skeleton key={i} className="h-16 w-full" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
+        <p className="text-red-600 text-lg">Error loading products: {error.message}</p>
+        <Button onClick={() => refetch()} variant="outline">
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Try Again
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -124,12 +159,17 @@ export default function AllProducts() {
 
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+          <label htmlFor="search-products" className="sr-only">
+            Search products
+          </label>
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" aria-hidden="true" />
           <Input
+            id="search-products"
             placeholder="Search products..."
             className="pl-8 w-full"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
+            data-testid="input-search-products"
           />
         </div>
         
@@ -155,83 +195,173 @@ export default function AllProducts() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Product ID</TableHead>
-              <TableHead>Thumbnail</TableHead>
+              <TableHead>SKU</TableHead>
               <TableHead>Product Name</TableHead>
-              <TableHead>Brand</TableHead>
+              <TableHead>Category</TableHead>
               <TableHead>Price</TableHead>
-              <TableHead>Discount Price</TableHead>
-              <TableHead>Status</TableHead>
+              <TableHead>Compare Price</TableHead>
+              <TableHead>Inventory</TableHead>
+              <TableHead>Featured</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredProducts.length > 0 ? (
-              filteredProducts.map((product) => (
-                <TableRow key={product.id}>
-                  <TableCell className="font-medium">PROD-{product.id.toString().padStart(3, '0')}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center">
-                      {product.thumbnail ? (
-                        <OptimizedImage 
-                          src={product.thumbnail} 
-                          alt={product.name} 
-                          className="h-10 w-10 rounded-md object-cover"
-                        />
-                      ) : (
-                        <div className="h-10 w-10 rounded-md bg-gray-200 flex items-center justify-center">
-                          <span className="text-xs text-gray-500">No Image</span>
-                        </div>
-                      )}
-                    </div>
-                  </TableCell>
+              filteredProducts.map((product: any) => (
+                <TableRow key={product.id} data-testid={`row-product-${product.id}`}>
+                  <TableCell className="font-medium font-mono text-sm">{product.sku || 'N/A'}</TableCell>
                   <TableCell className="font-medium">{product.name}</TableCell>
-                  <TableCell>{product.brand}</TableCell>
-                  <TableCell>${product.price.toFixed(2)}</TableCell>
                   <TableCell>
-                    {product.discountPrice > 0 ? (
-                      <span className="line-through text-gray-500">
-                        ${product.discountPrice.toFixed(2)}
+                    {product.category ? (
+                      <Badge variant="secondary">{product.category.name}</Badge>
+                    ) : (
+                      <span className="text-gray-500">Uncategorized</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="font-medium">${parseFloat(product.price || 0).toFixed(2)}</TableCell>
+                  <TableCell>
+                    {product.comparePrice ? (
+                      <span className="text-gray-500">
+                        ${parseFloat(product.comparePrice).toFixed(2)}
                       </span>
                     ) : (
                       <span className="text-gray-500">-</span>
                     )}
                   </TableCell>
                   <TableCell>
-                    <Switch 
-                      checked={product.status} 
-                      onCheckedChange={() => {}} // In a real app, this would update the status
-                    />
-                    <span className="ml-2 text-sm">
-                      {product.status ? "Active" : "Inactive"}
+                    <span className={`text-sm ${
+                      product.inventoryQuantity > 10 ? 'text-green-600' : 
+                      product.inventoryQuantity > 0 ? 'text-yellow-600' : 'text-red-600'
+                    }`}>
+                      {product.inventoryQuantity || 0} in stock
                     </span>
                   </TableCell>
+                  <TableCell>
+                    {product.isFeatured ? (
+                      <Badge className="bg-blue-100 text-blue-800">Featured</Badge>
+                    ) : (
+                      <span className="text-gray-500">-</span>
+                    )}
+                  </TableCell>
                   <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button variant="outline" size="sm" asChild>
-                        <Link to={`/product/${product.id}`} target="_blank">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0" data-testid={`button-actions-${product.id}`}>
+                          <span className="sr-only">Open menu</span>
                           <Eye className="h-4 w-4" />
-                        </Link>
-                      </Button>
-                      <Button variant="outline" size="sm" asChild>
-                        <Link to={`/admin/products/edit/${product.id}`}>
-                          <Edit className="h-4 w-4" />
-                        </Link>
-                      </Button>
-                    </div>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem asChild>
+                          <Link to={`/product/${product.slug || product.id}`} target="_blank">
+                            <Eye className="mr-2 h-4 w-4" />
+                            View Product
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link to={`/admin/products/edit/${product.id}`}>
+                            <Edit className="mr-2 h-4 w-4" />
+                            Edit Product
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem 
+                          className="text-red-600"
+                          onClick={() => handleDeleteClick(product.id)}
+                          data-testid={`button-delete-${product.id}`}
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </TableCell>
                 </TableRow>
               ))
             ) : (
               <TableRow>
                 <TableCell colSpan={8} className="text-center py-8 text-gray-500">
-                  No products found
+                  {searchTerm ? 'No products match your search' : 'No products found'}
                 </TableCell>
               </TableRow>
             )}
           </TableBody>
         </Table>
       </div>
+
+      {/* Pagination */}
+      {pagination && pagination.totalPages > 1 && (
+        <div className="flex justify-center mt-6">
+          <Pagination>
+            <PaginationContent>
+              {pagination.hasPrev && (
+                <PaginationItem>
+                  <PaginationPrevious 
+                    onClick={() => setCurrentPage(currentPage - 1)}
+                    className="cursor-pointer"
+                  />
+                </PaginationItem>
+              )}
+              
+              {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
+                const pageNum = i + 1;
+                return (
+                  <PaginationItem key={pageNum}>
+                    <PaginationLink
+                      onClick={() => setCurrentPage(pageNum)}
+                      isActive={currentPage === pageNum}
+                      className="cursor-pointer"
+                    >
+                      {pageNum}
+                    </PaginationLink>
+                  </PaginationItem>
+                );
+              })}
+              
+              {pagination.hasNext && (
+                <PaginationItem>
+                  <PaginationNext 
+                    onClick={() => setCurrentPage(currentPage + 1)}
+                    className="cursor-pointer"
+                  />
+                </PaginationItem>
+              )}
+            </PaginationContent>
+          </Pagination>
+        </div>
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Product</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this product? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setDeleteDialogOpen(false)}
+              disabled={deleteProductMutation.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmDelete}
+              disabled={deleteProductMutation.isPending}
+              data-testid="button-confirm-delete"
+            >
+              {deleteProductMutation.isPending && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
