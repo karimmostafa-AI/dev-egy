@@ -1,6 +1,9 @@
 import express, { Request, Response } from "express";
 import { db, categories, products, orders, users, orderItems, coupons, blogPosts, reviews, collections, collectionProducts } from "../db";
 import { eq, desc, and, sql, gte, lte } from "drizzle-orm";
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
 import {
   requireAdmin,
   successResponse,
@@ -74,13 +77,12 @@ router.get("/dashboard/analytics", requireAdmin, asyncHandler(async (req: Reques
   // Get top selling products with proper joins
   const topProducts = await db.select({
     productName: products.name,
-    productImage: products.images,
     totalSales: sql<number>`COALESCE(SUM(${orderItems.quantity}), 0)`,
     totalRevenue: sql<number>`COALESCE(SUM(CAST(${orderItems.quantity} AS DECIMAL) * CAST(${orderItems.price} AS DECIMAL)), 0)`
   })
   .from(orderItems)
   .innerJoin(products, eq(orderItems.productId, products.id))
-  .groupBy(products.id, products.name, products.images)
+  .groupBy(products.id, products.name)
   .orderBy(sql`SUM(CAST(${orderItems.quantity} AS DECIMAL) * CAST(${orderItems.price} AS DECIMAL)) DESC`)
   .limit(5);
   
@@ -143,7 +145,7 @@ router.get("/dashboard/analytics", requireAdmin, asyncHandler(async (req: Reques
     },
     topSellingProducts: topProducts.map(product => ({
       name: product.productName,
-      image: product.productImage ? JSON.parse(product.productImage)[0] : null,
+      image: null, // TODO: Implement product images join if needed
       sales: product.totalSales,
       revenue: formatDecimal(product.totalRevenue)
     })),
@@ -177,10 +179,9 @@ router.get("/orders", requireAdmin, asyncHandler(async (req: Request, res: Respo
     total: orders.total,
     status: orders.status,
     paymentMethod: orders.paymentMethod,
-    shippingAddress: orders.shippingAddress,
-    city: orders.city,
-    state: orders.state,
-    zipCode: orders.zipCode
+    billingAddressId: orders.billingAddressId,
+    shippingAddressId: orders.shippingAddressId,
+    notes: orders.notes
   }).from(orders);
   
   // Apply status filter
@@ -205,14 +206,12 @@ router.get("/orders", requireAdmin, asyncHandler(async (req: Request, res: Respo
       phone: order.phone
     },
     shipping: {
-      address: order.shippingAddress,
-      city: order.city,
-      state: order.state,
-      zipCode: order.zipCode
+      addressId: order.shippingAddressId || 'N/A' // TODO: Join with addresses table for full info
     },
     amount: formatDecimal(order.total),
     status: formatOrderStatus(order.status),
-    paymentMethod: order.paymentMethod || 'N/A'
+    paymentMethod: order.paymentMethod || 'N/A',
+    notes: order.notes
   }));
   
   res.json(successResponse(paginatedResponse(formattedOrders, page, limit, allOrders.length)));
@@ -672,12 +671,51 @@ router.patch("/reviews/:id/approve", requireAdmin, asyncHandler(async (req: Requ
   }, `Review ${isApproved ? 'approved' : 'rejected'} successfully`));
 }));
 
-// Upload endpoint placeholder
-router.post("/upload", requireAdmin, asyncHandler(async (req: Request, res: Response) => {
-  // TODO: Implement actual file upload logic
-  // For now, return a placeholder response
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const uploadDir = path.join(process.cwd(), 'attached_assets');
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({ 
+  storage: storage,
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = /jpeg|jpg|png|gif|webp/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowedTypes.test(file.mimetype);
+    
+    if (mimetype && extname) {
+      return cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed'));
+    }
+  },
+  limits: {
+    fileSize: 5 * 1024 * 1024 // 5MB limit
+  }
+});
+
+router.post("/upload", requireAdmin, upload.single('file'), asyncHandler(async (req: Request, res: Response) => {
+  if (!req.file) {
+    return res.status(400).json(errorResponse('No file uploaded'));
+  }
+  
+  // Return the file URL relative to the public directory
+  const fileUrl = `/attached_assets/${req.file.filename}`;
+  
   res.json(successResponse({
-    url: '/images/placeholder.jpg'
+    url: fileUrl,
+    originalName: req.file.originalname,
+    size: req.file.size
   }, 'File uploaded successfully'));
 }));
 

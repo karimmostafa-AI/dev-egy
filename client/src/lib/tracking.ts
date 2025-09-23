@@ -38,8 +38,11 @@ export class TrackingService {
 
   // Track page views
   trackPageView(url: string, title?: string) {
-    if (!this.isInitialized || !window.gtag) {
-      console.warn('Tracking not initialized');
+    if (!this.isInitialized || !window.gtag || !this.trackingId) {
+      // Only log in development mode to avoid console spam
+      if (process.env.NODE_ENV === 'development') {
+        console.debug('Tracking not initialized or tracking ID missing');
+      }
       return;
     }
 
@@ -51,8 +54,11 @@ export class TrackingService {
 
   // Track events
   trackEvent(action: string, category: string, label?: string, value?: number) {
-    if (!this.isInitialized || !window.gtag) {
-      console.warn('Tracking not initialized');
+    if (!this.isInitialized || !window.gtag || !this.trackingId) {
+      // Only log in development mode to avoid console spam
+      if (process.env.NODE_ENV === 'development') {
+        console.debug('Tracking not initialized or tracking ID missing');
+      }
       return;
     }
 
@@ -85,8 +91,11 @@ export class TrackingService {
 
   // Track purchase
   trackPurchase(transactionId: string, value: number, currency: string, items: any[]) {
-    if (!this.isInitialized || !window.gtag) {
-      console.warn('Tracking not initialized');
+    if (!this.isInitialized || !window.gtag || !this.trackingId) {
+      // Only log in development mode to avoid console spam
+      if (process.env.NODE_ENV === 'development') {
+        console.debug('Tracking not initialized or tracking ID missing');
+      }
       return;
     }
 

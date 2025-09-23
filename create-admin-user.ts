@@ -13,11 +13,16 @@ async function createAdminUser() {
     const existingAdmin = await db.select().from(users).where(eq(users.email, adminEmail));
     
     if (existingAdmin.length > 0) {
-      // Update existing user to admin role
+      // Update existing user with new password hash and admin role
+      const hashedPassword = await bcrypt.hash(adminPassword, 10);
       await db.update(users)
-        .set({ role: 'super_admin' })
+        .set({ 
+          role: 'super_admin',
+          passwordHash: hashedPassword,
+          fullName: 'System Administrator'
+        })
         .where(eq(users.email, adminEmail));
-      console.log(`Updated existing user ${adminEmail} to super_admin role`);
+      console.log(`Updated existing user ${adminEmail} with new password and super_admin role`);
     } else {
       // Create new admin user
       const hashedPassword = await bcrypt.hash(adminPassword, 10);

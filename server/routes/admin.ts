@@ -192,80 +192,15 @@ router.get("/dashboard/analytics", async (req, res) => {
     // Format sales trends for the chart
     const salesTrends = salesTrendsResult.map(item => ({
       name: new Date(item.month + "-01").toLocaleDateString('en-US', { month: 'short' }),
-      total: parseFloat(item.total.toString())
+      value: parseFloat(item.total.toString()) // Use 'value' instead of 'total' for chart compatibility
     })).reverse(); // Reverse to show chronological order
-    
-    // Format the data for the frontend - properly type the analytics object
-    const analytics: {
-      totalProducts: number;
-      totalCustomers: number;
-      totalOrders: number;
-      confirmedOrders: number;
-      pendingOrders: number;
-      processingOrders: number;
-      pickupOrders: number;
-      onTheWayOrders: number;
-      deliveredOrders: number;
-      cancelledOrders: number;
-      totalEarnings: number;
-      todayEarnings: number;
-      weeklyEarnings: number;
-      monthlyEarnings: number;
-      productsChange: number;
-      customersChange: number;
-      ordersChange: number;
-      earningsChange: number;
-      todayEarningsChange: number;
-      pendingWithdrawals: number;
-      rejectedWithdrawals: number;
-      salesTrends: Array<{ name: string; total: number }>;
-      orderStatusDistribution: Array<{ name: string; value: number }>;
-      topSellingProducts: Array<{ name: string; sales: number; revenue: string }>;
-      recentOrders: Array<{ id: string; date: string; customer: string; amount: number; status: string }>;
-    } = {
-      totalProducts: totalProducts,
-      totalCustomers: totalCustomers,
-      totalOrders: totalOrders,
-      confirmedOrders: orderStatusCounts.find(s => s.status === "confirmed")?.count || 0,
-      pendingOrders: orderStatusCounts.find(s => s.status === "pending")?.count || 0,
-      processingOrders: orderStatusCounts.find(s => s.status === "processing")?.count || 0,
-      pickupOrders: 0,
-      onTheWayOrders: 0,
-      deliveredOrders: orderStatusCounts.find(s => s.status === "delivered")?.count || 0,
-      cancelledOrders: orderStatusCounts.find(s => s.status === "cancelled")?.count || 0,
-      totalEarnings: totalEarnings,
-      todayEarnings: todayEarnings,
-      weeklyEarnings: weeklyEarnings,
-      monthlyEarnings: monthlyEarnings,
-      productsChange: productsChange,
-      customersChange: customersChange,
-      ordersChange: ordersChange,
-      earningsChange: earningsChange,
-      todayEarningsChange: todayEarningsChange,
-      pendingWithdrawals: 0,
-      rejectedWithdrawals: 0,
-      salesTrends: salesTrends,
-      orderStatusDistribution: [
-        { name: "Pending", value: orderStatusCounts.find(s => s.status === "pending")?.count || 0 },
-        { name: "Confirmed", value: orderStatusCounts.find(s => s.status === "confirmed")?.count || 0 },
-        { name: "Processing", value: orderStatusCounts.find(s => s.status === "processing")?.count || 0 },
-        { name: "Delivered", value: orderStatusCounts.find(s => s.status === "delivered")?.count || 0 },
-        { name: "Cancelled", value: orderStatusCounts.find(s => s.status === "cancelled")?.count || 0 },
-      ],
-      topSellingProducts: topProductsResult.map(product => ({
-        name: product.productName,
-        sales: product.totalQuantity,
-        revenue: `${parseFloat(product.totalSales.toString()).toFixed(2)}`
-      })),
-      recentOrders: [] // Initialize as empty array
-    };
     
     // Fetch recent orders
     const recentOrdersResult = await db.select().from(orders)
       .orderBy(desc(orders.createdAt))
       .limit(5);
     
-    analytics.recentOrders = recentOrdersResult.map(order => ({
+    const recentOrders = recentOrdersResult.map(order => ({
       id: order.orderNumber,
       date: order.createdAt ? new Date(order.createdAt).toISOString().split('T')[0] : '',
       customer: `${order.firstName} ${order.lastName}`,
@@ -273,7 +208,46 @@ router.get("/dashboard/analytics", async (req, res) => {
       status: order.status
     }));
     
-    res.json(analytics);
+    // Format the response to match frontend expectations
+    const response = {
+      success: true,
+      data: {
+        stats: {
+          totalProducts: totalProducts,
+          totalCustomers: totalCustomers,
+          totalOrders: totalOrders,
+          totalEarnings: totalEarnings,
+          todayEarnings: todayEarnings,
+          weeklyEarnings: weeklyEarnings,
+          monthlyEarnings: monthlyEarnings,
+        },
+        charts: {
+          salesTrends: salesTrends,
+          orderStatusDistribution: [
+            { name: "Pending", value: orderStatusCounts.find(s => s.status === "pending")?.count || 0 },
+            { name: "Confirmed", value: orderStatusCounts.find(s => s.status === "confirmed")?.count || 0 },
+            { name: "Processing", value: orderStatusCounts.find(s => s.status === "processing")?.count || 0 },
+            { name: "Delivered", value: orderStatusCounts.find(s => s.status === "delivered")?.count || 0 },
+            { name: "Cancelled", value: orderStatusCounts.find(s => s.status === "cancelled")?.count || 0 },
+          ],
+        },
+        topSellingProducts: topProductsResult.map(product => ({
+          name: product.productName,
+          sales: product.totalQuantity,
+          revenue: parseFloat(product.totalSales.toString()).toFixed(2)
+        })),
+        recentOrders: recentOrders,
+        orderStatus: {
+          pending: orderStatusCounts.find(s => s.status === "pending")?.count || 0,
+          confirmed: orderStatusCounts.find(s => s.status === "confirmed")?.count || 0,
+          processing: orderStatusCounts.find(s => s.status === "processing")?.count || 0,
+          delivered: orderStatusCounts.find(s => s.status === "delivered")?.count || 0,
+          cancelled: orderStatusCounts.find(s => s.status === "cancelled")?.count || 0,
+        }
+      }
+    };
+    
+    res.json(response);
   } catch (error) {
     console.error("Error fetching dashboard analytics:", error);
     res.status(500).json({ message: "Internal server error" });

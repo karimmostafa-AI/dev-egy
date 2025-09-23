@@ -16,7 +16,7 @@ import paymentRoutes from "./routes/payment";
 import blogRoutes from "./routes/blog";
 import searchRoutes from "./routes/search";
 import couponRoutes from "./routes/coupons";
-// Use improved admin routes with better consistency
+// Use improved admin routes as primary admin API
 import adminRoutes from "./routes/adminImproved";
 
 export async function registerRoutes(app: Express): Promise<Server> {

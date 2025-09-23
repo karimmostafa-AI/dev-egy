@@ -1,4 +1,4 @@
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { db, users } from "../db";
 import { eq } from "drizzle-orm";
@@ -130,7 +130,8 @@ export class AuthService {
   async isAdmin(userId: string): Promise<boolean> {
     try {
       const user = await this.getUserById(userId);
-      return user?.role === "admin" || false;
+      const adminRoles = ['admin', 'super_admin', 'manager'];
+      return user?.role ? adminRoles.includes(user.role) : false;
     } catch (error) {
       console.error("Error checking admin status:", error);
       return false;

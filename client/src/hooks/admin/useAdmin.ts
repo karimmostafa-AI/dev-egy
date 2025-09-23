@@ -1,6 +1,6 @@
 // Admin React Query hooks
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import * as adminApi from "./api";
+import { adminApi } from "../../lib/adminApi";
 
 // Dashboard analytics
 export const useDashboardAnalytics = () => {

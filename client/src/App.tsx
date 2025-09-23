@@ -7,6 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { useTracking } from "@/hooks/useTracking";
+import { AdminAuthProvider } from "@/contexts/AdminAuthContext";
 
 // Lazy load pages
 const Home = lazy(() => import("@/pages/Home"));
@@ -31,6 +32,7 @@ const Blog = lazy(() => import("@/pages/Blog"));
 const BlogPost = lazy(() => import("@/pages/BlogPost"));
 const BrandPage = lazy(() => import("@/pages/BrandPage"));
 const AdminDashboard = lazy(() => import("@/pages/AdminDashboard"));
+const AdminLogin = lazy(() => import("@/pages/AdminLogin"));
 const NotFound = lazy(() => import("@/pages/not-found"));
 
 function Router() {
@@ -62,6 +64,8 @@ function Router() {
           <Route path="/blog" component={Blog} />
           <Route path="/blog/:slug" component={BlogPost} />
           <Route path="/brand/:slug" component={BrandPage} />
+          <Route path="/admin/login" component={AdminLogin} />
+          <Route path="/admin/:rest*" component={AdminDashboard} />
           <Route path="/admin" component={AdminDashboard} />
           <Route component={NotFound} />
         </Switch>
@@ -73,10 +77,12 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Router />
-      </TooltipProvider>
+      <AdminAuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Router />
+        </TooltipProvider>
+      </AdminAuthProvider>
     </QueryClientProvider>
   );
 }

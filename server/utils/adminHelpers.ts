@@ -43,8 +43,8 @@ export function getDateRange(period: 'today' | 'week' | 'month') {
   }
 
   return {
-    start: startDate.toISOString(),
-    end: now.toISOString()
+    start: startDate, // Return Date objects for Drizzle timestamp compatibility
+    end: now // Return Date objects for Drizzle timestamp compatibility
   };
 }
 
@@ -108,6 +108,14 @@ export function paginatedResponse<T>(
   };
 }
 
+// JWT Secret with consistent fallback
+const JWT_SECRET = process.env.JWT_SECRET || (() => {
+  if (process.env.NODE_ENV === 'development') {
+    return "dev-egypt-secret-key-for-development-only";
+  }
+  throw new Error("JWT_SECRET environment variable is required for security");
+})();
+
 // Improved admin authentication middleware
 export async function requireAdmin(req: Request, res: Response, next: NextFunction) {
   try {
@@ -131,7 +139,7 @@ export async function requireAdmin(req: Request, res: Response, next: NextFuncti
 
     // Extract and verify token
     const token = authHeader.substring(7);
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as any;
+    const decoded = jwt.verify(token, JWT_SECRET) as any;
 
     // Fetch user from database
     const userResult = await db.select().from(users).where(eq(users.id, decoded.userId));
