@@ -12,6 +12,7 @@ import collectionRoutes from "./routes/collections";
 import cartRoutes from "./routes/cart";
 import orderRoutes from "./routes/orders";
 import checkoutRoutes from "./routes/checkout";
+import paymentRoutes from "./routes/payment";
 import blogRoutes from "./routes/blog";
 import searchRoutes from "./routes/search";
 import couponRoutes from "./routes/coupons";
@@ -31,6 +32,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use("/api/cart", cartRoutes);
   app.use("/api/orders", orderRoutes);
   app.use("/api/checkout", checkoutRoutes);
+  app.use("/api/payments", paymentRoutes);
   app.use("/api/blog", blogRoutes);
   app.use("/api/search", searchRoutes);
   app.use("/api/coupons", couponRoutes);

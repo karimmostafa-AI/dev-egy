@@ -4,6 +4,7 @@ import { ChevronDown } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 
 interface Category {
+  id: string;
   name: string;
   subcategories: string[];
   highlight?: boolean;
@@ -133,50 +134,47 @@ export default function CategoryNavigation() {
   }
 
   return (
-    <div className="bg-background border-b h-12 relative" data-testid="category-navigation">
-      <div className="flex items-center h-full">
-        {categories.map((category: Category) => (
-          <div
-            key={category.name}
-            className="relative"
-            onMouseEnter={() => setHoveredCategory(category.name)}
-            onMouseLeave={() => setHoveredCategory(null)}
-          >
-            <button
-              data-testid={`category-${category.name.toLowerCase().replace(/\s+/g, '-')}`}
-              onClick={() => handleCategoryClick(category.name)}
-              className={`px-4 py-3 text-sm font-medium transition-colors hover-elevate flex items-center space-x-1 ${
-                category.highlight 
-                  ? 'text-destructive hover:text-destructive-foreground' 
-                  : 'text-foreground hover:text-primary'
-              }`}
-            >
-              <span>{category.name}</span>
-              <ChevronDown className="h-3 w-3" />
-            </button>
-
-            {/* Dropdown Menu - Full width on hover */}
-            {hoveredCategory === category.name && (
-              <div 
-                className="absolute top-full left-0 right-0 bg-background border-b border-border shadow-lg z-50"
-                data-testid={`dropdown-${category.name.toLowerCase().replace(/\s+/g, '-')}`}
+    <div className="hidden lg:block bg-background border-b" data-testid="category-navigation">
+      <div className="max-w-7xl mx-auto px-6">
+        <div className="flex space-x-8 py-4" onMouseLeave={() => setHoveredCategory(null)}>
+          {categories.map((category) => (
+            <div key={category.id} className="relative">
+              <button
+                onMouseEnter={() => setHoveredCategory(category.id)}
+                onClick={() => handleCategoryClick(category.name)}
+                className={`flex items-center space-x-1 text-sm font-medium transition-colors hover:text-primary ${
+                  hoveredCategory === category.id 
+                    ? 'text-primary' 
+                    : 'text-foreground hover:text-primary'
+                }`}
               >
-                <div className="max-w-7xl mx-auto py-4 px-4 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                  {category.subcategories.map((subcategory: string) => (
-                    <button
-                      key={subcategory}
-                      data-testid={`subcategory-${subcategory.toLowerCase().replace(/\s+/g, '-')}`}
-                      onClick={() => handleSubcategoryClick(subcategory, category.name)}
-                      className="block w-full text-left px-3 py-2 text-sm text-foreground hover:bg-accent hover:text-accent-foreground transition-colors rounded"
-                    >
-                      {subcategory}
-                    </button>
-                  ))}
+                <span>{category.name}</span>
+                <ChevronDown className="h-3 w-3" />
+              </button>
+
+              {/* Dropdown Menu - Full width on hover */}
+              {hoveredCategory === category.id && (
+                <div 
+                  className="absolute top-full left-0 right-0 bg-background border-b border-border shadow-lg z-50"
+                  data-testid={`dropdown-${category.name.toLowerCase().replace(/\s+/g, '-')}`}
+                >
+                  <div className="max-w-7xl mx-auto py-4 px-4 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                    {(category.subcategories || []).map((subcategory: string) => (
+                      <button
+                        key={subcategory}
+                        data-testid={`subcategory-${subcategory.toLowerCase().replace(/\s+/g, '-')}`}
+                        onClick={() => handleSubcategoryClick(subcategory, category.name)}
+                        className="block w-full text-left px-3 py-2 text-sm text-foreground hover:bg-accent hover:text-accent-foreground transition-colors rounded"
+                      >
+                        {subcategory}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
-        ))}
+              )}
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

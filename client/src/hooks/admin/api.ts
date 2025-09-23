@@ -41,6 +41,11 @@ export const fetchCategories = async () => {
   return await res.json();
 };
 
+export const fetchCategory = async (id: string) => {
+  const res = await apiRequest("GET", `/api/admin/categories/${id}`);
+  return await res.json();
+};
+
 export const createCategory = async (data: any) => {
   const res = await apiRequest("POST", "/api/admin/categories", data);
   return await res.json();
@@ -66,6 +71,11 @@ export const fetchProducts = async (params: {
   if (params.limit) searchParams.append("limit", params.limit.toString());
   
   const res = await apiRequest("GET", `/api/admin/products?${searchParams.toString()}`);
+  return await res.json();
+};
+
+export const fetchProduct = async (id: string) => {
+  const res = await apiRequest("GET", `/api/admin/products/${id}`);
   return await res.json();
 };
 
@@ -236,6 +246,23 @@ export const updateCollection = async (id: string, data: any) => {
 
 export const deleteCollection = async (id: string) => {
   const res = await apiRequest("DELETE", `/api/admin/collections/${id}`);
+  return await res.json();
+};
+
+// Upload image
+export const uploadImage = async (file: File) => {
+  const formData = new FormData();
+  formData.append("image", file);
+  
+  const res = await fetch("/api/admin/upload", {
+    method: "POST",
+    body: formData,
+  });
+  
+  if (!res.ok) {
+    throw new Error("Failed to upload image");
+  }
+  
   return await res.json();
 };
 

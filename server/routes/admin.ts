@@ -291,6 +291,24 @@ router.get("/categories", requireAdmin, async (req, res) => {
   }
 });
 
+router.get("/categories/:id", requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Fetch category from the database
+    const categoryResult = await db.select().from(categories).where(eq(categories.id, id));
+    
+    if (categoryResult.length === 0) {
+      return res.status(404).json({ message: "Category not found" });
+    }
+    
+    res.json(categoryResult[0]);
+  } catch (error) {
+    console.error("Error fetching category:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
 router.post("/categories", requireAdmin, async (req, res) => {
   try {
     const { name, description, parentId } = req.body;
@@ -387,6 +405,37 @@ router.get("/products", requireAdmin, async (req, res) => {
     });
   } catch (error) {
     console.error("Error fetching products:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+router.get("/products/:id", requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Fetch product from the database with category information
+    const productResult = await db.select({
+      product: products,
+      category: categories
+    })
+    .from(products)
+    .leftJoin(categories, eq(products.categoryId, categories.id))
+    .where(eq(products.id, id));
+    
+    if (productResult.length === 0) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+    
+    // Format product for the frontend
+    const item = productResult[0];
+    const formattedProduct = {
+      ...item.product,
+      category: item.category
+    };
+    
+    res.json(formattedProduct);
+  } catch (error) {
+    console.error("Error fetching product:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 });
@@ -1288,6 +1337,19 @@ router.delete("/collections/:id/products/:productId", requireAdmin, async (req, 
     res.json({ message: `Product removed from collection successfully` });
   } catch (error) {
     console.error("Error removing product from collection:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+// Upload image endpoint
+router.post("/upload", requireAdmin, async (req, res) => {
+  try {
+    // For now, we'll just return a mock URL
+    // In a real implementation, you would handle file uploads here
+    const imageUrl = "/images/placeholder-product.jpg";
+    res.json({ url: imageUrl });
+  } catch (error) {
+    console.error("Error uploading image:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 });

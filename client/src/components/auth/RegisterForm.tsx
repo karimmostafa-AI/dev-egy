@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -11,33 +12,28 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 
 export function RegisterForm() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const { toast } = useToast();
+  const { register } = useAuth();
+  const [location, setLocation] = useLocation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fullName, email, password }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Failed to register");
-      }
-
+      await register(fullName, email, password);
+      
       toast({
         title: "Success!",
         description: "You have been registered successfully.",
       });
-
+      
+      // Redirect to home page after successful registration
+      setLocation("/");
     } catch (error) {
       let errorMessage = "An unexpected error occurred.";
       if (error instanceof Error) {

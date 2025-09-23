@@ -1,10 +1,41 @@
 import { Router } from "express";
 import { OrderService } from "../services/orderService";
 import { AuthService } from "../services/authService";
+import { db, orders } from "../db";
+import { eq, desc } from "drizzle-orm";
 
 const router = Router();
 const orderService = new OrderService();
 const authService = new AuthService();
+
+// Get user orders (protected route)
+router.get("/", async (req, res) => {
+  try {
+    // Extract token from Authorization header
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ message: "Authorization token required" });
+    }
+    
+    const token = authHeader.substring(7); // Remove "Bearer " prefix
+    const decoded = authService.verifyToken(token);
+    
+    if (!decoded) {
+      return res.status(401).json({ message: "Invalid or expired token" });
+    }
+    
+    // Fetch user orders
+    const userOrders = await db.select().from(orders).where(eq(orders.userId, decoded.userId)).orderBy(desc(orders.createdAt));
+    
+    res.json({ orders: userOrders });
+  } catch (error) {
+    let errorMessage = "An unexpected error occurred.";
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    }
+    res.status(500).json({ message: errorMessage });
+  }
+});
 
 // Create new order (protected route)
 router.post("/", async (req, res) => {

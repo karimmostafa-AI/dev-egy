@@ -21,10 +21,10 @@ const filterGroups: FilterGroup[] = [
     id: 'category',
     name: 'Category',
     options: [
-      { id: 'tops', name: 'Scrub Tops', count: 185 },
-      { id: 'pants', name: 'Scrub Pants', count: 140 },
-      { id: 'sets', name: 'Scrub Sets', count: 65 },
-      { id: 'jackets', name: 'Jackets & Lab Coats', count: 95 },
+      { id: 'scrubs', name: 'Scrubs', count: 185 },
+      { id: 'lab-coats', name: 'Lab Coats', count: 140 },
+      { id: 'shoes', name: 'Shoes', count: 65 },
+      { id: 'accessories', name: 'Accessories', count: 95 },
     ]
   },
   {

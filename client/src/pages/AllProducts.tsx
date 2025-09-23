@@ -1,15 +1,22 @@
-import { useState } from "react";
-import { Link } from "wouter";
+import { useState } from 'react';
+import { Link, useLocation } from 'wouter';
 import { 
-  Search, 
+  ArrowLeft,
+  Search,
   Plus,
-  Edit,
+  Edit3,
+  Trash2,
+  Upload,
+  Filter,
   Eye,
-  Filter
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
+  Edit
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
 import {
   Table,
   TableBody,
@@ -17,16 +24,30 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from '@/components/ui/table';
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
+  DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Badge } from "@/components/ui/badge";
+} from '@/components/ui/dropdown-menu';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious
+} from '@/components/ui/pagination';
+import { Skeleton } from '@/components/ui/skeleton';
+import TopNavigationBar from '@/components/TopNavigationBar';
+import MainHeader from '@/components/MainHeader';
+import CategoryNavigation from '@/components/CategoryNavigation';
+import Footer from '@/components/Footer';
+import { useProducts, useDeleteProduct } from '@/hooks/admin/useAdmin';
+import OptimizedImage from '@/components/OptimizedImage';
 
 const productsData = [
   {
@@ -152,7 +173,7 @@ export default function AllProducts() {
                   <TableCell>
                     <div className="flex items-center">
                       {product.thumbnail ? (
-                        <img 
+                        <OptimizedImage 
                           src={product.thumbnail} 
                           alt={product.name} 
                           className="h-10 w-10 rounded-md object-cover"

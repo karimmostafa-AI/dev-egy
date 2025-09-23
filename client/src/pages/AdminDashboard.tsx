@@ -18,7 +18,8 @@ import {
   Ticket,
   FileText,
   Star,
-  Archive
+  Archive,
+  Warehouse
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -77,6 +78,15 @@ import {
   useReviews,
   useCollections
 } from "@/hooks/admin/useAdmin";
+// Import admin pages
+import AddProduct from "./AddProduct";
+import EditProduct from "./EditProduct";
+import AddCategory from "./AddCategory";
+import EditCategory from "./EditCategory";
+import AddSubCategory from "./AddSubCategory";
+import EditSubCategory from "./EditSubCategory";
+import { handleApiError, handleSuccess } from "@/lib/errorHandler";
+import InventoryManagement from "./InventoryManagement";
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
@@ -259,15 +269,22 @@ export default function AdminDashboard() {
               <Route path="/admin" component={DashboardContent} />
               <Route path="/admin/orders" component={OrderManagement} />
               <Route path="/admin/products" component={ProductManagement} />
+              <Route path="/admin/products/add" component={AddProduct} />
+              <Route path="/admin/products/edit/:id" component={EditProduct} />
               <Route path="/admin/categories" component={CategoryManagement} />
+              <Route path="/admin/categories/add" component={AddCategory} />
+              <Route path="/admin/categories/edit/:id" component={EditCategory} />
               <Route path="/admin/subcategories" component={SubCategoryManagement} />
+              <Route path="/admin/subcategories/add" component={AddSubCategory} />
+              <Route path="/admin/subcategories/edit/:id" component={EditSubCategory} />
               <Route path="/admin/customers" component={CustomerManagement} />
               <Route path="/admin/coupons" component={CouponManagement} />
               <Route path="/admin/blog-posts" component={BlogPostManagement} />
               <Route path="/admin/reviews" component={ReviewManagement} />
-              <Route path="/admin/collections" component={CollectionManagement} />
-              <Route path="/admin/refunds" component={RefundManagement} />
-              <Route path="/admin/messages" component={MessagesPage} />
+              <Route path="/collections" component={CollectionManagement} />
+              <Route path="/refunds" component={RefundManagement} />
+              <Route path="/messages" component={MessagesPage} />
+              <Route path="/inventory" component={InventoryManagement} />
             </Switch>
           </div>
         </main>
@@ -399,6 +416,10 @@ function DashboardContent() {
   
   // Recent Orders
   const { data: ordersData } = useOrders({ limit: 5 });
+  
+  // Fetch all products for inventory summary
+  const { data: productsData } = useProducts({ limit: 1000 });
+  const products = productsData?.products || [];
   
   if (analyticsLoading) {
     return <div className="flex justify-center items-center h-64">Loading dashboard data...</div>;
@@ -810,12 +831,9 @@ function DashboardContent() {
         </Card>
         
         {/* Visit Analysis */}
-        <Card className="hover:shadow-lg transition-shadow">
+        <Card>
           <CardHeader>
-            <CardTitle>Today's Visit Analysis</CardTitle>
-            <CardDescription>
-              Website visits throughout the day
-            </CardDescription>
+            <CardTitle>Visit Analysis</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-80">
@@ -850,6 +868,42 @@ function DashboardContent() {
                   />
                 </LineChart>
               </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+      
+      {/* Inventory Summary */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card className="md:col-span-3">
+          <CardHeader>
+            <CardTitle>Inventory Summary</CardTitle>
+            <CardDescription>
+              Quick overview of product inventory levels
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="bg-green-50 p-4 rounded-lg">
+                <div className="text-2xl font-bold">{products.filter((p: any) => p.inventoryQuantity > 10).length}</div>
+                <div className="text-sm text-green-700">Well Stocked</div>
+                <div className="text-xs text-muted-foreground">More than 10 units</div>
+              </div>
+              <div className="bg-yellow-50 p-4 rounded-lg">
+                <div className="text-2xl font-bold">{products.filter((p: any) => p.inventoryQuantity > 0 && p.inventoryQuantity <= 10).length}</div>
+                <div className="text-sm text-yellow-700">Low Stock</div>
+                <div className="text-xs text-muted-foreground">1-10 units remaining</div>
+              </div>
+              <div className="bg-red-50 p-4 rounded-lg">
+                <div className="text-2xl font-bold">{products.filter((p: any) => p.inventoryQuantity === 0 || !p.isAvailable).length}</div>
+                <div className="text-sm text-red-700">Out of Stock</div>
+                <div className="text-xs text-muted-foreground">Sold out or inactive</div>
+              </div>
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <div className="text-2xl font-bold">{products.reduce((total: number, p: any) => total + (p.inventoryQuantity || 0), 0)}</div>
+                <div className="text-sm text-blue-700">Total Units</div>
+                <div className="text-xs text-muted-foreground">Across all products</div>
+              </div>
             </div>
           </CardContent>
         </Card>

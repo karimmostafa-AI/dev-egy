@@ -47,6 +47,13 @@ export const useCategories = () => {
   });
 };
 
+export const useCategory = (id: string) => {
+  return useQuery({
+    queryKey: ["admin", "categories", id],
+    queryFn: () => adminApi.fetchCategory(id),
+  });
+};
+
 export const useCreateCategory = () => {
   const queryClient = useQueryClient();
   return useMutation({
@@ -89,6 +96,13 @@ export const useProducts = (params: {
   return useQuery({
     queryKey: ["admin", "products", paramsKey],
     queryFn: () => adminApi.fetchProducts(params),
+  });
+};
+
+export const useProduct = (id: string) => {
+  return useQuery({
+    queryKey: ["admin", "products", id],
+    queryFn: () => adminApi.fetchProduct(id),
   });
 };
 
@@ -360,6 +374,13 @@ export const useDeleteCollection = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "collections"] });
     },
+  });
+};
+
+// Upload image
+export const useUploadImage = () => {
+  return useMutation({
+    mutationFn: adminApi.uploadImage,
   });
 };
 

@@ -1,17 +1,16 @@
-import { useState } from 'react';
-import { useLocation } from 'wouter';
+import { useState, useEffect } from 'react';
+import { Link, useRoute, useLocation } from "wouter";
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Star, Heart } from 'lucide-react';
+import { Star, Heart, Filter, ChevronDown, X } from 'lucide-react';
 import { 
   Pagination,
   PaginationContent,
   PaginationItem,
   PaginationLink,
   PaginationNext,
-  PaginationPrevious,
-  PaginationEllipsis
+  PaginationPrevious
 } from '@/components/ui/pagination';
 import TopNavigationBar from '@/components/TopNavigationBar';
 import MainHeader from '@/components/MainHeader';
@@ -19,15 +18,17 @@ import CategoryNavigation from '@/components/CategoryNavigation';
 import ProductFilters from '@/components/ProductFilters';
 import SortDropdown from '@/components/product/SortDropdown';
 import Footer from '@/components/Footer';
-import { sampleProducts } from '@/data/products';
+import { useProducts } from '@/hooks/useProducts';
 import { Skeleton } from '@/components/ui/skeleton';
+import { sampleProducts } from '@/data/products';
 
-const PRODUCTS_PER_PAGE = 9;
+
+const PRODUCTS_PER_PAGE = 12;
 
 export default function ScrubsPage() {
   const [location, setLocation] = useLocation();
   // Filter products to show only scrubs
-  const scrubProducts = sampleProducts.filter(product => 
+  const scrubProducts = sampleProducts.filter((product: any) => 
     product.name.toLowerCase().includes('scrub') || 
     product.name.toLowerCase().includes('top') || 
     product.name.toLowerCase().includes('pant')
@@ -36,6 +37,7 @@ export default function ScrubsPage() {
   const [appliedFilters, setAppliedFilters] = useState<Record<string, string[]>>({});
   const [currentPage, setCurrentPage] = useState(1);
   const [favorites, setFavorites] = useState<Set<number>>(new Set());
+  const [viewMode, setViewMode] = useState<'grid' | 'list' | 'virtual'>('grid');
 
   const totalPages = Math.ceil(filteredProducts.length / PRODUCTS_PER_PAGE);
   const startIndex = (currentPage - 1) * PRODUCTS_PER_PAGE;
@@ -76,7 +78,7 @@ export default function ScrubsPage() {
             );
           case 'size':
             return filterValues.some(size =>
-              product.sizes.some(productSize =>
+              product.sizes.some((productSize: any) =>
                 productSize.toLowerCase() === size.toLowerCase()
               )
             );
@@ -160,93 +162,228 @@ export default function ScrubsPage() {
             <h2 className="text-lg font-medium text-muted-foreground">
               Showing {filteredProducts.length} items
             </h2>
-            <SortDropdown onSortChange={handleSortChange} />
+            <div className="flex items-center gap-2">
+              <SortDropdown onSortChange={handleSortChange} />
+              <div className="flex border rounded-md">
+                <Button
+                  variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                  size="sm"
+                  className="rounded-r-none"
+                  onClick={() => setViewMode('grid')}
+                >
+                  Grid
+                </Button>
+                <Button
+                  variant={viewMode === 'list' ? 'default' : 'ghost'}
+                  size="sm"
+                  className="rounded-none"
+                  onClick={() => setViewMode('list')}
+                >
+                  List
+                </Button>
+                <Button
+                  variant={viewMode === 'virtual' ? 'default' : 'ghost'}
+                  size="sm"
+                  className="rounded-l-none"
+                  onClick={() => setViewMode('virtual')}
+                >
+                  Virtual
+                </Button>
+              </div>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-            {currentProducts.map((product) => (
-              <Card
-                key={product.id}
-                className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer group"
-                onClick={() => setLocation(`/product/${product.id}`)}
-              >
-                {/* Product Image */}
-                <div className="relative h-64 bg-muted overflow-hidden">
-                  <img 
-                    src={product.image} 
-                    alt={product.name}
-                    className="absolute inset-0 w-full h-full object-cover opacity-60"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-                  
-                  {/* Badges */}
-                  <div className="absolute top-3 left-3 flex flex-col gap-1">
-                    {product.isNew && <Badge className="text-xs font-bold">NEW</Badge>}
-                    {product.isOnSale && <Badge variant="destructive" className="text-xs font-bold">SALE</Badge>}
+          {viewMode === 'virtual' ? (
+            <div className="text-center py-12">
+              <p>Virtualized view not available</p>
+            </div>
+          ) : viewMode === 'list' ? (
+            <div className="space-y-4">
+              {currentProducts.map((product: any) => (
+                <Card
+                  key={product.id}
+                  className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer group flex"
+                  onClick={() => setLocation(`/product/${product.id}`)}
+                >
+                  {/* Product Image */}
+                  <div className="relative h-32 w-32 bg-muted overflow-hidden">
+                    <img 
+                      src={product.image} 
+                      alt={product.name}
+                      className="absolute inset-0 w-full h-full object-cover opacity-60"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                    
+                    {/* Badges */}
+                    <div className="absolute top-2 left-2 flex flex-col gap-1">
+                      {product.isNew && <Badge className="text-xs font-bold">NEW</Badge>}
+                      {product.isOnSale && <Badge variant="destructive" className="text-xs font-bold">SALE</Badge>}
+                    </div>
+
+                    {/* Favorite */}
+                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button 
+                        size="sm" 
+                        variant="secondary"
+                        className="h-6 w-6 p-0 rounded-full"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleFavorite(product.id);
+                        }}
+                      >
+                        <Heart 
+                          className={`h-3 w-3 ${favorites.has(product.id) ? 'fill-destructive text-destructive' : ''}`} 
+                        />
+                      </Button>
+                    </div>
                   </div>
 
-                  {/* Favorite */}
-                  <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Button 
-                      size="sm" 
-                      variant="secondary"
-                      className="h-8 w-8 p-0 rounded-full"
+                  {/* Product Info */}
+                  <div className="flex-1 p-4">
+                    <div className="mb-2">
+                      <h3 className="font-semibold text-sm group-hover:text-primary transition-colors">
+                        {product.name}
+                      </h3>
+                      <p className="text-xs text-muted-foreground">{product.brand}</p>
+                    </div>
+
+                    {/* Rating */}
+                    <div className="flex items-center gap-1 mb-2">
+                      <div className="flex">{renderStars(Math.floor(product.rating))}</div>
+                      <span className="text-xs text-muted-foreground">
+                        {product.rating} ({product.reviewCount})
+                      </span>
+                    </div>
+
+                    {/* Price */}
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="font-bold text-lg text-primary">
+                        ${(product.price / 100).toFixed(2)}
+                      </span>
+                      {product.originalPrice && (
+                        <span className="text-sm text-muted-foreground line-through">
+                          ${(product.originalPrice / 100).toFixed(2)}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Colors */}
+                    <div className="flex items-center gap-1 mb-3">
+                      <span className="text-xs text-muted-foreground">Colors:</span>
+                      <div className="flex gap-1">
+                        {product.colors.slice(0, 3).map((color: any, index: any) => (
+                          <div 
+                            key={index}
+                            className="h-3 w-3 rounded-full border"
+                            style={{ backgroundColor: color.toLowerCase() }}
+                          />
+                        ))}
+                        {product.colors.length > 3 && (
+                          <span className="text-xs text-muted-foreground">+{product.colors.length - 3}</span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Add to Cart */}
+                    <Button
+                      size="sm"
                       onClick={(e) => {
                         e.stopPropagation();
-                        toggleFavorite(product.id);
+                        console.log(`Add to cart: ${product.name}`);
                       }}
                     >
-                      <Heart 
-                        className={`h-4 w-4 ${favorites.has(product.id) ? 'fill-destructive text-destructive' : ''}`} 
-                      />
+                      Add to Cart
                     </Button>
                   </div>
-                </div>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+              {currentProducts.map((product: any) => (
+                <Card
+                  key={product.id}
+                  className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer group"
+                  onClick={() => setLocation(`/product/${product.id}`)}
+                >
+                  {/* Product Image */}
+                  <div className="relative h-64 bg-muted overflow-hidden">
+                    <img 
+                      src={product.image} 
+                      alt={product.name}
+                      className="absolute inset-0 w-full h-full object-cover opacity-60"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                    
+                    {/* Badges */}
+                    <div className="absolute top-3 left-3 flex flex-col gap-1">
+                      {product.isNew && <Badge className="text-xs font-bold">NEW</Badge>}
+                      {product.isOnSale && <Badge variant="destructive" className="text-xs font-bold">SALE</Badge>}
+                    </div>
 
-                {/* Product Info */}
-                <div className="p-4">
-                  <div className="mb-2">
-                    <h3 className="font-semibold text-sm group-hover:text-primary transition-colors">
-                      {product.name}
-                    </h3>
-                    <p className="text-xs text-muted-foreground">{product.brand}</p>
+                    {/* Favorite */}
+                    <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button 
+                        size="sm" 
+                        variant="secondary"
+                        className="h-8 w-8 p-0 rounded-full"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleFavorite(product.id);
+                        }}
+                      >
+                        <Heart 
+                          className={`h-4 w-4 ${favorites.has(product.id) ? 'fill-destructive text-destructive' : ''}`} 
+                        />
+                      </Button>
+                    </div>
                   </div>
 
-                  {/* Rating */}
-                  <div className="flex items-center gap-1 mb-2">
-                    <div className="flex">{renderStars(Math.floor(product.rating))}</div>
-                    <span className="text-xs text-muted-foreground">
-                      {product.rating} ({product.reviewCount})
-                    </span>
-                  </div>
+                  {/* Product Info */}
+                  <div className="p-4">
+                    <div className="mb-2">
+                      <h3 className="font-semibold text-sm group-hover:text-primary transition-colors">
+                        {product.name}
+                      </h3>
+                      <p className="text-xs text-muted-foreground">{product.brand}</p>
+                    </div>
 
-                  {/* Price */}
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className="font-bold text-lg text-primary">
-                      ${(product.price / 100).toFixed(2)}
-                    </span>
-                    {product.originalPrice && (
-                      <span className="text-sm text-muted-foreground line-through">
-                        ${(product.originalPrice / 100).toFixed(2)}
+                    {/* Rating */}
+                    <div className="flex items-center gap-1 mb-2">
+                      <div className="flex">{renderStars(Math.floor(product.rating))}</div>
+                      <span className="text-xs text-muted-foreground">
+                        {product.rating} ({product.reviewCount})
                       </span>
-                    )}
-                  </div>
+                    </div>
 
-                  {/* Add to Cart */}
-                  <Button
-                    className="w-full"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      console.log(`Add to cart: ${product.name}`);
-                    }}
-                  >
-                    Add to Cart
-                  </Button>
-                </div>
-              </Card>
-            ))}
-          </div>
+                    {/* Price */}
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="font-bold text-lg text-primary">
+                        ${(product.price / 100).toFixed(2)}
+                      </span>
+                      {product.originalPrice && (
+                        <span className="text-sm text-muted-foreground line-through">
+                          ${(product.originalPrice / 100).toFixed(2)}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Add to Cart */}
+                    <Button
+                      className="w-full"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        console.log(`Add to cart: ${product.name}`);
+                      }}
+                    >
+                      Add to Cart
+                    </Button>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          )}
 
           {/* Pagination */}
           {totalPages > 1 && (

@@ -1,14 +1,43 @@
 import { useState } from 'react';
 import { Link } from 'wouter';
-import { Search, User, ShoppingCart, BookOpen } from 'lucide-react';
+import { Search, User, ShoppingCart, BookOpen, Menu } from 'lucide-react';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import MobileMenu from '@/components/MobileMenu';
+
+const categories = [
+  { 
+    id: 1, 
+    name: "Scrubs", 
+    subcategories: ["Men's Scrubs", "Women's Scrubs", "Children's Scrubs"] 
+  },
+  { 
+    id: 2, 
+    name: "Lab Coats", 
+    subcategories: ["Men's Lab Coats", "Women's Lab Coats", "Children's Lab Coats"] 
+  },
+  { 
+    id: 3, 
+    name: "Shoes", 
+    subcategories: ["Men's Shoes", "Women's Shoes", "Children's Shoes"] 
+  },
+  { 
+    id: 4, 
+    name: "Accessories", 
+    subcategories: ["Scrubs Caps", "Face Masks", "Stethoscopes"] 
+  },
+];
 
 export default function MainHeader() {
   const [searchQuery, setSearchQuery] = useState('');
 
   return (
     <div className="bg-background border-b h-20 flex items-center justify-between px-6" data-testid="main-header">
+      {/* Mobile Menu */}
+      <div className="lg:hidden">
+        <MobileMenu categories={categories} />
+      </div>
+
       {/* Logo */}
       <div className="flex items-center">
         <Link href="/">
@@ -19,7 +48,7 @@ export default function MainHeader() {
             DE
           </div>
         </Link>
-        <div className="ml-3">
+        <div className="ml-3 hidden sm:block">
           <div className="text-lg font-bold text-foreground" data-testid="brand-name">
             DEV Egypt
           </div>
@@ -32,7 +61,7 @@ export default function MainHeader() {
       {/* Account & Cart with Search */}
       <div className="flex items-center space-x-4">
         {/* Search Bar - moved to right, styled to match original */}
-        <div className="relative flex-1 max-w-2xl mx-8">
+        <div className="relative flex-1 max-w-2xl mx-8 hidden lg:block">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
           <Input
             type="search"
@@ -48,14 +77,14 @@ export default function MainHeader() {
         </div>
         <Link 
           href="/blog"
-          className={buttonVariants({ variant: "ghost", size: "icon" }) + " hover-elevate"}
+          className={buttonVariants({ variant: "ghost", size: "icon" }) + " hidden lg:flex hover-elevate"}
           data-testid="blog-button"
         >
           <BookOpen className="h-5 w-5" />
         </Link>
         <Link 
           href="/account"
-          className={buttonVariants({ variant: "ghost", size: "icon" }) + " hover-elevate"}
+          className={buttonVariants({ variant: "ghost", size: "icon" }) + " hidden lg:flex hover-elevate"}
           data-testid="account-button"
         >
           <User className="h-5 w-5" />

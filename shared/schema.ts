@@ -133,6 +133,22 @@ export const orders = sqliteTable("orders", {
   updatedAt: integer("updated_at", { mode: "timestamp" }).default(sql`(strftime('%s', 'now'))`),
 });
 
+// Payments table
+export const payments = sqliteTable("payments", {
+  id: text("id").primaryKey().$defaultFn(generateUUID),
+  orderId: text("order_id").references(() => orders.id).notNull(),
+  paymentIntentId: text("payment_intent_id").notNull(),
+  amount: numeric("amount").notNull(),
+  currency: text("currency").notNull(),
+  status: text("status").notNull(), // pending, succeeded, failed, refunded
+  method: text("method").notNull(), // card, bank_transfer, etc.
+  gateway: text("gateway").notNull(), // stripe, paypal, etc.
+  gatewayReference: text("gateway_reference"), // Reference ID from payment gateway
+  notes: text("notes"),
+  createdAt: integer("created_at", { mode: "timestamp" }).default(sql`(strftime('%s', 'now'))`),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).default(sql`(strftime('%s', 'now'))`),
+});
+
 // Order items table
 export const orderItems = sqliteTable("order_items", {
   id: text("id").primaryKey().$defaultFn(generateUUID),

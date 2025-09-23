@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import OptimizedImage from '@/components/OptimizedImage';
 import femaleWorkerImage from '@assets/generated_images/Female_healthcare_worker_in_scrubs_c9f74238.png';
 import maleWorkerImage from '@assets/generated_images/Male_healthcare_worker_sitting_40871523.png';
 
@@ -137,7 +138,7 @@ export default function ProductShowcase() {
             </div>
             
             {/* Background Image */}
-            <img 
+            <OptimizedImage 
               src={product.image} 
               alt={product.title}
               className="absolute right-0 top-0 h-full w-auto object-cover opacity-20"

@@ -3,40 +3,56 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/componen
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-
-// Mock data for demonstration
-const cartItems = [
-  {
-    id: 1,
-    name: "Women's Stretch V-Neck Top",
-    price: 2499, // in cents
-    quantity: 2,
-    image: "/placeholder.svg",
-  },
-  {
-    id: 2,
-    name: "Men's Unisex Jogger Pant",
-    price: 3299,
-    quantity: 1,
-    image: "/placeholder.svg",
-  },
-];
-
-const subtotal = cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
-const shipping = 500; // $5.00
-const taxes = Math.round(subtotal * 0.07); // 7% tax
-const total = subtotal + shipping + taxes;
+import { useCart } from "@/hooks/useCart";
 
 export default function OrderSummary() {
   const [location, setLocation] = useLocation();
   const { toast } = useToast();
+  const { cartItems } = useCart();
+
+  // Calculate totals
+  const subtotal = cartItems.reduce((acc, item) => {
+    const price = parseFloat(item.product?.price || '0');
+    return acc + (price * item.quantity);
+  }, 0);
+  
+  const shipping = subtotal > 50 ? 0 : 7.99; // Free shipping over $50
+  const taxes = subtotal * 0.0875; // 8.75% tax
+  const total = subtotal + shipping + taxes;
 
   const handlePlaceOrder = async () => {
     try {
-      const response = await fetch("/api/orders", {
+      // Collect shipping and payment information
+      // For now, we'll use mock data
+      const checkoutData = {
+        items: cartItems.map(item => ({
+          productId: item.productId,
+          quantity: item.quantity,
+          price: parseFloat(item.product?.price || '0')
+        })),
+        subtotal,
+        shipping,
+        taxes,
+        total,
+        currency: "USD",
+        firstName: "John",
+        lastName: "Doe",
+        email: "john.doe@example.com",
+        phone: "+1234567890",
+        billingAddressId: "mock-billing-address",
+        shippingAddressId: "mock-shipping-address",
+        paymentMethod: "card",
+        paymentStatus: "pending"
+      };
+
+      // Send checkout data to the server
+      const response = await fetch("/api/checkout", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ cartItems, total }),
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("token")}`
+        },
+        body: JSON.stringify(checkoutData),
       });
 
       const data = await response.json();
@@ -47,11 +63,11 @@ export default function OrderSummary() {
 
       toast({
         title: "Order Placed!",
-        description: `Your order #${data.orderId} has been confirmed.`,
+        description: `Your order #${data.order.orderNumber} has been confirmed.`,
       });
 
-      // Redirect to a success page (which we would create next)
-      setLocation(`/order-success?orderId=${data.orderId}`);
+      // Redirect to a success page
+      setLocation(`/order-success?orderId=${data.order.orderNumber}`);
 
     } catch (error) {
       let errorMessage = "An unexpected error occurred.";
@@ -76,10 +92,12 @@ export default function OrderSummary() {
           {cartItems.map((item) => (
             <div key={item.id} className="flex justify-between items-center">
               <div>
-                <p className="font-medium">{item.name}</p>
+                <p className="font-medium">{item.product?.name}</p>
                 <p className="text-muted-foreground">Qty: {item.quantity}</p>
               </div>
-              <p className="font-medium">${((item.price * item.quantity) / 100).toFixed(2)}</p>
+              <p className="font-medium">
+                ${(parseFloat(item.product?.price || '0') * item.quantity).toFixed(2)}
+              </p>
             </div>
           ))}
         </div>
@@ -87,25 +105,37 @@ export default function OrderSummary() {
         <div className="space-y-1 text-sm">
           <div className="flex justify-between">
             <p className="text-muted-foreground">Subtotal</p>
-            <p>${(subtotal / 100).toFixed(2)}</p>
+            <p>${subtotal.toFixed(2)}</p>
           </div>
           <div className="flex justify-between">
             <p className="text-muted-foreground">Shipping</p>
-            <p>${(shipping / 100).toFixed(2)}</p>
+            <p>
+              {shipping === 0 ? (
+                <span className="text-green-600">FREE</span>
+              ) : (
+                `${shipping.toFixed(2)}`
+              )}
+            </p>
           </div>
           <div className="flex justify-between">
             <p className="text-muted-foreground">Taxes</p>
-            <p>${(taxes / 100).toFixed(2)}</p>
+            <p>${taxes.toFixed(2)}</p>
           </div>
         </div>
         <Separator />
         <div className="flex justify-between font-bold text-lg">
           <p>Total</p>
-          <p>${(total / 100).toFixed(2)}</p>
+          <p>${total.toFixed(2)}</p>
         </div>
       </CardContent>
       <CardFooter>
-        <Button onClick={handlePlaceOrder} className="w-full bg-red-600 hover:bg-red-700 text-white">Place Order</Button>
+        <Button 
+          onClick={handlePlaceOrder} 
+          className="w-full bg-red-600 hover:bg-red-700 text-white"
+          disabled={cartItems.length === 0}
+        >
+          Place Order
+        </Button>
       </CardFooter>
     </Card>
   );

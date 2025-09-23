@@ -6,6 +6,15 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
+// Health check endpoint
+app.get("/api/health", (_req: Request, res: Response) => {
+  res.json({ 
+    status: "ok", 
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
+  });
+});
+
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;

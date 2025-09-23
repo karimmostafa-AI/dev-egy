@@ -38,5 +38,6 @@ export const {
   coupons,
   blogPosts,
   blogCategories,
-  blogPostCategories
+  blogPostCategories,
+  payments
 } = schema;

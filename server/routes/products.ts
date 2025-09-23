@@ -42,6 +42,47 @@ router.get("/", async (req, res) => {
   }
 });
 
+// Search products
+router.get("/search", async (req, res) => {
+  try {
+    const {
+      q: searchQuery,
+      category,
+      brand,
+      minPrice,
+      maxPrice,
+      sortBy,
+      page,
+      limit
+    } = req.query;
+    
+    // Validate search query
+    if (!searchQuery || typeof searchQuery !== 'string') {
+      return res.status(400).json({ message: "Search query is required" });
+    }
+    
+    const filterOptions = {
+      search: searchQuery,
+      category: category as string,
+      brand: brand as string,
+      minPrice: minPrice ? parseFloat(minPrice as string) : undefined,
+      maxPrice: maxPrice ? parseFloat(maxPrice as string) : undefined,
+      sortBy: sortBy as any,
+      page: page ? parseInt(page as string) : undefined,
+      limit: limit ? parseInt(limit as string) : undefined
+    };
+    
+    const result = await productService.getProducts(filterOptions);
+    res.json(result);
+  } catch (error) {
+    let errorMessage = "An unexpected error occurred.";
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    }
+    res.status(500).json({ message: errorMessage });
+  }
+});
+
 // Get product by ID
 router.get("/:id", async (req, res) => {
   try {
