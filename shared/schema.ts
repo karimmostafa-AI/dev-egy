@@ -1,21 +1,17 @@
 import { sql } from "drizzle-orm";
-import { sqliteTable, text, integer, numeric, primaryKey, index, uniqueIndex } from "drizzle-orm/sqlite-core";
+import { pgTable, text, integer, numeric, boolean, timestamp, uuid } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
-import { randomUUID } from "crypto";
-
-// Helper function to generate UUID for SQLite
-const generateUUID = () => randomUUID();
 
 // Users table
-export const users = sqliteTable("users", {
-  id: text("id").primaryKey().$defaultFn(generateUUID),
+export const users = pgTable("users", {
+  id: uuid("id").primaryKey().defaultRandom(),
   fullName: text("full_name").notNull(),
   email: text("email").notNull().unique(),
   passwordHash: text("password_hash").notNull(),
   role: text("role").default("customer"), // 'customer', 'admin', 'super_admin', 'manager'
-  createdAt: integer("created_at", { mode: "timestamp" }).default(sql`(strftime('%s', 'now'))`),
-  updatedAt: integer("updated_at", { mode: "timestamp" }).default(sql`(strftime('%s', 'now'))`),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 const baseInsertUserSchema = createInsertSchema(users);
@@ -33,32 +29,32 @@ export type InsertUser = z.infer<typeof insertUserSchema> & { password?: string 
 export type User = typeof users.$inferSelect;
 
 // Categories table
-export const categories = sqliteTable("categories", {
-  id: text("id").primaryKey().$defaultFn(generateUUID),
+export const categories = pgTable("categories", {
+  id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),
   slug: text("slug").notNull().unique(),
   description: text("description"),
-  parentId: text("parent_id"),
+  parentId: uuid("parent_id"),
   image: text("image"), // Category image URL
-  createdAt: integer("created_at", { mode: "timestamp" }).default(sql`(strftime('%s', 'now'))`),
-  updatedAt: integer("updated_at", { mode: "timestamp" }).default(sql`(strftime('%s', 'now'))`),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Brands table
-export const brands = sqliteTable("brands", {
-  id: text("id").primaryKey().$defaultFn(generateUUID),
+export const brands = pgTable("brands", {
+  id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),
   slug: text("slug").notNull().unique(),
   description: text("description"),
   logo: text("logo"),
-  isFeatured: integer("is_featured", { mode: "boolean" }).default(false),
-  createdAt: integer("created_at", { mode: "timestamp" }).default(sql`(strftime('%s', 'now'))`),
-  updatedAt: integer("updated_at", { mode: "timestamp" }).default(sql`(strftime('%s', 'now'))`),
+  isFeatured: boolean("is_featured").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Products table
-export const products = sqliteTable("products", {
-  id: text("id").primaryKey().$defaultFn(generateUUID),
+export const products = pgTable("products", {
+  id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),
   slug: text("slug").notNull().unique(),
   description: text("description"),
@@ -67,33 +63,33 @@ export const products = sqliteTable("products", {
   price: numeric("price").notNull(),
   comparePrice: numeric("compare_price"),
   costPerItem: numeric("cost_per_item"),
-  categoryId: text("category_id").references(() => categories.id),
-  brandId: text("brand_id").references(() => brands.id),
-  isFeatured: integer("is_featured", { mode: "boolean" }).default(false),
-  isAvailable: integer("is_available", { mode: "boolean" }).default(true),
+  categoryId: uuid("category_id").references(() => categories.id),
+  brandId: uuid("brand_id").references(() => brands.id),
+  isFeatured: boolean("is_featured").default(false),
+  isAvailable: boolean("is_available").default(true),
   inventoryQuantity: integer("inventory_quantity").default(0),
-  allowOutOfStockPurchases: integer("allow_out_of_stock_purchases", { mode: "boolean" }).default(false),
+  allowOutOfStockPurchases: boolean("allow_out_of_stock_purchases").default(false),
   weight: numeric("weight"),
   weightUnit: text("weight_unit"),
-  createdAt: integer("created_at", { mode: "timestamp" }).default(sql`(strftime('%s', 'now'))`),
-  updatedAt: integer("updated_at", { mode: "timestamp" }).default(sql`(strftime('%s', 'now'))`),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Product images table
-export const productImages = sqliteTable("product_images", {
-  id: text("id").primaryKey().$defaultFn(generateUUID),
-  productId: text("product_id").references(() => products.id).notNull(),
+export const productImages = pgTable("product_images", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  productId: uuid("product_id").references(() => products.id).notNull(),
   url: text("url").notNull(),
   alt: text("alt"),
-  isPrimary: integer("is_primary", { mode: "boolean" }).default(false),
+  isPrimary: boolean("is_primary").default(false),
   sortOrder: integer("sort_order").default(0),
-  createdAt: integer("created_at", { mode: "timestamp" }).default(sql`(strftime('%s', 'now'))`),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 // Addresses table
-export const addresses = sqliteTable("addresses", {
-  id: text("id").primaryKey().$defaultFn(generateUUID),
-  userId: text("user_id").references(() => users.id).notNull(),
+export const addresses = pgTable("addresses", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").references(() => users.id).notNull(),
   firstName: text("first_name").notNull(),
   lastName: text("last_name").notNull(),
   company: text("company"),
@@ -104,15 +100,15 @@ export const addresses = sqliteTable("addresses", {
   country: text("country").notNull(),
   zip: text("zip").notNull(),
   phone: text("phone"),
-  isDefault: integer("is_default", { mode: "boolean" }).default(false),
-  createdAt: integer("created_at", { mode: "timestamp" }).default(sql`(strftime('%s', 'now'))`),
-  updatedAt: integer("updated_at", { mode: "timestamp" }).default(sql`(strftime('%s', 'now'))`),
+  isDefault: boolean("is_default").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Orders table
-export const orders = sqliteTable("orders", {
-  id: text("id").primaryKey().$defaultFn(generateUUID),
-  userId: text("user_id").references(() => users.id),
+export const orders = pgTable("orders", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").references(() => users.id),
   orderNumber: text("order_number").notNull().unique(),
   status: text("status").notNull().default("pending"), // pending, confirmed, processing, shipped, delivered, cancelled
   subtotal: numeric("subtotal").notNull(),
@@ -124,22 +120,22 @@ export const orders = sqliteTable("orders", {
   lastName: text("last_name").notNull(),
   email: text("email").notNull(),
   phone: text("phone"),
-  billingAddressId: text("billing_address_id").references(() => addresses.id),
-  shippingAddressId: text("shipping_address_id").references(() => addresses.id),
+  billingAddressId: uuid("billing_address_id").references(() => addresses.id),
+  shippingAddressId: uuid("shipping_address_id").references(() => addresses.id),
   notes: text("notes"),
   paymentMethod: text("payment_method"),
   paymentStatus: text("payment_status").notNull().default("pending"), // pending, paid, failed, refunded
-  shippedAt: integer("shipped_at", { mode: "timestamp" }),
-  deliveredAt: integer("delivered_at", { mode: "timestamp" }),
-  cancelledAt: integer("cancelled_at", { mode: "timestamp" }),
-  createdAt: integer("created_at", { mode: "timestamp" }).default(sql`(strftime('%s', 'now'))`),
-  updatedAt: integer("updated_at", { mode: "timestamp" }).default(sql`(strftime('%s', 'now'))`),
+  shippedAt: timestamp("shipped_at"),
+  deliveredAt: timestamp("delivered_at"),
+  cancelledAt: timestamp("cancelled_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Payments table
-export const payments = sqliteTable("payments", {
-  id: text("id").primaryKey().$defaultFn(generateUUID),
-  orderId: text("order_id").references(() => orders.id).notNull(),
+export const payments = pgTable("payments", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  orderId: uuid("order_id").references(() => orders.id).notNull(),
   paymentIntentId: text("payment_intent_id").notNull(),
   amount: numeric("amount").notNull(),
   currency: text("currency").notNull(),
@@ -148,141 +144,141 @@ export const payments = sqliteTable("payments", {
   gateway: text("gateway").notNull(), // stripe, paypal, etc.
   gatewayReference: text("gateway_reference"), // Reference ID from payment gateway
   notes: text("notes"),
-  createdAt: integer("created_at", { mode: "timestamp" }).default(sql`(strftime('%s', 'now'))`),
-  updatedAt: integer("updated_at", { mode: "timestamp" }).default(sql`(strftime('%s', 'now'))`),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Order items table
-export const orderItems = sqliteTable("order_items", {
-  id: text("id").primaryKey().$defaultFn(generateUUID),
-  orderId: text("order_id").references(() => orders.id).notNull(),
-  productId: text("product_id").references(() => products.id).notNull(),
+export const orderItems = pgTable("order_items", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  orderId: uuid("order_id").references(() => orders.id).notNull(),
+  productId: uuid("product_id").references(() => products.id).notNull(),
   name: text("name").notNull(),
   sku: text("sku").notNull(),
   price: numeric("price").notNull(),
   quantity: integer("quantity").notNull(),
-  createdAt: integer("created_at", { mode: "timestamp" }).default(sql`(strftime('%s', 'now'))`),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 // Carts table
-export const carts = sqliteTable("carts", {
-  id: text("id").primaryKey().$defaultFn(generateUUID),
-  userId: text("user_id").references(() => users.id),
+export const carts = pgTable("carts", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").references(() => users.id),
   sessionId: text("session_id"),
-  createdAt: integer("created_at", { mode: "timestamp" }).default(sql`(strftime('%s', 'now'))`),
-  updatedAt: integer("updated_at", { mode: "timestamp" }).default(sql`(strftime('%s', 'now'))`),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Cart items table
-export const cartItems = sqliteTable("cart_items", {
-  id: text("id").primaryKey().$defaultFn(generateUUID),
-  cartId: text("cart_id").references(() => carts.id).notNull(),
-  productId: text("product_id").references(() => products.id).notNull(),
+export const cartItems = pgTable("cart_items", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  cartId: uuid("cart_id").references(() => carts.id).notNull(),
+  productId: uuid("product_id").references(() => products.id).notNull(),
   quantity: integer("quantity").notNull(),
-  createdAt: integer("created_at", { mode: "timestamp" }).default(sql`(strftime('%s', 'now'))`),
-  updatedAt: integer("updated_at", { mode: "timestamp" }).default(sql`(strftime('%s', 'now'))`),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Collections table
-export const collections = sqliteTable("collections", {
-  id: text("id").primaryKey().$defaultFn(generateUUID),
+export const collections = pgTable("collections", {
+  id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),
   slug: text("slug").notNull().unique(),
   description: text("description"),
   image: text("image"),
-  isPublished: integer("is_published", { mode: "boolean" }).default(false),
-  createdAt: integer("created_at", { mode: "timestamp" }).default(sql`(strftime('%s', 'now'))`),
-  updatedAt: integer("updated_at", { mode: "timestamp" }).default(sql`(strftime('%s', 'now'))`),
+  isPublished: boolean("is_published").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Collection products table
-export const collectionProducts = sqliteTable("collection_products", {
-  id: text("id").primaryKey().$defaultFn(generateUUID),
-  collectionId: text("collection_id").references(() => collections.id).notNull(),
-  productId: text("product_id").references(() => products.id).notNull(),
+export const collectionProducts = pgTable("collection_products", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  collectionId: uuid("collection_id").references(() => collections.id).notNull(),
+  productId: uuid("product_id").references(() => products.id).notNull(),
   sortOrder: integer("sort_order").default(0),
-  createdAt: integer("created_at", { mode: "timestamp" }).default(sql`(strftime('%s', 'now'))`),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 // Wishlists table
-export const wishlists = sqliteTable("wishlists", {
-  id: text("id").primaryKey().$defaultFn(generateUUID),
-  userId: text("user_id").references(() => users.id).notNull(),
+export const wishlists = pgTable("wishlists", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").references(() => users.id).notNull(),
   name: text("name").notNull().default("My Wishlist"),
-  isPublic: integer("is_public", { mode: "boolean" }).default(false),
-  createdAt: integer("created_at", { mode: "timestamp" }).default(sql`(strftime('%s', 'now'))`),
-  updatedAt: integer("updated_at", { mode: "timestamp" }).default(sql`(strftime('%s', 'now'))`),
+  isPublic: boolean("is_public").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Wishlist items table
-export const wishlistItems = sqliteTable("wishlist_items", {
-  id: text("id").primaryKey().$defaultFn(generateUUID),
-  wishlistId: text("wishlist_id").references(() => wishlists.id).notNull(),
-  productId: text("product_id").references(() => products.id).notNull(),
-  createdAt: integer("created_at", { mode: "timestamp" }).default(sql`(strftime('%s', 'now'))`),
+export const wishlistItems = pgTable("wishlist_items", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  wishlistId: uuid("wishlist_id").references(() => wishlists.id).notNull(),
+  productId: uuid("product_id").references(() => products.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 // Reviews table
-export const reviews = sqliteTable("reviews", {
-  id: text("id").primaryKey().$defaultFn(generateUUID),
-  userId: text("user_id").references(() => users.id).notNull(),
-  productId: text("product_id").references(() => products.id).notNull(),
+export const reviews = pgTable("reviews", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").references(() => users.id).notNull(),
+  productId: uuid("product_id").references(() => products.id).notNull(),
   rating: integer("rating").notNull(), // 1-5
   title: text("title").notNull(),
   comment: text("comment").notNull(),
-  isVerifiedPurchase: integer("is_verified_purchase", { mode: "boolean" }).default(false),
-  isApproved: integer("is_approved", { mode: "boolean" }).default(false),
-  createdAt: integer("created_at", { mode: "timestamp" }).default(sql`(strftime('%s', 'now'))`),
-  updatedAt: integer("updated_at", { mode: "timestamp" }).default(sql`(strftime('%s', 'now'))`),
+  isVerifiedPurchase: boolean("is_verified_purchase").default(false),
+  isApproved: boolean("is_approved").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Coupons table
-export const coupons = sqliteTable("coupons", {
-  id: text("id").primaryKey().$defaultFn(generateUUID),
+export const coupons = pgTable("coupons", {
+  id: uuid("id").primaryKey().defaultRandom(),
   code: text("code").notNull().unique(),
   type: text("type").notNull(), // percentage, fixed_amount
   value: numeric("value").notNull(),
   minimumAmount: numeric("minimum_amount"),
   usageLimit: integer("usage_limit"),
   usedCount: integer("used_count").default(0),
-  isActive: integer("is_active", { mode: "boolean" }).default(true),
-  startDate: integer("start_date", { mode: "timestamp" }).notNull(),
-  endDate: integer("end_date", { mode: "timestamp" }),
-  createdAt: integer("created_at", { mode: "timestamp" }).default(sql`(strftime('%s', 'now'))`),
-  updatedAt: integer("updated_at", { mode: "timestamp" }).default(sql`(strftime('%s', 'now'))`),
+  isActive: boolean("is_active").default(true),
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Blog posts table
-export const blogPosts = sqliteTable("blog_posts", {
-  id: text("id").primaryKey().$defaultFn(generateUUID),
+export const blogPosts = pgTable("blog_posts", {
+  id: uuid("id").primaryKey().defaultRandom(),
   title: text("title").notNull(),
   slug: text("slug").notNull().unique(),
   content: text("content").notNull(),
   excerpt: text("excerpt"),
   featuredImage: text("featured_image"),
-  isPublished: integer("is_published", { mode: "boolean" }).default(false),
-  publishedAt: integer("published_at", { mode: "timestamp" }),
-  authorId: text("author_id").references(() => users.id),
-  createdAt: integer("created_at", { mode: "timestamp" }).default(sql`(strftime('%s', 'now'))`),
-  updatedAt: integer("updated_at", { mode: "timestamp" }).default(sql`(strftime('%s', 'now'))`),
+  isPublished: boolean("is_published").default(false),
+  publishedAt: timestamp("published_at"),
+  authorId: uuid("author_id").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Blog categories table
-export const blogCategories = sqliteTable("blog_categories", {
-  id: text("id").primaryKey().$defaultFn(generateUUID),
+export const blogCategories = pgTable("blog_categories", {
+  id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),
   slug: text("slug").notNull().unique(),
   description: text("description"),
-  createdAt: integer("created_at", { mode: "timestamp" }).default(sql`(strftime('%s', 'now'))`),
-  updatedAt: integer("updated_at", { mode: "timestamp" }).default(sql`(strftime('%s', 'now'))`),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Blog post categories table
-export const blogPostCategories = sqliteTable("blog_post_categories", {
-  id: text("id").primaryKey().$defaultFn(generateUUID),
-  postId: text("post_id").references(() => blogPosts.id).notNull(),
-  categoryId: text("category_id").references(() => blogCategories.id).notNull(),
-  createdAt: integer("created_at", { mode: "timestamp" }).default(sql`(strftime('%s', 'now'))`),
+export const blogPostCategories = pgTable("blog_post_categories", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  postId: uuid("post_id").references(() => blogPosts.id).notNull(),
+  categoryId: uuid("category_id").references(() => blogCategories.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 // ===== COMPREHENSIVE ZOD VALIDATION SCHEMAS FOR ADMIN ENDPOINTS =====

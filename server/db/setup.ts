@@ -1,19 +1,16 @@
-import { drizzle } from "drizzle-orm/better-sqlite3";
-import { migrate } from "drizzle-orm/better-sqlite3/migrator";
-import Database from "better-sqlite3";
+import { drizzle } from "drizzle-orm/neon-http";
+import { migrate } from "drizzle-orm/neon-http/migrator";
+import { neon } from "@neondatabase/serverless";
 import * as schema from "../../shared/schema";
 
 async function setupDatabase() {
   console.log("Setting up database...");
   
-  // Create SQLite database connection
-  const sqlite = new Database("dev-egypt.db");
-  
-  // Enable foreign key constraints
-  sqlite.exec("PRAGMA foreign_keys = ON;");
+  // Create PostgreSQL database connection using Neon
+  const sql = neon(process.env.DATABASE_URL!);
   
   // Create drizzle instance
-  const db = drizzle(sqlite, { schema });
+  const db = drizzle(sql, { schema });
   
   try {
     // Run migrations
@@ -22,8 +19,6 @@ async function setupDatabase() {
     console.log("✅ Database setup complete!");
   } catch (error) {
     console.error("❌ Error setting up database:", error);
-  } finally {
-    sqlite.close();
   }
 }
 
