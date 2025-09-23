@@ -168,7 +168,7 @@ router.get("/orders", requireAdmin, asyncHandler(async (req: Request, res: Respo
   const { status, search } = req.query;
   
   // Build query with filters
-  let query = db.select({
+  const baseQuery = db.select({
     id: orders.id,
     orderNumber: orders.orderNumber,
     createdAt: orders.createdAt,
@@ -184,13 +184,10 @@ router.get("/orders", requireAdmin, asyncHandler(async (req: Request, res: Respo
     notes: orders.notes
   }).from(orders);
   
-  // Apply status filter
-  if (status && status !== 'all') {
-    query = query.where(eq(orders.status, status as string));
-  }
-  
-  // Execute query
-  const allOrders = await query.orderBy(desc(orders.createdAt));
+  // Execute query with conditional filter
+  const allOrders = status && status !== 'all' 
+    ? await baseQuery.where(eq(orders.status, status as string)).orderBy(desc(orders.createdAt))
+    : await baseQuery.orderBy(desc(orders.createdAt));
   
   // Apply pagination
   const paginatedOrders = applyPagination(allOrders, page, limit);
@@ -354,19 +351,17 @@ router.get("/products", requireAdmin, asyncHandler(async (req: Request, res: Res
   const { categoryId, search } = req.query;
   
   // Build query with joins
-  let query = db.select({
+  const baseQuery = db.select({
     product: products,
     category: categories
   })
   .from(products)
   .leftJoin(categories, eq(products.categoryId, categories.id));
   
-  // Apply filters
-  if (categoryId) {
-    query = query.where(eq(products.categoryId, categoryId as string));
-  }
-  
-  const allProducts = await query.orderBy(desc(products.createdAt));
+  // Execute query with conditional filter
+  const allProducts = categoryId 
+    ? await baseQuery.where(eq(products.categoryId, categoryId as string)).orderBy(desc(products.createdAt))
+    : await baseQuery.orderBy(desc(products.createdAt));
   
   // Format products
   const formattedProducts = allProducts.map(item => ({
@@ -375,15 +370,14 @@ router.get("/products", requireAdmin, asyncHandler(async (req: Request, res: Res
     slug: item.product.slug,
     description: item.product.description,
     price: formatDecimal(item.product.price),
-    discountPrice: item.product.discountPrice ? formatDecimal(item.product.discountPrice) : null,
-    images: item.product.images ? JSON.parse(item.product.images) : [],
+    comparePrice: item.product.comparePrice ? formatDecimal(item.product.comparePrice) : null,
     category: item.category ? {
       id: item.category.id,
       name: item.category.name
     } : null,
-    stock: item.product.stock,
+    inventoryQuantity: item.product.inventoryQuantity,
     sku: item.product.sku,
-    featured: item.product.featured,
+    isFeatured: item.product.isFeatured,
     createdAt: item.product.createdAt,
     updatedAt: item.product.updatedAt
   }));
@@ -416,17 +410,14 @@ router.get("/products/:id", requireAdmin, asyncHandler(async (req: Request, res:
     slug: item.product.slug,
     description: item.product.description,
     price: formatDecimal(item.product.price),
-    discountPrice: item.product.discountPrice ? formatDecimal(item.product.discountPrice) : null,
-    images: item.product.images ? JSON.parse(item.product.images) : [],
-    colors: item.product.colors ? JSON.parse(item.product.colors) : [],
-    sizes: item.product.sizes ? JSON.parse(item.product.sizes) : [],
+    comparePrice: item.product.comparePrice ? formatDecimal(item.product.comparePrice) : null,
     category: item.category ? {
       id: item.category.id,
       name: item.category.name
     } : null,
-    stock: item.product.stock,
+    inventoryQuantity: item.product.inventoryQuantity,
     sku: item.product.sku,
-    featured: item.product.featured,
+    isFeatured: item.product.isFeatured,
     createdAt: item.product.createdAt,
     updatedAt: item.product.updatedAt
   };
@@ -447,11 +438,8 @@ router.post("/products", requireAdmin, asyncHandler(async (req: Request, res: Re
   const [newProduct] = await db.insert(products).values({
     ...data,
     slug,
-    images: JSON.stringify(data.images || []),
-    colors: JSON.stringify(data.colors || []),
-    sizes: JSON.stringify(data.sizes || []),
     price: data.price.toString(),
-    discountPrice: data.discountPrice ? data.discountPrice.toString() : null,
+    comparePrice: data.comparePrice ? data.comparePrice.toString() : null,
     createdAt: new Date(),
     updatedAt: new Date()
   }).returning();
@@ -459,10 +447,7 @@ router.post("/products", requireAdmin, asyncHandler(async (req: Request, res: Re
   res.status(201).json(successResponse({
     ...newProduct,
     price: formatDecimal(newProduct.price),
-    discountPrice: newProduct.discountPrice ? formatDecimal(newProduct.discountPrice) : null,
-    images: JSON.parse(newProduct.images),
-    colors: JSON.parse(newProduct.colors),
-    sizes: JSON.parse(newProduct.sizes)
+    comparePrice: newProduct.comparePrice ? formatDecimal(newProduct.comparePrice) : null
   }, 'Product created successfully'));
 }));
 
@@ -472,20 +457,11 @@ router.put("/products/:id", requireAdmin, asyncHandler(async (req: Request, res:
   
   const updateData: any = { ...data, updatedAt: new Date() };
   
-  if (data.images) {
-    updateData.images = JSON.stringify(data.images);
-  }
-  if (data.colors) {
-    updateData.colors = JSON.stringify(data.colors);
-  }
-  if (data.sizes) {
-    updateData.sizes = JSON.stringify(data.sizes);
-  }
   if (data.price !== undefined) {
     updateData.price = data.price.toString();
   }
-  if (data.discountPrice !== undefined) {
-    updateData.discountPrice = data.discountPrice ? data.discountPrice.toString() : null;
+  if (data.comparePrice !== undefined) {
+    updateData.comparePrice = data.comparePrice ? data.comparePrice.toString() : null;
   }
   
   const [updatedProduct] = await db.update(products)
@@ -500,10 +476,7 @@ router.put("/products/:id", requireAdmin, asyncHandler(async (req: Request, res:
   res.json(successResponse({
     ...updatedProduct,
     price: formatDecimal(updatedProduct.price),
-    discountPrice: updatedProduct.discountPrice ? formatDecimal(updatedProduct.discountPrice) : null,
-    images: JSON.parse(updatedProduct.images),
-    colors: JSON.parse(updatedProduct.colors),
-    sizes: JSON.parse(updatedProduct.sizes)
+    comparePrice: updatedProduct.comparePrice ? formatDecimal(updatedProduct.comparePrice) : null
   }, 'Product updated successfully'));
 }));
 
@@ -611,7 +584,7 @@ router.get("/reviews", requireAdmin, asyncHandler(async (req: Request, res: Resp
   const { page, limit } = validatePaginationParams(req);
   const { productId, isApproved } = req.query;
   
-  let query = db.select({
+  const baseQuery = db.select({
     review: reviews,
     product: products,
     user: users
@@ -620,15 +593,19 @@ router.get("/reviews", requireAdmin, asyncHandler(async (req: Request, res: Resp
   .leftJoin(products, eq(reviews.productId, products.id))
   .leftJoin(users, eq(reviews.userId, users.id));
   
+  // Build conditions array
+  const conditions = [];
   if (productId) {
-    query = query.where(eq(reviews.productId, productId as string));
+    conditions.push(eq(reviews.productId, productId as string));
   }
-  
   if (isApproved !== undefined) {
-    query = query.where(eq(reviews.isApproved, isApproved === 'true'));
+    conditions.push(eq(reviews.isApproved, isApproved === 'true'));
   }
   
-  const allReviews = await query.orderBy(desc(reviews.createdAt));
+  // Execute query with conditional filters
+  const allReviews = conditions.length > 0
+    ? await baseQuery.where(and(...conditions)).orderBy(desc(reviews.createdAt))
+    : await baseQuery.orderBy(desc(reviews.createdAt));
   
   const formattedReviews = allReviews.map(item => ({
     id: item.review.id,
