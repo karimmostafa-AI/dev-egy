@@ -101,34 +101,34 @@ router.get("/dashboard/analytics", requireAdmin, asyncHandler(async (req: Reques
   .orderBy(desc(orders.createdAt))
   .limit(5);
   
-  // Get sales trends for the last 7 months
+  // Get sales trends for the last 7 months (PostgreSQL compatible)
   const salesTrends = await db.select({
-    month: sql<string>`strftime('%Y-%m', ${orders.createdAt})`,
+    month: sql<string>`to_char(${orders.createdAt}, 'YYYY-MM')`,
     total: sql<number>`COALESCE(SUM(CAST(${orders.total} AS DECIMAL)), 0)`
   })
   .from(orders)
   .where(eq(orders.status, "delivered"))
-  .groupBy(sql`strftime('%Y-%m', ${orders.createdAt})`)
-  .orderBy(sql`strftime('%Y-%m', ${orders.createdAt}) DESC`)
+  .groupBy(sql`to_char(${orders.createdAt}, 'YYYY-MM')`)
+  .orderBy(sql`to_char(${orders.createdAt}, 'YYYY-MM') DESC`)
   .limit(7);
   
   // Format the response data
   const analytics = {
     stats: {
-      totalProducts: productCount?.count || 0,
-      totalCustomers: customerCount?.count || 0,
-      totalOrders: orderCount?.count || 0,
+      totalProducts: Number(productCount?.count || 0),
+      totalCustomers: Number(customerCount?.count || 0),
+      totalOrders: Number(orderCount?.count || 0),
       totalEarnings: formatDecimal(totalEarningsData?.total || 0),
       todayEarnings: formatDecimal(todayEarningsData?.total || 0),
       weeklyEarnings: formatDecimal(weeklyEarningsData?.total || 0),
       monthlyEarnings: formatDecimal(monthlyEarningsData?.total || 0),
     },
     orderStatus: {
-      pending: orderStatusData.find(s => s.status === "pending")?.count || 0,
-      confirmed: orderStatusData.find(s => s.status === "confirmed")?.count || 0,
-      processing: orderStatusData.find(s => s.status === "processing")?.count || 0,
-      delivered: orderStatusData.find(s => s.status === "delivered")?.count || 0,
-      cancelled: orderStatusData.find(s => s.status === "cancelled")?.count || 0,
+      pending: Number(orderStatusData.find(s => s.status === "pending")?.count || 0),
+      confirmed: Number(orderStatusData.find(s => s.status === "confirmed")?.count || 0),
+      processing: Number(orderStatusData.find(s => s.status === "processing")?.count || 0),
+      delivered: Number(orderStatusData.find(s => s.status === "delivered")?.count || 0),
+      cancelled: Number(orderStatusData.find(s => s.status === "cancelled")?.count || 0),
     },
     charts: {
       salesTrends: salesTrends.reverse().map(item => ({
@@ -136,11 +136,11 @@ router.get("/dashboard/analytics", requireAdmin, asyncHandler(async (req: Reques
         value: formatDecimal(item.total)
       })),
       orderStatusDistribution: Object.entries({
-        pending: orderStatusData.find(s => s.status === "pending")?.count || 0,
-        confirmed: orderStatusData.find(s => s.status === "confirmed")?.count || 0,
-        processing: orderStatusData.find(s => s.status === "processing")?.count || 0,
-        delivered: orderStatusData.find(s => s.status === "delivered")?.count || 0,
-        cancelled: orderStatusData.find(s => s.status === "cancelled")?.count || 0,
+        pending: Number(orderStatusData.find(s => s.status === "pending")?.count || 0),
+        confirmed: Number(orderStatusData.find(s => s.status === "confirmed")?.count || 0),
+        processing: Number(orderStatusData.find(s => s.status === "processing")?.count || 0),
+        delivered: Number(orderStatusData.find(s => s.status === "delivered")?.count || 0),
+        cancelled: Number(orderStatusData.find(s => s.status === "cancelled")?.count || 0),
       }).map(([name, value]) => ({ name, value }))
     },
     topSellingProducts: topProducts.map(product => ({

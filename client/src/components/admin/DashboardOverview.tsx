@@ -164,28 +164,28 @@ export default function DashboardOverview() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Total Products"
-          value={data.stats.totalProducts.toLocaleString()}
+          value={Number(data.stats.totalProducts).toLocaleString()}
           change={12}
           icon={Package}
           description="Active products in catalog"
         />
         <StatCard
           title="Total Customers"
-          value={data.stats.totalCustomers.toLocaleString()}
+          value={Number(data.stats.totalCustomers).toLocaleString()}
           change={8}
           icon={Users}
           description="Registered customers"
         />
         <StatCard
           title="Total Orders"
-          value={data.stats.totalOrders.toLocaleString()}
+          value={Number(data.stats.totalOrders).toLocaleString()}
           change={15}
           icon={ShoppingCart}
           description="All time orders"
         />
         <StatCard
           title="Total Revenue"
-          value={`$${data.stats.totalEarnings.toLocaleString()}`}
+          value={`$${Number(data.stats.totalEarnings).toLocaleString()}`}
           change={22}
           icon={DollarSign}
           description="Total earnings"
