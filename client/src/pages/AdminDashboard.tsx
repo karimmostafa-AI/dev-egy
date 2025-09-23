@@ -37,16 +37,18 @@ import { useAdminAuth, withAdminAuth } from "@/contexts/AdminAuthContext";
 import OrderManagement from "./OrderManagement";
 import OrderDetails from "./OrderDetails";
 
-// Placeholder components for routes that will be implemented later
-const ProductManagement = () => <div className="p-6"><h2 className="text-2xl font-bold mb-4">Product Management</h2><p>Coming Soon</p></div>;
-const CustomerManagement = () => <div className="p-6"><h2 className="text-2xl font-bold mb-4">Customer Management</h2><p>Coming Soon</p></div>;
-const CategoryManagement = () => <div className="p-6"><h2 className="text-2xl font-bold mb-4">Category Management</h2><p>Coming Soon</p></div>;
-const CouponManagement = () => <div className="p-6"><h2 className="text-2xl font-bold mb-4">Coupon Management</h2><p>Coming Soon</p></div>;
-const BlogPostManagement = () => <div className="p-6"><h2 className="text-2xl font-bold mb-4">Blog Management</h2><p>Coming Soon</p></div>;
-const ReviewManagement = () => <div className="p-6"><h2 className="text-2xl font-bold mb-4">Review Management</h2><p>Coming Soon</p></div>;
-const CollectionManagement = () => <div className="p-6"><h2 className="text-2xl font-bold mb-4">Collection Management</h2><p>Coming Soon</p></div>;
-const RefundManagement = () => <div className="p-6"><h2 className="text-2xl font-bold mb-4">Refund Management</h2><p>Coming Soon</p></div>;
-const MessagesPage = () => <div className="p-6"><h2 className="text-2xl font-bold mb-4">Messages</h2><p>Coming Soon</p></div>;
+// Import real admin management components
+import AllProducts from "./AllProducts";
+import AllCategories from "./AllCategories";
+import CustomerManagement from "./CustomerManagement";
+import CouponManagement from "./CouponManagement";
+import BlogPostManagement from "./BlogPostManagement";
+import ReviewManagement from "./ReviewManagement";
+import CollectionManagement from "./CollectionManagement";
+import RefundManagement from "./RefundManagement";
+import MessagesPage from "./MessagesPage";
+
+// All management components are now imported as real functional components
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
@@ -249,8 +251,8 @@ function AdminDashboard() {
               <Route path="/admin/" component={DashboardContent} />
               <Route path="/admin/orders" component={OrderManagement} />
               <Route path="/admin/orders*" component={OrderManagement} />
-              <Route path="/admin/products" component={ProductManagement} />
-              <Route path="/admin/categories" component={CategoryManagement} />
+              <Route path="/admin/products" component={AllProducts} />
+              <Route path="/admin/categories" component={AllCategories} />
               <Route path="/admin/customers" component={CustomerManagement} />
               <Route path="/admin/coupons" component={CouponManagement} />
               <Route path="/admin/blog-posts" component={BlogPostManagement} />
