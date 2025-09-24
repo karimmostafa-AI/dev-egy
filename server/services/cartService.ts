@@ -284,4 +284,141 @@ export class CartService {
       throw new Error("Failed to get cart with coupon due to an unexpected error.");
     }
   }
+
+  // Calculate checkout totals for cart
+  async calculateCheckoutTotals(cartId: string, shippingAddress?: any): Promise<any> {
+    try {
+      // Get cart items with products
+      const cartItemsList = await db.select({
+        cartItem: cartItems,
+        product: products
+      })
+      .from(cartItems)
+      .innerJoin(products, eq(cartItems.productId, products.id))
+      .where(eq(cartItems.cartId, cartId));
+
+      // Get cart with coupon
+      const cartWithCoupon = await this.getCartWithCoupon(cartId);
+      
+      if (cartItemsList.length === 0) {
+        return {
+          subtotal: 0,
+          discountAmount: 0,
+          shippingCost: 0,
+          tax: 0,
+          total: 0,
+          items: []
+        };
+      }
+
+      // Calculate subtotal
+      let subtotal = 0;
+      const items = [];
+      
+      for (const item of cartItemsList) {
+        const price = parseFloat(item.product.price as string);
+        const lineTotal = price * item.cartItem.quantity;
+        subtotal += lineTotal;
+        
+        items.push({
+          productId: item.product.id,
+          name: item.product.name,
+          sku: item.product.sku,
+          price: price,
+          quantity: item.cartItem.quantity,
+          lineTotal: lineTotal
+        });
+      }
+
+      // Calculate discount
+      let discountAmount = 0;
+      if (cartWithCoupon.coupon) {
+        discountAmount = parseFloat(cartWithCoupon.cart.discountAmount || '0');
+      }
+
+      // Calculate shipping (free over $50, otherwise $7.99)
+      const shippingCost = subtotal > 50 ? 0 : 7.99;
+
+      // Calculate tax (8.75% - could be made dynamic based on shipping address)
+      const taxableAmount = subtotal - discountAmount;
+      const tax = taxableAmount * 0.0875;
+
+      // Calculate total
+      const total = subtotal - discountAmount + shippingCost + tax;
+
+      return {
+        subtotal: Number(subtotal.toFixed(2)),
+        discountAmount: Number(discountAmount.toFixed(2)),
+        shippingCost: Number(shippingCost.toFixed(2)),
+        tax: Number(tax.toFixed(2)),
+        total: Number(total.toFixed(2)),
+        items,
+        appliedCoupon: cartWithCoupon.coupon
+      };
+    } catch (error) {
+      if (error instanceof Error) {
+        throw new Error(`Failed to calculate checkout totals: ${error.message}`);
+      }
+      throw new Error("Failed to calculate checkout totals due to an unexpected error.");
+    }
+  }
+
+  // Reserve inventory for checkout (simulate inventory management)
+  async reserveInventory(cartId: string): Promise<boolean> {
+    try {
+      const cartItemsList = await db.select({
+        cartItem: cartItems,
+        product: products
+      })
+      .from(cartItems)
+      .innerJoin(products, eq(cartItems.productId, products.id))
+      .where(eq(cartItems.cartId, cartId));
+
+      // Check if all items have sufficient inventory
+      for (const item of cartItemsList) {
+        if (!item.product.allowOutOfStockPurchases && 
+            (item.product.inventoryQuantity || 0) < item.cartItem.quantity) {
+          throw new Error(`Insufficient inventory for ${item.product.name}`);
+        }
+      }
+
+      // In a real implementation, you would actually reserve the inventory here
+      // For now, we'll just return true indicating successful reservation
+      return true;
+    } catch (error) {
+      if (error instanceof Error) {
+        throw new Error(`Failed to reserve inventory: ${error.message}`);
+      }
+      throw new Error("Failed to reserve inventory due to an unexpected error.");
+    }
+  }
+
+  // Update inventory after successful order (decrease quantities)
+  async updateInventoryAfterOrder(cartId: string): Promise<void> {
+    try {
+      const cartItemsList = await db.select({
+        cartItem: cartItems,
+        product: products
+      })
+      .from(cartItems)
+      .innerJoin(products, eq(cartItems.productId, products.id))
+      .where(eq(cartItems.cartId, cartId));
+
+      // Update inventory quantities
+      for (const item of cartItemsList) {
+        const newQuantity = (item.product.inventoryQuantity || 0) - item.cartItem.quantity;
+        await db.update(products)
+          .set({ 
+            inventoryQuantity: Math.max(0, newQuantity),
+            updatedAt: new Date()
+          })
+          .where(eq(products.id, item.product.id));
+      }
+    } catch (error) {
+      if (error instanceof Error) {
+        throw new Error(`Failed to update inventory: ${error.message}`);
+      }
+      throw new Error("Failed to update inventory due to an unexpected error.");
+    }
+  }
 }

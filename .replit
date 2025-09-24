@@ -28,10 +28,6 @@ localPort = 41211
 externalPort = 5000
 
 [[ports]]
-localPort = 42027
-externalPort = 3001
-
-[[ports]]
 localPort = 44021
 externalPort = 3002
 
@@ -72,3 +68,4 @@ outputType = "webview"
 
 [agent]
 expertMode = true
+integrations = ["javascript_stripe:1.0.0"]
