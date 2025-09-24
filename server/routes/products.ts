@@ -1,10 +1,40 @@
 import { Router } from "express";
 import { ProductService } from "../services/productService";
+import { ProductOptionsService } from "../services/productOptionsService";
 import { AuthService } from "../services/authService";
+import { 
+  insertProductOptionSchema,
+  updateProductOptionSchema,
+  insertProductVariantSchema,
+  updateProductVariantSchema
+} from "@shared/schema";
 
 const router = Router();
 const productService = new ProductService();
+const productOptionsService = new ProductOptionsService();
 const authService = new AuthService();
+
+// Helper function to verify admin authentication
+const verifyAdminAuth = (req: any) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    throw new Error("Authorization token required");
+  }
+  
+  const token = authHeader.substring(7);
+  const decoded = authService.verifyToken(token);
+  
+  if (!decoded) {
+    throw new Error("Invalid or expired token");
+  }
+  
+  // Check if user has admin role
+  if (decoded.role !== 'admin' && decoded.role !== 'super_admin') {
+    throw new Error("Admin access required");
+  }
+  
+  return decoded;
+};
 
 // Get all products with filtering, sorting, and pagination
 router.get("/", async (req, res) => {
@@ -182,6 +212,361 @@ router.post("/:id/reviews", async (req, res) => {
     
     const review = await productService.addProductReview(reviewData);
     res.status(201).json({ review });
+  } catch (error) {
+    let errorMessage = "An unexpected error occurred.";
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    }
+    res.status(500).json({ message: errorMessage });
+  }
+});
+
+// ===== PRODUCT OPTIONS ENDPOINTS =====
+
+// Get all options for a product
+router.get("/:id/options", async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    if (!id) {
+      return res.status(400).json({ message: "Product ID is required" });
+    }
+    
+    const options = await productOptionsService.getProductOptions(id);
+    res.json({ options });
+  } catch (error) {
+    let errorMessage = "An unexpected error occurred.";
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    }
+    res.status(500).json({ message: errorMessage });
+  }
+});
+
+// Create option for product (admin only)
+router.post("/:id/options", async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    if (!id) {
+      return res.status(400).json({ message: "Product ID is required" });
+    }
+    
+    // Verify admin authentication
+    verifyAdminAuth(req);
+    
+    // Validate request body
+    const validationResult = insertProductOptionSchema.safeParse({
+      productId: id,
+      ...req.body
+    });
+    
+    if (!validationResult.success) {
+      return res.status(400).json({ 
+        message: "Validation failed", 
+        errors: validationResult.error.issues 
+      });
+    }
+    
+    const option = await productOptionsService.createProductOption(id, req.body);
+    res.status(201).json({ option });
+  } catch (error) {
+    let errorMessage = "An unexpected error occurred.";
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    }
+    
+    const statusCode = errorMessage.includes("Admin access required") || errorMessage.includes("Authorization") ? 401 : 500;
+    res.status(statusCode).json({ message: errorMessage });
+  }
+});
+
+// Update option (admin only)
+router.put("/:id/options/:optionId", async (req, res) => {
+  try {
+    const { id, optionId } = req.params;
+    
+    if (!id || !optionId) {
+      return res.status(400).json({ message: "Product ID and Option ID are required" });
+    }
+    
+    // Verify admin authentication
+    verifyAdminAuth(req);
+    
+    // Validate request body
+    const validationResult = updateProductOptionSchema.safeParse(req.body);
+    
+    if (!validationResult.success) {
+      return res.status(400).json({ 
+        message: "Validation failed", 
+        errors: validationResult.error.issues 
+      });
+    }
+    
+    const option = await productOptionsService.updateProductOption(id, optionId, validationResult.data);
+    res.json({ option });
+  } catch (error) {
+    let errorMessage = "An unexpected error occurred.";
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    }
+    
+    let statusCode = 500;
+    if (errorMessage.includes("Admin access required") || errorMessage.includes("Authorization")) {
+      statusCode = 401;
+    } else if (errorMessage.includes("not found")) {
+      statusCode = 404;
+    }
+    
+    res.status(statusCode).json({ message: errorMessage });
+  }
+});
+
+// Delete option (admin only)
+router.delete("/:id/options/:optionId", async (req, res) => {
+  try {
+    const { id, optionId } = req.params;
+    
+    if (!id || !optionId) {
+      return res.status(400).json({ message: "Product ID and Option ID are required" });
+    }
+    
+    // Verify admin authentication
+    verifyAdminAuth(req);
+    
+    await productOptionsService.deleteProductOption(id, optionId);
+    res.status(204).send();
+  } catch (error) {
+    let errorMessage = "An unexpected error occurred.";
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    }
+    
+    let statusCode = 500;
+    if (errorMessage.includes("Admin access required") || errorMessage.includes("Authorization")) {
+      statusCode = 401;
+    } else if (errorMessage.includes("not found")) {
+      statusCode = 404;
+    }
+    
+    res.status(statusCode).json({ message: errorMessage });
+  }
+});
+
+// ===== PRODUCT VARIANTS ENDPOINTS =====
+
+// Get all variants for a product
+router.get("/:id/variants", async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    if (!id) {
+      return res.status(400).json({ message: "Product ID is required" });
+    }
+    
+    const variants = await productOptionsService.getProductVariants(id);
+    res.json({ variants });
+  } catch (error) {
+    let errorMessage = "An unexpected error occurred.";
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    }
+    res.status(500).json({ message: errorMessage });
+  }
+});
+
+// Create variant (admin only)
+router.post("/:id/variants", async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    if (!id) {
+      return res.status(400).json({ message: "Product ID is required" });
+    }
+    
+    // Verify admin authentication
+    verifyAdminAuth(req);
+    
+    // Validate request body
+    const validationResult = insertProductVariantSchema.safeParse({
+      productId: id,
+      ...req.body
+    });
+    
+    if (!validationResult.success) {
+      return res.status(400).json({ 
+        message: "Validation failed", 
+        errors: validationResult.error.issues 
+      });
+    }
+    
+    // Validate optionValueIds are provided
+    if (!req.body.optionValueIds || !Array.isArray(req.body.optionValueIds)) {
+      return res.status(400).json({ message: "optionValueIds array is required" });
+    }
+    
+    const variant = await productOptionsService.createProductVariant(id, req.body);
+    res.status(201).json({ variant });
+  } catch (error) {
+    let errorMessage = "An unexpected error occurred.";
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    }
+    
+    const statusCode = errorMessage.includes("Admin access required") || errorMessage.includes("Authorization") ? 401 : 500;
+    res.status(statusCode).json({ message: errorMessage });
+  }
+});
+
+// Update variant (admin only)
+router.put("/:id/variants/:variantId", async (req, res) => {
+  try {
+    const { id, variantId } = req.params;
+    
+    if (!id || !variantId) {
+      return res.status(400).json({ message: "Product ID and Variant ID are required" });
+    }
+    
+    // Verify admin authentication
+    verifyAdminAuth(req);
+    
+    // Validate request body
+    const validationResult = updateProductVariantSchema.safeParse(req.body);
+    
+    if (!validationResult.success) {
+      return res.status(400).json({ 
+        message: "Validation failed", 
+        errors: validationResult.error.issues 
+      });
+    }
+    
+    const variant = await productOptionsService.updateProductVariant(id, variantId, validationResult.data);
+    res.json({ variant });
+  } catch (error) {
+    let errorMessage = "An unexpected error occurred.";
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    }
+    
+    let statusCode = 500;
+    if (errorMessage.includes("Admin access required") || errorMessage.includes("Authorization")) {
+      statusCode = 401;
+    } else if (errorMessage.includes("not found")) {
+      statusCode = 404;
+    }
+    
+    res.status(statusCode).json({ message: errorMessage });
+  }
+});
+
+// Delete variant (admin only)
+router.delete("/:id/variants/:variantId", async (req, res) => {
+  try {
+    const { id, variantId } = req.params;
+    
+    if (!id || !variantId) {
+      return res.status(400).json({ message: "Product ID and Variant ID are required" });
+    }
+    
+    // Verify admin authentication
+    verifyAdminAuth(req);
+    
+    await productOptionsService.deleteProductVariant(id, variantId);
+    res.status(204).send();
+  } catch (error) {
+    let errorMessage = "An unexpected error occurred.";
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    }
+    
+    let statusCode = 500;
+    if (errorMessage.includes("Admin access required") || errorMessage.includes("Authorization")) {
+      statusCode = 401;
+    } else if (errorMessage.includes("not found")) {
+      statusCode = 404;
+    }
+    
+    res.status(statusCode).json({ message: errorMessage });
+  }
+});
+
+// ===== STOCK MANAGEMENT ENDPOINTS =====
+
+// Update variant stock (admin only)
+router.patch("/:id/variants/:variantId/stock", async (req, res) => {
+  try {
+    const { id, variantId } = req.params;
+    const { quantity } = req.body;
+    
+    if (!id || !variantId) {
+      return res.status(400).json({ message: "Product ID and Variant ID are required" });
+    }
+    
+    if (quantity === undefined || typeof quantity !== 'number' || quantity < 0) {
+      return res.status(400).json({ message: "Valid quantity (>= 0) is required" });
+    }
+    
+    // Verify admin authentication
+    verifyAdminAuth(req);
+    
+    const variant = await productOptionsService.updateVariantStock(variantId, quantity);
+    res.json({ variant });
+  } catch (error) {
+    let errorMessage = "An unexpected error occurred.";
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    }
+    
+    let statusCode = 500;
+    if (errorMessage.includes("Admin access required") || errorMessage.includes("Authorization")) {
+      statusCode = 401;
+    } else if (errorMessage.includes("not found")) {
+      statusCode = 404;
+    }
+    
+    res.status(statusCode).json({ message: errorMessage });
+  }
+});
+
+// Check variant availability
+router.get("/:id/variants/:variantId/availability", async (req, res) => {
+  try {
+    const { id, variantId } = req.params;
+    const { quantity = "1" } = req.query;
+    
+    if (!id || !variantId) {
+      return res.status(400).json({ message: "Product ID and Variant ID are required" });
+    }
+    
+    const requestedQuantity = parseInt(quantity as string, 10);
+    if (isNaN(requestedQuantity) || requestedQuantity <= 0) {
+      return res.status(400).json({ message: "Valid quantity (> 0) is required" });
+    }
+    
+    const availability = await productOptionsService.checkVariantAvailability(variantId, requestedQuantity);
+    res.json(availability);
+  } catch (error) {
+    let errorMessage = "An unexpected error occurred.";
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    }
+    
+    const statusCode = errorMessage.includes("not found") ? 404 : 500;
+    res.status(statusCode).json({ message: errorMessage });
+  }
+});
+
+// Get product aggregate stock
+router.get("/:id/stock", async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    if (!id) {
+      return res.status(400).json({ message: "Product ID is required" });
+    }
+    
+    const stockInfo = await productOptionsService.getProductAggregateStock(id);
+    res.json(stockInfo);
   } catch (error) {
     let errorMessage = "An unexpected error occurred.";
     if (error instanceof Error) {
