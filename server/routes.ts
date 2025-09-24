@@ -16,6 +16,8 @@ import paymentRoutes from "./routes/payment";
 import blogRoutes from "./routes/blog";
 import searchRoutes from "./routes/search";
 import couponRoutes from "./routes/coupons";
+import addressRoutes from "./routes/addresses";
+import wishlistRoutes from "./routes/wishlists";
 // Use improved admin routes as primary admin API
 import adminRoutes from "./routes/adminImproved";
 
@@ -37,6 +39,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use("/api/blog", blogRoutes);
   app.use("/api/search", searchRoutes);
   app.use("/api/coupons", couponRoutes);
+  app.use("/api/addresses", addressRoutes);
+  app.use("/api/wishlist", wishlistRoutes);
   app.use("/api/admin", adminRoutes);
 
   // Existing products endpoint with filtering, sorting, and pagination
