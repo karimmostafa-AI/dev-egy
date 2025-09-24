@@ -35,6 +35,15 @@ const BlogPost = lazy(() => import("@/pages/BlogPost"));
 const BrandPage = lazy(() => import("@/pages/BrandPage"));
 const AdminDashboard = lazy(() => import("@/pages/AdminDashboard"));
 const AdminLogin = lazy(() => import("@/pages/AdminLogin"));
+const Search = lazy(() => import("@/pages/Search"));
+const Wishlist = lazy(() => import("@/pages/Wishlist"));
+const OrderDetails = lazy(() => import("@/pages/OrderDetails"));
+const Brands = lazy(() => import("@/pages/Brands"));
+const Collections = lazy(() => import("@/pages/Collections"));
+const CollectionDetail = lazy(() => import("@/pages/CollectionDetail"));
+const ForgotPassword = lazy(() => import("@/pages/ForgotPassword"));
+const ResetPassword = lazy(() => import("@/pages/ResetPassword"));
+const OrderTracking = lazy(() => import("@/pages/OrderTracking"));
 const NotFound = lazy(() => import("@/pages/not-found"));
 
 // Protected Route Component
@@ -71,6 +80,7 @@ function Router() {
           <Route path="/cart" component={Cart} />
           <Route path="/contact" component={ContactUs} />
           <Route path="/faq" component={FAQs} />
+          <Route path="/search" component={Search} />
           <Route path="/product/:slug" component={ProductDetail} />
           <Route path="/auth" component={AuthPage} />
           <Route path="/checkout">
@@ -89,6 +99,18 @@ function Router() {
           <Route path="/blog" component={Blog} />
           <Route path="/blog/:slug" component={BlogPost} />
           <Route path="/brand/:slug" component={BrandPage} />
+          <Route path="/brands" component={Brands} />
+          <Route path="/wishlist">
+            <ProtectedRoute component={Wishlist} />
+          </Route>
+          <Route path="/orders/:id">
+            <ProtectedRoute component={OrderDetails} />
+          </Route>
+          <Route path="/collections" component={Collections} />
+          <Route path="/collections/:slug" component={CollectionDetail} />
+          <Route path="/forgot-password" component={ForgotPassword} />
+          <Route path="/reset-password" component={ResetPassword} />
+          <Route path="/order-tracking" component={OrderTracking} />
           <Route path="/admin/login" component={AdminLogin} />
           <Route path="/admin/:rest*" component={AdminDashboard} />
           <Route path="/admin" component={AdminDashboard} />
