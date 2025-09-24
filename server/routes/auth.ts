@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { UserService } from "../services/userService";
 import { AuthService } from "../services/authService";
+import { forgotPasswordSchema, resetPasswordSchema, verifyResetTokenSchema } from "@shared/schema";
 
 const router = Router();
 const userService = new UserService();
@@ -144,6 +145,123 @@ router.put("/me", async (req, res) => {
       errorMessage = error.message;
     }
     res.status(500).json({ message: errorMessage });
+  }
+});
+
+// Forgot password endpoint - Generate reset token and send email
+router.post("/forgot-password", async (req, res) => {
+  try {
+    // Validate request body using Zod schema
+    const validationResult = forgotPasswordSchema.safeParse(req.body);
+    
+    if (!validationResult.success) {
+      return res.status(400).json({ 
+        message: "Invalid request data", 
+        errors: validationResult.error.errors 
+      });
+    }
+    
+    const { email } = validationResult.data;
+    
+    // Process forgot password request
+    const result = await authService.forgotPassword(email);
+    
+    if (!result.success) {
+      return res.status(400).json({ message: result.message });
+    }
+    
+    res.json({ 
+      success: true, 
+      message: result.message 
+    });
+  } catch (error) {
+    console.error("Forgot password error:", error);
+    let errorMessage = "An unexpected error occurred while processing your request.";
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    }
+    res.status(500).json({ message: errorMessage });
+  }
+});
+
+// Reset password endpoint - Validate token and update password
+router.post("/reset-password", async (req, res) => {
+  try {
+    // Validate request body using Zod schema
+    const validationResult = resetPasswordSchema.safeParse(req.body);
+    
+    if (!validationResult.success) {
+      return res.status(400).json({ 
+        message: "Invalid request data", 
+        errors: validationResult.error.errors 
+      });
+    }
+    
+    const { token, password } = validationResult.data;
+    
+    // Update password using reset token
+    const result = await authService.updatePasswordWithToken(token, password);
+    
+    if (!result.success) {
+      return res.status(400).json({ message: result.message });
+    }
+    
+    res.json({ 
+      success: true, 
+      message: result.message 
+    });
+  } catch (error) {
+    console.error("Reset password error:", error);
+    let errorMessage = "An unexpected error occurred while resetting your password.";
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    }
+    res.status(500).json({ message: errorMessage });
+  }
+});
+
+// Verify reset token endpoint - Check if token is valid and not expired
+router.get("/verify-reset-token", async (req, res) => {
+  try {
+    // Get token from query parameters
+    const { token } = req.query;
+    
+    // Validate request using Zod schema
+    const validationResult = verifyResetTokenSchema.safeParse({ token });
+    
+    if (!validationResult.success) {
+      return res.status(400).json({ 
+        message: "Invalid token parameter", 
+        errors: validationResult.error.errors 
+      });
+    }
+    
+    const { token: validatedToken } = validationResult.data;
+    
+    // Validate the reset token
+    const result = await authService.validateResetToken(validatedToken);
+    
+    if (!result.valid) {
+      return res.status(400).json({ 
+        valid: false, 
+        message: result.message 
+      });
+    }
+    
+    res.json({ 
+      valid: true, 
+      message: result.message 
+    });
+  } catch (error) {
+    console.error("Verify reset token error:", error);
+    let errorMessage = "An unexpected error occurred while verifying the token.";
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    }
+    res.status(500).json({ 
+      valid: false, 
+      message: errorMessage 
+    });
   }
 });
 

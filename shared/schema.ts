@@ -667,3 +667,21 @@ export const insertWishlistItemSchema = createInsertSchema(wishlistItems).omit({
 
 export type InsertWishlistItem = z.infer<typeof insertWishlistItemSchema>;
 export type WishlistItem = typeof wishlistItems.$inferSelect;
+
+// Password reset API endpoint schemas
+export const forgotPasswordSchema = z.object({
+  email: z.string().email("Invalid email format"),
+});
+
+export const resetPasswordSchema = z.object({
+  token: z.string().min(1, "Reset token is required"),
+  password: z.string().min(6, "Password must be at least 6 characters long"),
+});
+
+export const verifyResetTokenSchema = z.object({
+  token: z.string().min(1, "Reset token is required"),
+});
+
+export type ForgotPasswordRequest = z.infer<typeof forgotPasswordSchema>;
+export type ResetPasswordRequest = z.infer<typeof resetPasswordSchema>;
+export type VerifyResetTokenRequest = z.infer<typeof verifyResetTokenSchema>;

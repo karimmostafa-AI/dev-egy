@@ -17,6 +17,7 @@ export const {
   brands,
   products,
   productImages,
+  passwordResetTokens,
   addresses,
   orders,
   orderItems,
