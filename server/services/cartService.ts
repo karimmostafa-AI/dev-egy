@@ -1,5 +1,5 @@
 import { eq, and } from "drizzle-orm";
-import { db, carts, cartItems, products } from "../db";
+import { db, carts, cartItems, products, coupons } from "../db";
 import { InferSelectModel } from "drizzle-orm";
 import { carts as cartsTable, cartItems as cartItemsTable } from "@shared/schema";
 
@@ -143,6 +143,145 @@ export class CartService {
         throw new Error(`Failed to clear cart: ${error.message}`);
       }
       throw new Error("Failed to clear cart due to an unexpected error.");
+    }
+  }
+
+  // Apply coupon to cart
+  async applyCouponToCart(cartId: string, couponCode: string): Promise<any> {
+    try {
+      // Find the coupon
+      const couponResult = await db.select().from(coupons)
+        .where(and(
+          eq(coupons.code, couponCode),
+          eq(coupons.isActive, true)
+        )).limit(1);
+      
+      if (couponResult.length === 0) {
+        throw new Error("Coupon not found or inactive");
+      }
+      
+      const coupon = couponResult[0];
+      
+      // Check if coupon is expired
+      const now = new Date();
+      if (coupon.endDate && new Date(coupon.endDate) < now) {
+        throw new Error("Coupon has expired");
+      }
+      
+      // Check if coupon is not yet active
+      if (new Date(coupon.startDate) > now) {
+        throw new Error("Coupon is not yet active");
+      }
+      
+      // Check usage limit
+      if (coupon.usageLimit && coupon.usedCount !== null && coupon.usedCount >= coupon.usageLimit) {
+        throw new Error("Coupon usage limit exceeded");
+      }
+      
+      // Get cart total
+      const cartItemsList = await db.select({
+        cartItem: cartItems,
+        product: products
+      })
+      .from(cartItems)
+      .innerJoin(products, eq(cartItems.productId, products.id))
+      .where(eq(cartItems.cartId, cartId));
+      
+      let cartTotal = 0;
+      for (const item of cartItemsList) {
+        cartTotal += parseFloat(item.product.price as string) * item.cartItem.quantity;
+      }
+      
+      // Check minimum amount requirement
+      if (coupon.minimumAmount && cartTotal < parseFloat(coupon.minimumAmount as string)) {
+        throw new Error(`Cart total must be at least $${coupon.minimumAmount} to use this coupon`);
+      }
+      
+      // Calculate discount
+      let discount = 0;
+      if (coupon.type === "percentage") {
+        discount = cartTotal * (parseFloat(coupon.value as string) / 100);
+      } else if (coupon.type === "fixed_amount") {
+        discount = parseFloat(coupon.value as string);
+      }
+      
+      // Ensure discount doesn't exceed cart total
+      discount = Math.min(discount, cartTotal);
+      
+      // Update cart with applied coupon
+      const [updatedCart] = await db.update(carts)
+        .set({ 
+          appliedCouponId: coupon.id,
+          discountAmount: discount.toString(),
+          updatedAt: new Date(Math.floor(Date.now() / 1000) * 1000)
+        })
+        .where(eq(carts.id, cartId))
+        .returning();
+      
+      return {
+        cart: updatedCart,
+        coupon: {
+          id: coupon.id,
+          code: coupon.code,
+          type: coupon.type,
+          value: coupon.value,
+          discount: discount.toString()
+        },
+        cartTotal: cartTotal.toString(),
+        discountAmount: discount.toString(),
+        newTotal: (cartTotal - discount).toString()
+      };
+    } catch (error) {
+      if (error instanceof Error) {
+        throw new Error(`Failed to apply coupon: ${error.message}`);
+      }
+      throw new Error("Failed to apply coupon due to an unexpected error.");
+    }
+  }
+
+  // Remove coupon from cart
+  async removeCouponFromCart(cartId: string): Promise<Cart> {
+    try {
+      const [updatedCart] = await db.update(carts)
+        .set({ 
+          appliedCouponId: null,
+          discountAmount: "0",
+          updatedAt: new Date(Math.floor(Date.now() / 1000) * 1000)
+        })
+        .where(eq(carts.id, cartId))
+        .returning();
+      
+      return updatedCart;
+    } catch (error) {
+      if (error instanceof Error) {
+        throw new Error(`Failed to remove coupon from cart: ${error.message}`);
+      }
+      throw new Error("Failed to remove coupon from cart due to an unexpected error.");
+    }
+  }
+
+  // Get cart with coupon details
+  async getCartWithCoupon(cartId: string): Promise<any> {
+    try {
+      const cartResult = await db.select({
+        cart: carts,
+        coupon: coupons
+      })
+      .from(carts)
+      .leftJoin(coupons, eq(carts.appliedCouponId, coupons.id))
+      .where(eq(carts.id, cartId))
+      .limit(1);
+      
+      if (cartResult.length === 0) {
+        throw new Error("Cart not found");
+      }
+      
+      return cartResult[0];
+    } catch (error) {
+      if (error instanceof Error) {
+        throw new Error(`Failed to get cart with coupon: ${error.message}`);
+      }
+      throw new Error("Failed to get cart with coupon due to an unexpected error.");
     }
   }
 }

@@ -26,8 +26,22 @@ import OptimizedImage from "@/components/OptimizedImage";
 
 export default function Cart() {
   const [location, setLocation] = useLocation();
-  const { cartItems, isLoading, error, updateItem, removeItem } = useCart();
+  const { 
+    cartItems, 
+    cart, 
+    appliedCoupon, 
+    isLoading, 
+    error, 
+    updateItem, 
+    removeItem,
+    applyCoupon,
+    removeCoupon,
+    isApplyingCoupon,
+    isRemovingCoupon,
+    couponError 
+  } = useCart();
   const [promoCode, setPromoCode] = useState('');
+  const { toast } = useToast();
 
   const updateQuantity = (itemId: string, newQuantity: number) => {
     if (newQuantity <= 0) {
@@ -48,9 +62,58 @@ export default function Cart() {
     return total + (price * item.quantity);
   }, 0);
   
+  const discountAmount = parseFloat(cart?.discountAmount || '0');
   const shipping = subtotal > 50 ? 0 : 7.99; // Free shipping over $50
-  const tax = subtotal * 0.0875; // 8.75% tax
-  const total = subtotal + shipping + tax;
+  const tax = (subtotal - discountAmount) * 0.0875; // 8.75% tax on discounted amount
+  const total = subtotal - discountAmount + shipping + tax;
+
+  // Handle coupon application
+  const handleApplyCoupon = async () => {
+    if (!promoCode.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a coupon code",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    applyCoupon(promoCode, {
+      onSuccess: () => {
+        toast({
+          title: "Success",
+          description: "Coupon applied successfully!"
+        });
+        setPromoCode('');
+      },
+      onError: (error: any) => {
+        toast({
+          title: "Error",
+          description: error?.message || "Failed to apply coupon",
+          variant: "destructive"
+        });
+      }
+    });
+  };
+
+  // Handle coupon removal
+  const handleRemoveCoupon = async () => {
+    removeCoupon(undefined, {
+      onSuccess: () => {
+        toast({
+          title: "Success",
+          description: "Coupon removed successfully!"
+        });
+      },
+      onError: (error: any) => {
+        toast({
+          title: "Error",
+          description: error?.message || "Failed to remove coupon",
+          variant: "destructive"
+        });
+      }
+    });
+  };
 
   if (isLoading) {
     return (
@@ -190,13 +253,32 @@ export default function Cart() {
                     <span>${subtotal.toFixed(2)}</span>
                   </div>
                   
+                  {appliedCoupon && discountAmount > 0 && (
+                    <div className="flex justify-between items-center text-green-600">
+                      <span className="flex items-center gap-2">
+                        Discount ({appliedCoupon.code})
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={handleRemoveCoupon}
+                          disabled={isRemovingCoupon}
+                          className="h-4 w-4 p-0 text-red-500 hover:text-red-700"
+                          data-testid="button-remove-coupon"
+                        >
+                          ×
+                        </Button>
+                      </span>
+                      <span>-${discountAmount.toFixed(2)}</span>
+                    </div>
+                  )}
+                  
                   <div className="flex justify-between">
                     <span>Shipping</span>
                     <span>
                       {shipping === 0 ? (
                         <span className="text-green-600">FREE</span>
                       ) : (
-                        `${shipping.toFixed(2)}`
+                        `$${shipping.toFixed(2)}`
                       )}
                     </span>
                   </div>
@@ -215,16 +297,32 @@ export default function Cart() {
                 </div>
 
                 {/* Promo Code */}
-                <div className="mt-6">
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder="Promo code"
-                      value={promoCode}
-                      onChange={(e) => setPromoCode(e.target.value)}
-                    />
-                    <Button variant="outline">Apply</Button>
+                {!appliedCoupon && (
+                  <div className="mt-6">
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Enter promo code"
+                        value={promoCode}
+                        onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                        disabled={isApplyingCoupon}
+                        data-testid="input-promo-code"
+                      />
+                      <Button 
+                        variant="outline" 
+                        onClick={handleApplyCoupon}
+                        disabled={isApplyingCoupon || !promoCode.trim()}
+                        data-testid="button-apply-coupon"
+                      >
+                        {isApplyingCoupon ? "Applying..." : "Apply"}
+                      </Button>
+                    </div>
+                    {couponError && (
+                      <p className="text-sm text-red-500 mt-2" data-testid="text-coupon-error">
+                        {(couponError as Error).message}
+                      </p>
+                    )}
                   </div>
-                </div>
+                )}
 
                 {/* Checkout Button */}
                 <Link href="/checkout" className={buttonVariants({ size: 'lg' }) + " w-full mt-6"}>

@@ -165,6 +165,8 @@ export const carts = pgTable("carts", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: uuid("user_id").references(() => users.id),
   sessionId: text("session_id"),
+  appliedCouponId: uuid("applied_coupon_id").references(() => coupons.id),
+  discountAmount: numeric("discount_amount").default("0"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

@@ -24,11 +24,13 @@ interface MobileMenuProps {
 }
 
 export default function MobileMenu({ categories }: MobileMenuProps) {
+  // Ensure all hooks are called consistently at the top level
   const [openCategory, setOpenCategory] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const { cartItems } = useCart();
+  const { cartItems, isLoading, error } = useCart();
   
-  const cartItemCount = cartItems.reduce((total, item) => total + item.quantity, 0);
+  // Safely calculate cart item count with defensive programming
+  const cartItemCount = Array.isArray(cartItems) ? cartItems.reduce((total, item) => total + item.quantity, 0) : 0;
 
   const toggleCategory = (categoryId: number) => {
     setOpenCategory(openCategory === categoryId ? null : categoryId);
@@ -131,7 +133,7 @@ export default function MobileMenu({ categories }: MobileMenuProps) {
             {/* Categories */}
             <div className="py-2">
               <h3 className="px-4 py-2 text-sm font-semibold text-muted-foreground">Categories</h3>
-              {categories.map((category) => (
+              {Array.isArray(categories) && categories.map((category) => (
                 <div key={category.id}>
                   <button
                     onClick={() => toggleCategory(category.id)}
@@ -146,7 +148,7 @@ export default function MobileMenu({ categories }: MobileMenuProps) {
                   </button>
                   {openCategory === category.id && (
                     <div className="pl-8 pr-4 pb-2">
-                      {category.subcategories.map((subcategory, index) => (
+                      {Array.isArray(category.subcategories) && category.subcategories.map((subcategory, index) => (
                         <Link
                           key={index}
                           href={`/${category.name.toLowerCase()}/${subcategory.toLowerCase().replace(/\s+/g, '-')}`}

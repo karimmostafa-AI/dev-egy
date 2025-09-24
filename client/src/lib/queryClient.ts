@@ -20,6 +20,9 @@ export async function apiRequest(
     token = localStorage.getItem("token");
   }
   
+  // Get session ID from localStorage for cart persistence
+  const sessionId = localStorage.getItem("session_id");
+  
   const headers: Record<string, string> = {};
   
   if (data) {
@@ -30,12 +33,23 @@ export async function apiRequest(
     headers["Authorization"] = `Bearer ${token}`;
   }
   
+  // Include session ID if available (for cart persistence)
+  if (sessionId) {
+    headers["x-session-id"] = sessionId;
+  }
+  
   const res = await fetch(url, {
     method,
     headers,
     body: data ? JSON.stringify(data) : undefined,
     credentials: "include",
   });
+
+  // Store session ID from response header if provided
+  const responseSessionId = res.headers.get("x-session-id");
+  if (responseSessionId) {
+    localStorage.setItem("session_id", responseSessionId);
+  }
 
   await throwIfResNotOk(res);
   return res;
@@ -47,9 +61,24 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
+    // Get session ID from localStorage for cart persistence
+    const sessionId = localStorage.getItem("session_id");
+    
+    const headers: Record<string, string> = {};
+    if (sessionId) {
+      headers["x-session-id"] = sessionId;
+    }
+    
     const res = await fetch(queryKey.join("/") as string, {
+      headers,
       credentials: "include",
     });
+
+    // Store session ID from response header if provided
+    const responseSessionId = res.headers.get("x-session-id");
+    if (responseSessionId) {
+      localStorage.setItem("session_id", responseSessionId);
+    }
 
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {
       return null;
