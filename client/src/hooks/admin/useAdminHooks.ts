@@ -16,6 +16,11 @@ export const adminQueryKeys = {
   coupons: (filters?: any) => ['admin', 'coupons', filters],
   coupon: (id: string) => ['admin', 'coupons', id],
   reviews: (filters?: any) => ['admin', 'reviews', filters],
+  blogPosts: (filters?: any) => ['admin', 'blog-posts', filters],
+  blogPost: (id: string) => ['admin', 'blog-posts', id],
+  collections: (filters?: any) => ['admin', 'collections', filters],
+  collection: (id: string) => ['admin', 'collections', id],
+  collectionProducts: (id: string) => ['admin', 'collections', id, 'products'],
 } as const;
 
 // Dashboard Analytics Hook
@@ -340,6 +345,150 @@ export function useExportData() {
   });
 }
 
+// Blog Posts Hooks
+export function useBlogPosts(params: { page?: number; limit?: number } = {}) {
+  return useQuery({
+    queryKey: adminQueryKeys.blogPosts(params),
+    queryFn: () => adminApi.fetchBlogPosts(params),
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+}
+
+export function useBlogPost(blogPostId: string) {
+  return useQuery({
+    queryKey: adminQueryKeys.blogPost(blogPostId),
+    queryFn: () => adminApi.fetchBlogPost(blogPostId),
+    enabled: !!blogPostId,
+  });
+}
+
+export function useCreateBlogPost() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (blogPostData: any) => adminApi.createBlogPost(blogPostData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: adminQueryKeys.blogPosts() });
+      queryClient.invalidateQueries({ queryKey: adminQueryKeys.dashboard });
+    },
+  });
+}
+
+export function useUpdateBlogPost() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ blogPostId, data }: { blogPostId: string; data: any }) =>
+      adminApi.updateBlogPost(blogPostId, data),
+    onSuccess: (data, { blogPostId }) => {
+      queryClient.invalidateQueries({ queryKey: adminQueryKeys.blogPosts() });
+      queryClient.invalidateQueries({ queryKey: adminQueryKeys.blogPost(blogPostId) });
+    },
+  });
+}
+
+export function useDeleteBlogPost() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (blogPostId: string) => adminApi.deleteBlogPost(blogPostId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: adminQueryKeys.blogPosts() });
+      queryClient.invalidateQueries({ queryKey: adminQueryKeys.dashboard });
+    },
+  });
+}
+
+// Collections Hooks
+export function useCollections(params: { page?: number; limit?: number } = {}) {
+  return useQuery({
+    queryKey: adminQueryKeys.collections(params),
+    queryFn: () => adminApi.fetchCollections(params),
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+}
+
+export function useCollection(collectionId: string) {
+  return useQuery({
+    queryKey: adminQueryKeys.collection(collectionId),
+    queryFn: () => adminApi.fetchCollection(collectionId),
+    enabled: !!collectionId,
+  });
+}
+
+export function useCreateCollection() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (collectionData: any) => adminApi.createCollection(collectionData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: adminQueryKeys.collections() });
+      queryClient.invalidateQueries({ queryKey: adminQueryKeys.dashboard });
+    },
+  });
+}
+
+export function useUpdateCollection() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ collectionId, data }: { collectionId: string; data: any }) =>
+      adminApi.updateCollection(collectionId, data),
+    onSuccess: (data, { collectionId }) => {
+      queryClient.invalidateQueries({ queryKey: adminQueryKeys.collections() });
+      queryClient.invalidateQueries({ queryKey: adminQueryKeys.collection(collectionId) });
+    },
+  });
+}
+
+export function useDeleteCollection() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (collectionId: string) => adminApi.deleteCollection(collectionId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: adminQueryKeys.collections() });
+      queryClient.invalidateQueries({ queryKey: adminQueryKeys.dashboard });
+    },
+  });
+}
+
+// Collection Products Hooks
+export function useCollectionProducts(collectionId: string) {
+  return useQuery({
+    queryKey: adminQueryKeys.collectionProducts(collectionId),
+    queryFn: () => adminApi.fetchCollectionProducts(collectionId),
+    enabled: !!collectionId,
+    staleTime: 1000 * 60 * 3, // 3 minutes
+  });
+}
+
+export function useAddProductToCollection() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ collectionId, productData }: { collectionId: string; productData: any }) =>
+      adminApi.addProductToCollection(collectionId, productData),
+    onSuccess: (data, { collectionId }) => {
+      queryClient.invalidateQueries({ queryKey: adminQueryKeys.collectionProducts(collectionId) });
+      queryClient.invalidateQueries({ queryKey: adminQueryKeys.collections() });
+    },
+  });
+}
+
+export function useRemoveProductFromCollection() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ collectionId, productId }: { collectionId: string; productId: string }) =>
+      adminApi.removeProductFromCollection(collectionId, productId),
+    onSuccess: (data, { collectionId }) => {
+      queryClient.invalidateQueries({ queryKey: adminQueryKeys.collectionProducts(collectionId) });
+      queryClient.invalidateQueries({ queryKey: adminQueryKeys.collections() });
+    },
+  });
+}
+
 // Combined hook for common admin operations
 export function useAdminOperations() {
   return {
@@ -372,6 +521,18 @@ export function useAdminOperations() {
     
     // Reviews
     approveReview: useApproveReview(),
+    
+    // Blog Posts
+    createBlogPost: useCreateBlogPost(),
+    updateBlogPost: useUpdateBlogPost(),
+    deleteBlogPost: useDeleteBlogPost(),
+    
+    // Collections
+    createCollection: useCreateCollection(),
+    updateCollection: useUpdateCollection(),
+    deleteCollection: useDeleteCollection(),
+    addProductToCollection: useAddProductToCollection(),
+    removeProductFromCollection: useRemoveProductFromCollection(),
     
     // File Upload
     uploadFile: useFileUpload(),

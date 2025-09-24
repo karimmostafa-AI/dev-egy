@@ -6,7 +6,8 @@ import {
   Trash2,
   Eye,
   Calendar,
-  User
+  User,
+  MoreHorizontal
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,80 +27,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-
-// Mock data for blog posts
-const blogPostsData = [
-  {
-    id: 1,
-    title: "The Ultimate Guide to Choosing Medical Scrubs",
-    excerpt: "Learn everything you need to know about selecting the perfect scrubs for your medical profession.",
-    author: {
-      name: "Dr. Sarah Johnson",
-      avatar: "",
-    },
-    status: "published",
-    publishDate: "2023-05-15",
-    views: 1250,
-    comments: 23,
-    featured: true,
-  },
-  {
-    id: 2,
-    title: "Infection Control Best Practices in Healthcare",
-    excerpt: "Essential guidelines for maintaining proper hygiene and infection control in medical settings.",
-    author: {
-      name: "Nurse Patricia Wilson",
-      avatar: "",
-    },
-    status: "published",
-    publishDate: "2023-05-10",
-    views: 890,
-    comments: 15,
-    featured: false,
-  },
-  {
-    id: 3,
-    title: "Comfort and Style: New Lab Coat Collection",
-    excerpt: "Discover our latest collection of lab coats designed for both comfort and professional appearance.",
-    author: {
-      name: "Admin Team",
-      avatar: "",
-    },
-    status: "draft",
-    publishDate: "",
-    views: 0,
-    comments: 0,
-    featured: false,
-  },
-  {
-    id: 4,
-    title: "Healthcare Worker Wellness Tips",
-    excerpt: "Important self-care tips for healthcare professionals working long hours.",
-    author: {
-      name: "Dr. Michael Chen",
-      avatar: "",
-    },
-    status: "scheduled",
-    publishDate: "2023-05-25",
-    views: 0,
-    comments: 0,
-    featured: true,
-  },
-  {
-    id: 5,
-    title: "Understanding Different Types of Medical Footwear",
-    excerpt: "A comprehensive guide to choosing the right shoes for your medical work environment.",
-    author: {
-      name: "Nurse Emily Rodriguez",
-      avatar: "",
-    },
-    status: "published",
-    publishDate: "2023-05-08",
-    views: 654,
-    comments: 8,
-    featured: false,
-  },
-];
+import { Skeleton } from "@/components/ui/skeleton";
+import { useToast } from "@/hooks/use-toast";
+import { 
+  useBlogPosts, 
+  useDeleteBlogPost,
+  useUpdateBlogPost
+} from "@/hooks/admin/useAdminHooks";
 
 const statusColors = {
   published: "bg-green-100 text-green-800",
@@ -109,20 +43,124 @@ const statusColors = {
 
 export default function BlogPostManagement() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [page, setPage] = useState(1);
+  const [limit] = useState(10);
+  const { toast } = useToast();
 
-  const filteredPosts = blogPostsData.filter(post => 
-    post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    post.author.name.toLowerCase().includes(searchTerm.toLowerCase())
+  // Fetch blog posts
+  const { 
+    data: blogPostsResponse, 
+    isLoading, 
+    error,
+    refetch 
+  } = useBlogPosts({ page, limit });
+
+  // Mutations
+  const deletePostMutation = useDeleteBlogPost();
+  const updatePostMutation = useUpdateBlogPost();
+
+  // Extract blog posts from response
+  const blogPosts = blogPostsResponse?.success ? blogPostsResponse.data?.data || [] : [];
+  const pagination = blogPostsResponse?.success ? blogPostsResponse.data?.pagination : null;
+
+  // Filter posts based on search term
+  const filteredPosts = blogPosts.filter((post: any) => 
+    post.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    post.excerpt?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const getStatusBadge = (status: string) => {
-    const displayText = status.charAt(0).toUpperCase() + status.slice(1);
+  const getStatusBadge = (isPublished: boolean, isFeatured: boolean) => {
+    const status = isPublished ? "published" : "draft";
+    const displayText = isPublished ? "Published" : "Draft";
+    
     return (
-      <Badge className={statusColors[status as keyof typeof statusColors] || "bg-gray-100 text-gray-800"}>
-        {displayText}
-      </Badge>
+      <div className="flex items-center gap-2">
+        <Badge className={statusColors[status as keyof typeof statusColors] || "bg-gray-100 text-gray-800"}>
+          {displayText}
+        </Badge>
+        {isFeatured && (
+          <Badge variant="secondary" className="text-xs">Featured</Badge>
+        )}
+      </div>
     );
   };
+
+  const handleDeletePost = async (postId: string, title: string) => {
+    if (window.confirm(`Are you sure you want to delete "${title}"?`)) {
+      try {
+        const result = await deletePostMutation.mutateAsync(postId);
+        if (result.success) {
+          toast({
+            title: "Success",
+            description: "Blog post deleted successfully",
+          });
+        } else {
+          toast({
+            title: "Error",
+            description: result.error || "Failed to delete blog post",
+            variant: "destructive",
+          });
+        }
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to delete blog post",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
+  const handleTogglePublish = async (postId: string, currentStatus: boolean) => {
+    try {
+      const result = await updatePostMutation.mutateAsync({
+        blogPostId: postId,
+        data: { isPublished: !currentStatus }
+      });
+      if (result.success) {
+        toast({
+          title: "Success",
+          description: `Blog post ${!currentStatus ? 'published' : 'unpublished'} successfully`,
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: result.error || "Failed to update blog post",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update blog post",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const formatDate = (dateString: string | number) => {
+    if (!dateString) return "Not set";
+    const date = typeof dateString === 'number' ? new Date(dateString * 1000) : new Date(dateString);
+    return date.toLocaleDateString();
+  };
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Blog Management</h1>
+            <p className="mt-2 text-red-600">
+              Error loading blog posts. Please try again.
+            </p>
+          </div>
+          <Button onClick={() => refetch()}>
+            Retry
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -162,67 +200,75 @@ export default function BlogPostManagement() {
             <TableHeader>
               <TableRow>
                 <TableHead>Title</TableHead>
-                <TableHead>Author</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Publish Date</TableHead>
-                <TableHead>Views</TableHead>
-                <TableHead>Comments</TableHead>
+                <TableHead>Created Date</TableHead>
+                <TableHead>Updated Date</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredPosts.length > 0 ? (
-                filteredPosts.map((post) => (
+              {isLoading ? (
+                // Loading skeleton
+                Array.from({ length: 5 }).map((_, index) => (
+                  <TableRow key={index}>
+                    <TableCell className="max-w-xs">
+                      <div className="space-y-2">
+                        <Skeleton className="h-4 w-3/4" />
+                        <Skeleton className="h-3 w-1/2" />
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-6 w-20" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-24" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-24" />
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Skeleton className="h-8 w-8 ml-auto" />
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : filteredPosts.length > 0 ? (
+                filteredPosts.map((post: any) => (
                   <TableRow key={post.id} data-testid={`row-post-${post.id}`}>
                     <TableCell className="max-w-xs">
                       <div className="space-y-1">
-                        <div className="font-medium text-gray-900 flex items-center gap-2">
+                        <div className="font-medium text-gray-900">
                           {post.title}
-                          {post.featured && (
-                            <Badge variant="secondary" className="text-xs">Featured</Badge>
-                          )}
                         </div>
-                        <div className="text-sm text-gray-500 line-clamp-2">
-                          {post.excerpt}
-                        </div>
+                        {post.excerpt && (
+                          <div className="text-sm text-gray-500 line-clamp-2">
+                            {post.excerpt}
+                          </div>
+                        )}
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Avatar className="h-6 w-6">
-                          <AvatarImage src={post.author.avatar} alt={post.author.name} />
-                          <AvatarFallback className="text-xs">
-                            {post.author.name.split(' ').map(n => n[0]).join('')}
-                          </AvatarFallback>
-                        </Avatar>
-                        <span className="text-sm text-gray-900">{post.author.name}</span>
+                      {getStatusBadge(post.isPublished, post.isFeatured)}
+                    </TableCell>
+                    <TableCell className="text-gray-900">
+                      <div className="flex items-center gap-1">
+                        <Calendar className="h-4 w-4 text-gray-500" />
+                        {formatDate(post.createdAt)}
                       </div>
                     </TableCell>
-                    <TableCell>
-                      {getStatusBadge(post.status)}
-                    </TableCell>
                     <TableCell className="text-gray-900">
-                      {post.publishDate ? (
-                        <div className="flex items-center gap-1">
-                          <Calendar className="h-4 w-4 text-gray-500" />
-                          {new Date(post.publishDate).toLocaleDateString()}
-                        </div>
-                      ) : (
-                        <span className="text-gray-500">Not scheduled</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-gray-900">
-                      {post.views.toLocaleString()}
-                    </TableCell>
-                    <TableCell className="text-gray-900">
-                      {post.comments}
+                      {formatDate(post.updatedAt)}
                     </TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0" data-testid={`button-actions-${post.id}`}>
+                          <Button 
+                            variant="ghost" 
+                            className="h-8 w-8 p-0" 
+                            data-testid={`button-actions-${post.id}`}
+                            disabled={deletePostMutation.isPending || updatePostMutation.isPending}
+                          >
                             <span className="sr-only">Open menu</span>
-                            <Eye className="h-4 w-4" />
+                            <MoreHorizontal className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
@@ -234,13 +280,16 @@ export default function BlogPostManagement() {
                             <Edit className="mr-2 h-4 w-4" />
                             Edit Post
                           </DropdownMenuItem>
-                          {post.status === "draft" && (
-                            <DropdownMenuItem>
-                              <Calendar className="mr-2 h-4 w-4" />
-                              Schedule
-                            </DropdownMenuItem>
-                          )}
-                          <DropdownMenuItem className="text-red-600">
+                          <DropdownMenuItem 
+                            onClick={() => handleTogglePublish(post.id, post.isPublished)}
+                          >
+                            <Calendar className="mr-2 h-4 w-4" />
+                            {post.isPublished ? 'Unpublish' : 'Publish'}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            className="text-red-600"
+                            onClick={() => handleDeletePost(post.id, post.title)}
+                          >
                             <Trash2 className="mr-2 h-4 w-4" />
                             Delete
                           </DropdownMenuItem>
@@ -251,8 +300,8 @@ export default function BlogPostManagement() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-gray-500">
-                    No blog posts found
+                  <TableCell colSpan={5} className="text-center py-8 text-gray-500">
+                    {searchTerm ? "No blog posts found matching your search" : "No blog posts found"}
                   </TableCell>
                 </TableRow>
               )}
@@ -260,6 +309,38 @@ export default function BlogPostManagement() {
           </Table>
         </div>
       </div>
+
+      {/* Pagination */}
+      {pagination && pagination.totalPages > 1 && (
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-gray-700">
+            Showing {((pagination.page - 1) * pagination.limit) + 1} to{' '}
+            {Math.min(pagination.page * pagination.limit, pagination.total)} of{' '}
+            {pagination.total} results
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage(page - 1)}
+              disabled={!pagination.hasPrev || isLoading}
+            >
+              Previous
+            </Button>
+            <span className="text-sm text-gray-600">
+              Page {pagination.page} of {pagination.totalPages}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage(page + 1)}
+              disabled={!pagination.hasNext || isLoading}
+            >
+              Next
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
