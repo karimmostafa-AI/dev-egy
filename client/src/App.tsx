@@ -8,6 +8,8 @@ import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { useTracking } from "@/hooks/useTracking";
 import { AdminAuthProvider } from "@/contexts/AdminAuthContext";
+import { AuthProvider, useAuth } from "@/hooks/useAuth";
+import { useLocation } from "wouter";
 
 // Lazy load pages
 const Home = lazy(() => import("@/pages/Home"));
@@ -35,6 +37,25 @@ const AdminDashboard = lazy(() => import("@/pages/AdminDashboard"));
 const AdminLogin = lazy(() => import("@/pages/AdminLogin"));
 const NotFound = lazy(() => import("@/pages/not-found"));
 
+// Protected Route Component
+function ProtectedRoute({ component: Component }: { component: React.ComponentType<any> }) {
+  const { user, isLoading } = useAuth();
+  const [location, setLocation] = useLocation();
+
+  if (isLoading) {
+    return <LoadingSpinner data-testid="protected-route-loading" />;
+  }
+
+  if (!user) {
+    // Store the current path for redirect after login
+    localStorage.setItem('redirectAfterLogin', location);
+    setLocation('/auth');
+    return null;
+  }
+
+  return <div data-testid="protected-route-authenticated"><Component /></div>;
+}
+
 function Router() {
   // Initialize tracking
   useTracking();
@@ -52,13 +73,17 @@ function Router() {
           <Route path="/faq" component={FAQs} />
           <Route path="/product/:slug" component={ProductDetail} />
           <Route path="/auth" component={AuthPage} />
-          <Route path="/checkout" component={CheckoutPage} />
+          <Route path="/checkout">
+            <ProtectedRoute component={CheckoutPage} />
+          </Route>
           <Route path="/order-success" component={OrderSuccessPage} />
           <Route path="/scrubs" component={Scrubs} />
           <Route path="/lab-coats" component={LabCoats} />
           <Route path="/shoes" component={Shoes} />
           <Route path="/accessories" component={Accessories} />
-          <Route path="/account" component={AccountDashboard} />
+          <Route path="/account">
+            <ProtectedRoute component={AccountDashboard} />
+          </Route>
           <Route path="/privacy-policy" component={PrivacyPolicy} />
           <Route path="/terms-of-service" component={TermsOfService} />
           <Route path="/blog" component={Blog} />
@@ -77,12 +102,14 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AdminAuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Router />
-        </TooltipProvider>
-      </AdminAuthProvider>
+      <AuthProvider>
+        <AdminAuthProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Router />
+          </TooltipProvider>
+        </AdminAuthProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }
