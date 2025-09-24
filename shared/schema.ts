@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, integer, numeric, boolean, timestamp, uuid } from "drizzle-orm/pg-core";
+import { pgTable, text, integer, numeric, boolean, timestamp, uuid, uniqueIndex } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -86,6 +86,67 @@ export const productImages = pgTable("product_images", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Product options table (Size, Color, etc.)
+export const productOptions = pgTable("product_options", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  productId: uuid("product_id").references(() => products.id).notNull(),
+  name: text("name").notNull(), // e.g., "Size", "Color"
+  displayName: text("display_name").notNull(), // e.g., "Size", "Color"
+  sortOrder: integer("sort_order").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Product option values table (Small, Medium, Large for Size)
+export const productOptionValues = pgTable("product_option_values", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  optionId: uuid("option_id").references(() => productOptions.id).notNull(),
+  value: text("value").notNull(), // e.g., "Small", "Red"
+  displayValue: text("display_value").notNull(), // e.g., "Small", "Red"
+  sortOrder: integer("sort_order").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Product variants table (specific combinations of options)
+export const productVariants = pgTable("product_variants", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  productId: uuid("product_id").references(() => products.id).notNull(),
+  sku: text("sku").notNull().unique(),
+  price: numeric("price"), // Override product price if set
+  comparePrice: numeric("compare_price"), // Override product compare price if set
+  costPerItem: numeric("cost_per_item"), // Override product cost if set
+  inventoryQuantity: integer("inventory_quantity").notNull().default(0),
+  allowOutOfStockPurchases: boolean("allow_out_of_stock_purchases").default(false),
+  weight: numeric("weight"), // Override product weight if set
+  weightUnit: text("weight_unit"), // Override product weight unit if set
+  isAvailable: boolean("is_available").default(true),
+  sortOrder: integer("sort_order").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Product variant option values table (links variants to their option values)
+export const productVariantOptionValues = pgTable("product_variant_option_values", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  variantId: uuid("variant_id").references(() => productVariants.id).notNull(),
+  optionValueId: uuid("option_value_id").references(() => productOptionValues.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  // Composite unique constraint to prevent duplicate option assignments
+  variantOptionUnique: uniqueIndex("variant_option_unique").on(table.variantId, table.optionValueId),
+}));
+
+// Password reset tokens table
+export const passwordResetTokens = pgTable("password_reset_tokens", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").references(() => users.id).notNull(),
+  tokenHash: text("token_hash").notNull().unique(), // SHA-256 hash of the actual token
+  expiresAt: timestamp("expires_at").notNull(),
+  usedAt: timestamp("used_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Addresses table
 export const addresses = pgTable("addresses", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -153,6 +214,7 @@ export const orderItems = pgTable("order_items", {
   id: uuid("id").primaryKey().defaultRandom(),
   orderId: uuid("order_id").references(() => orders.id).notNull(),
   productId: uuid("product_id").references(() => products.id).notNull(),
+  variantId: uuid("variant_id").references(() => productVariants.id), // Optional variant reference
   name: text("name").notNull(),
   sku: text("sku").notNull(),
   price: numeric("price").notNull(),
@@ -176,6 +238,7 @@ export const cartItems = pgTable("cart_items", {
   id: uuid("id").primaryKey().defaultRandom(),
   cartId: uuid("cart_id").references(() => carts.id).notNull(),
   productId: uuid("product_id").references(() => products.id).notNull(),
+  variantId: uuid("variant_id").references(() => productVariants.id), // Optional variant reference
   quantity: integer("quantity").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -217,6 +280,7 @@ export const wishlistItems = pgTable("wishlist_items", {
   id: uuid("id").primaryKey().defaultRandom(),
   wishlistId: uuid("wishlist_id").references(() => wishlists.id).notNull(),
   productId: uuid("product_id").references(() => products.id).notNull(),
+  variantId: uuid("variant_id").references(() => productVariants.id), // Optional variant reference
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -451,6 +515,98 @@ export const insertCollectionProductSchema = z.object({
 export type InsertCollectionProduct = z.infer<typeof insertCollectionProductSchema>;
 export type CollectionProduct = typeof collectionProducts.$inferSelect;
 
+// Product option schemas
+export const insertProductOptionSchema = createInsertSchema(productOptions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  productId: z.string().uuid(),
+  name: z.string().min(1).max(50),
+  displayName: z.string().min(1).max(50),
+  sortOrder: z.number().int().min(0).optional(),
+});
+
+export const updateProductOptionSchema = insertProductOptionSchema.partial();
+
+export type InsertProductOption = z.infer<typeof insertProductOptionSchema>;
+export type UpdateProductOption = z.infer<typeof updateProductOptionSchema>;
+export type ProductOption = typeof productOptions.$inferSelect;
+
+// Product option value schemas
+export const insertProductOptionValueSchema = createInsertSchema(productOptionValues).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  optionId: z.string().uuid(),
+  value: z.string().min(1).max(50),
+  displayValue: z.string().min(1).max(50),
+  sortOrder: z.number().int().min(0).optional(),
+});
+
+export const updateProductOptionValueSchema = insertProductOptionValueSchema.partial();
+
+export type InsertProductOptionValue = z.infer<typeof insertProductOptionValueSchema>;
+export type UpdateProductOptionValue = z.infer<typeof updateProductOptionValueSchema>;
+export type ProductOptionValue = typeof productOptionValues.$inferSelect;
+
+// Product variant schemas
+export const insertProductVariantSchema = createInsertSchema(productVariants).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  productId: z.string().uuid(),
+  sku: z.string().min(1).max(50).regex(/^[A-Z0-9-_]+$/, "SKU must contain only uppercase letters, numbers, hyphens, and underscores"),
+  price: z.coerce.number().nonnegative("Price must be a positive number").optional(),
+  comparePrice: z.coerce.number().nonnegative("Compare price must be a positive number").optional(),
+  costPerItem: z.coerce.number().nonnegative("Cost must be a positive number").optional(),
+  inventoryQuantity: z.coerce.number().int().min(0),
+  allowOutOfStockPurchases: z.boolean().optional(),
+  weight: z.coerce.number().nonnegative("Weight must be a positive number").optional(),
+  weightUnit: weightUnitSchema.optional(),
+  isAvailable: z.boolean().optional(),
+  sortOrder: z.number().int().min(0).optional(),
+});
+
+export const updateProductVariantSchema = insertProductVariantSchema.partial();
+
+export type InsertProductVariant = z.infer<typeof insertProductVariantSchema>;
+export type UpdateProductVariant = z.infer<typeof updateProductVariantSchema>;
+export type ProductVariant = typeof productVariants.$inferSelect;
+
+// Product variant option value schemas
+export const insertProductVariantOptionValueSchema = createInsertSchema(productVariantOptionValues).omit({
+  id: true,
+  createdAt: true,
+}).extend({
+  variantId: z.string().uuid(),
+  optionValueId: z.string().uuid(),
+});
+
+export type InsertProductVariantOptionValue = z.infer<typeof insertProductVariantOptionValueSchema>;
+export type ProductVariantOptionValue = typeof productVariantOptionValues.$inferSelect;
+
+// Password reset token schemas
+export const insertPasswordResetTokenSchema = createInsertSchema(passwordResetTokens).omit({
+  id: true,
+  usedAt: true,
+  createdAt: true,
+}).extend({
+  userId: z.string().uuid(),
+  tokenHash: z.string().min(1), // SHA-256 hash of the actual token
+  expiresAt: z.number().int(),
+});
+
+export const updatePasswordResetTokenSchema = z.object({
+  usedAt: z.number().int().optional(),
+});
+
+export type InsertPasswordResetToken = z.infer<typeof insertPasswordResetTokenSchema>;
+export type UpdatePasswordResetToken = z.infer<typeof updatePasswordResetTokenSchema>;
+export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
+
 // Pagination and query schemas
 export const paginationSchema = z.object({
   page: z.string().transform((val) => parseInt(val) || 1).pipe(z.number().int().min(1)).optional(),
@@ -463,3 +619,51 @@ export const orderQuerySchema = paginationSchema.extend({
 
 export type PaginationQuery = z.infer<typeof paginationSchema>;
 export type OrderQuery = z.infer<typeof orderQuerySchema>;
+
+// Cart item schemas
+export const insertCartItemSchema = createInsertSchema(cartItems).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  cartId: z.string().uuid(),
+  productId: z.string().uuid(),
+  variantId: z.string().uuid().optional(), // Optional variant reference
+  quantity: z.number().int().min(1),
+});
+
+export const updateCartItemSchema = insertCartItemSchema.partial();
+
+export type InsertCartItem = z.infer<typeof insertCartItemSchema>;
+export type UpdateCartItem = z.infer<typeof updateCartItemSchema>;
+export type CartItem = typeof cartItems.$inferSelect;
+
+// Order item schemas
+export const insertOrderItemSchema = createInsertSchema(orderItems).omit({
+  id: true,
+  createdAt: true,
+}).extend({
+  orderId: z.string().uuid(),
+  productId: z.string().uuid(),
+  variantId: z.string().uuid().optional(), // Optional variant reference
+  name: z.string().min(1).max(200),
+  sku: z.string().min(1).max(50),
+  price: z.coerce.number().nonnegative("Price must be a positive number"),
+  quantity: z.number().int().min(1),
+});
+
+export type InsertOrderItem = z.infer<typeof insertOrderItemSchema>;
+export type OrderItem = typeof orderItems.$inferSelect;
+
+// Wishlist item schemas
+export const insertWishlistItemSchema = createInsertSchema(wishlistItems).omit({
+  id: true,
+  createdAt: true,
+}).extend({
+  wishlistId: z.string().uuid(),
+  productId: z.string().uuid(),
+  variantId: z.string().uuid().optional(), // Optional variant reference
+});
+
+export type InsertWishlistItem = z.infer<typeof insertWishlistItemSchema>;
+export type WishlistItem = typeof wishlistItems.$inferSelect;
