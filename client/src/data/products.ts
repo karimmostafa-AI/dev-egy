@@ -3,6 +3,7 @@
 export interface Product {
   id: number;
   name: string;
+  slug?: string;
   brand: string;
   price: number;
   originalPrice?: number;
@@ -29,6 +30,7 @@ export const sampleProducts: Product[] = [
   {
     id: 1,
     name: "Cherokee Revolution V-Neck Top",
+    slug: "cherokee-revolution-v-neck-top",
     brand: "Cherokee",
     price: 2499,
     originalPrice: 2999,
@@ -42,6 +44,7 @@ export const sampleProducts: Product[] = [
   {
     id: 2,
     name: "Barco One Cargo Scrub Pants",
+    slug: "barco-one-cargo-scrub-pants",
     brand: "Barco",
     price: 3599,
     originalPrice: 3999,
@@ -55,6 +58,7 @@ export const sampleProducts: Product[] = [
   {
     id: 3,
     name: "WonderWink Renew Cargo Pant",
+    slug: "wonderwink-renew-cargo-pant",
     brand: "WonderWink",
     price: 2799,
     rating: 4.5,
@@ -66,6 +70,7 @@ export const sampleProducts: Product[] = [
   {
     id: 4,
     name: "Healing Hands Purple Label Top",
+    slug: "healing-hands-purple-label-top",
     brand: "Healing Hands",
     price: 2299,
     originalPrice: 2699,
@@ -79,6 +84,7 @@ export const sampleProducts: Product[] = [
   {
     id: 5,
     name: "Greys Anatomy Signature Series",
+    slug: "greys-anatomy-signature-series",
     brand: "Greys Anatomy",
     price: 3299,
     rating: 4.6,
@@ -91,6 +97,7 @@ export const sampleProducts: Product[] = [
   {
     id: 6,
     name: "Dickies Dynamix V-Neck Top",
+    slug: "dickies-dynamix-v-neck-top",
     brand: "Dickies",
     price: 1999,
     originalPrice: 2399,

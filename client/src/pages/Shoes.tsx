@@ -168,7 +168,7 @@ export default function ShoesPage() {
               <Card
                 key={product.id}
                 className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer group"
-                onClick={() => setLocation(`/product/${product.id}`)}
+                onClick={() => setLocation(`/product/${product.slug || product.id}`)}
               >
                 {/* Product Image */}
                 <div className="relative h-64 bg-muted overflow-hidden">

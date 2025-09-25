@@ -414,7 +414,7 @@ export default function CollectionDetail() {
               <Card
                 key={product.id}
                 className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer group"
-                onClick={() => setLocation(`/product/${product.id}`)}
+                onClick={() => setLocation(`/product/${product.slug || product.id}`)}
                 data-testid={`product-card-${product.id}`}
               >
                 {/* Product Image */}
@@ -461,7 +461,7 @@ export default function CollectionDetail() {
                       className="h-8 w-8 p-0 rounded-full"
                       onClick={(e) => {
                         e.stopPropagation();
-                        setLocation(`/product/${product.id}`);
+                        setLocation(`/product/${product.slug || product.id}`);
                       }}
                       data-testid={`view-${product.id}`}
                     >
