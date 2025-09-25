@@ -145,7 +145,7 @@ export default function Wishlist() {
             <div className="mb-2">
               <h3 
                 className="font-semibold text-sm group-hover:text-primary transition-colors cursor-pointer"
-                onClick={() => setLocation(`/product/${item.slug || item.id}`))
+                onClick={() => setLocation(`/product/${item.slug || item.id}`)}
                 data-testid={`product-name-${item.id}`}
               >
                 {item.name}
@@ -218,7 +218,7 @@ export default function Wishlist() {
                 <div>
                   <h3 
                     className="font-semibold text-lg hover:text-primary transition-colors cursor-pointer"
-                    onClick={() => setLocation(`/product/${item.slug || item.id}`))
+                    onClick={() => setLocation(`/product/${item.slug || item.id}`)}
                     data-testid={`product-name-list-${item.id}`}
                   >
                     {item.name}
