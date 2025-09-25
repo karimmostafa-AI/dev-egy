@@ -108,10 +108,10 @@ const ProductDetail: React.FC = () => {
   
   // Find selected variant based on selected options
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({});
-  const selectedVariant = productVariants.find(variant => {
+  const selectedVariant = productVariants.find((variant: any) => {
     if (!variant.optionValues || variant.optionValues.length === 0) return false;
     
-    return variant.optionValues.every(optionValue => {
+    return variant.optionValues.every((optionValue: any) => {
       const optionName = optionValue.option.name;
       const selectedValue = selectedOptions[optionName];
       return selectedValue === optionValue.optionValue.id;
@@ -122,7 +122,7 @@ const ProductDetail: React.FC = () => {
   useEffect(() => {
     if (productOptions.length > 0) {
       const defaultSelections: Record<string, string> = {};
-      productOptions.forEach(option => {
+      productOptions.forEach((option: any) => {
         if (option.values && option.values.length > 0) {
           defaultSelections[option.name] = option.values[0].id;
         }
@@ -191,7 +191,7 @@ const ProductDetail: React.FC = () => {
     if (!reviewsData?.reviews || reviewsData.reviews.length === 0) {
       return 0;
     }
-    const totalRating = reviewsData.reviews.reduce((sum, review) => sum + review.rating, 0);
+    const totalRating = reviewsData.reviews.reduce((sum: number, review: any) => sum + review.rating, 0);
     return totalRating / reviewsData.reviews.length;
   };
   
@@ -261,14 +261,14 @@ const ProductDetail: React.FC = () => {
 
   const handleAddToCart = () => {
     // Check if all required options are selected
-    const missingOptions = productOptions.filter(option => 
+    const missingOptions = productOptions.filter((option: any) => 
       !selectedOptions[option.name] && option.values && option.values.length > 0
     );
     
     if (missingOptions.length > 0) {
       toast({
         title: 'Options Required',
-        description: `Please select ${missingOptions.map(opt => opt.displayName).join(', ')} before adding to cart.`,
+        description: `Please select ${missingOptions.map((opt: any) => opt.displayName).join(', ')} before adding to cart.`,
         variant: 'destructive',
       });
       return;
@@ -437,11 +437,11 @@ const ProductDetail: React.FC = () => {
             </div>
 
             {/* Product Options */}
-            {productOptions.map((option) => (
+            {productOptions.map((option: any) => (
               <div key={option.id}>
                 <h3 className="font-medium mb-2">{option.displayName}</h3>
                 <div className="flex flex-wrap gap-2">
-                  {option.values?.map((value) => {
+                  {option.values?.map((value: any) => {
                     const isSelected = selectedOptions[option.name] === value.id;
                     
                     if (option.name.toLowerCase().includes('color')) {
@@ -732,7 +732,7 @@ const ProductDetail: React.FC = () => {
           {/* Reviews List */}
           <div className="space-y-6">
             {reviewsData?.reviews && reviewsData.reviews.length > 0 ? (
-              reviewsData.reviews.map((review) => (
+              reviewsData.reviews.map((review: any) => (
                 <div key={review.id} className="border-b border-gray-200 pb-6">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center space-x-2">

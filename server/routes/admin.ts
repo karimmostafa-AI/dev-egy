@@ -87,7 +87,7 @@ const sendError = (res: Response, status: number, message: string, details?: str
 const validateInput = (schema: any, data: any, res: Response) => {
   const result = schema.safeParse(data);
   if (!result.success) {
-    const errorMessage = result.error.errors.map(err => `${err.path.join('.')}: ${err.message}`).join(', ');
+    const errorMessage = result.error.errors.map((err: any) => `${err.path.join('.')}: ${err.message}`).join(', ');
     sendError(res, 400, "Validation failed", errorMessage);
     return null;
   }

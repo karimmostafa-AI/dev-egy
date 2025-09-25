@@ -224,13 +224,14 @@ export class WishlistService {
         targetWishlist = await this.getOrCreateUserWishlist(userId);
       }
 
-      const deletedCount = await db.delete(wishlistItems)
+      const deletedItems = await db.delete(wishlistItems)
         .where(and(
           eq(wishlistItems.wishlistId, targetWishlist.id),
           eq(wishlistItems.productId, productId)
-        ));
+        ))
+        .returning({ id: wishlistItems.id });
 
-      if (deletedCount.rowCount === 0) {
+      if (deletedItems.length === 0) {
         throw new Error("Product not found in wishlist");
       }
     } catch (error) {

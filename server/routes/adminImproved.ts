@@ -850,7 +850,7 @@ router.get("/blog-posts", requireAdmin, asyncHandler(async (req: Request, res: R
     excerpt: post.excerpt,
     featuredImage: post.featuredImage,
     isPublished: post.isPublished,
-    isFeatured: post.isFeatured,
+    // isFeatured property doesn't exist in the schema
     authorId: post.authorId,
     createdAt: post.createdAt,
     updatedAt: post.updatedAt
@@ -878,7 +878,7 @@ router.get("/blog-posts/:id", requireAdmin, asyncHandler(async (req: Request, re
     excerpt: post.excerpt,
     featuredImage: post.featuredImage,
     isPublished: post.isPublished,
-    isFeatured: post.isFeatured,
+    // isFeatured property doesn't exist in the schema
     authorId: post.authorId,
     createdAt: post.createdAt,
     updatedAt: post.updatedAt
@@ -902,7 +902,7 @@ router.post("/blog-posts", requireAdmin, asyncHandler(async (req: Request, res: 
     excerpt: data.excerpt,
     featuredImage: data.featuredImage,
     isPublished: data.isPublished || false,
-    isFeatured: data.isFeatured || false,
+    // Remove isFeatured as it doesn't exist in schema
     authorId: data.authorId,
     createdAt: new Date(),
     updatedAt: new Date()
@@ -950,8 +950,8 @@ router.get("/collections", requireAdmin, asyncHandler(async (req: Request, res: 
     slug: collection.slug,
     description: collection.description,
     image: collection.image,
-    isActive: collection.isActive,
-    isFeatured: collection.isFeatured,
+    isPublished: collection.isPublished,
+    // Remove isActive and isFeatured as they don't exist in schema
     createdAt: collection.createdAt,
     updatedAt: collection.updatedAt
   }));
@@ -976,8 +976,8 @@ router.get("/collections/:id", requireAdmin, asyncHandler(async (req: Request, r
     slug: collection.slug,
     description: collection.description,
     image: collection.image,
-    isActive: collection.isActive,
-    isFeatured: collection.isFeatured,
+    isPublished: collection.isPublished,
+    // Remove isActive and isFeatured as they don't exist in schema
     createdAt: collection.createdAt,
     updatedAt: collection.updatedAt
   }));
@@ -998,8 +998,8 @@ router.post("/collections", requireAdmin, asyncHandler(async (req: Request, res:
     slug,
     description: data.description,
     image: data.image,
-    isActive: data.isActive !== undefined ? data.isActive : true,
-    isFeatured: data.isFeatured || false,
+    isPublished: data.isPublished !== undefined ? data.isPublished : false,
+    // Remove isActive and isFeatured as they don't exist in schema
     createdAt: new Date(),
     updatedAt: new Date()
   }).returning();

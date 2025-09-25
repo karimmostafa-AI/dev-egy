@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { UserService } from "../services/userService";
 import { AuthService } from "../services/authService";
-import { forgotPasswordSchema, resetPasswordSchema, verifyResetTokenSchema } from "@shared/schema";
+import { forgotPasswordSchema, resetPasswordSchema, verifyResetTokenSchema } from "@shared/schema-sqlite";
 
 const router = Router();
 const userService = new UserService();

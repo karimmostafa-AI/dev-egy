@@ -1,4 +1,4 @@
-import { eq, and } from "drizzle-orm";
+import { eq, and, isNull } from "drizzle-orm";
 import { db, carts, cartItems, products, coupons, productVariants } from "../db";
 import { InferSelectModel } from "drizzle-orm";
 import { carts as cartsTable, cartItems as cartItemsTable } from "@shared/schema";
@@ -76,7 +76,8 @@ export class CartService {
       if (variantId) {
         conditions.push(eq(cartItems.variantId, variantId));
       } else {
-        conditions.push(eq(cartItems.variantId, null));
+        // Use isNull for null comparisons instead of eq with null
+        conditions.push(isNull(cartItems.variantId));
       }
       
       const existingItem = await db.select()

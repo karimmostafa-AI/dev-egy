@@ -51,6 +51,16 @@ interface OrderStatus {
   label: string;
 }
 
+interface Order {
+  id: string;
+  date: string;
+  customer: string;
+  shop: string;
+  amount: string;
+  status: string;
+  paymentMethod: string;
+}
+
 const orderStatuses: OrderStatus[] = [
   { value: "all", label: "All" },
   { value: "pending", label: "Pending" },
@@ -79,7 +89,7 @@ export default function OrderManagement() {
   const [paymentMethodFilter, setPaymentMethodFilter] = useState("all");
   const [dateRange, setDateRange] = useState<{
     from: Date | undefined;
-    to: Date | undefined;
+    to?: Date | undefined;
   }>({ from: undefined, to: undefined });
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
@@ -88,6 +98,7 @@ export default function OrderManagement() {
   const [location, setLocation] = useLocation();
   const { toast } = useToast();
   const [viewOrderId, setViewOrderId] = useState<string | null>(null);
+  const [isActionLoading, setIsActionLoading] = useState(false);
 
   // Fetch orders using the real API
   const { data: ordersResponse, isLoading, error, refetch } = useOrders({ 
@@ -152,7 +163,7 @@ export default function OrderManagement() {
   const paginatedOrders = filteredAndSortedOrders;
   const totalPages = pagination?.totalPages || 1;
 
-  const paymentMethods = [...new Set(ordersData.map((order: any) => order.paymentMethod).filter(Boolean))];
+  const paymentMethods = Array.from(new Set(ordersData.map((order: any) => order.paymentMethod).filter(Boolean)));
 
   // Loading and error states
   if (isLoading) {
@@ -178,7 +189,7 @@ export default function OrderManagement() {
 
   // Export functionality
   const handleExportOrders = () => {
-    setIsLoading(true);
+    setIsActionLoading(true);
     try {
       exportFilteredOrders(
         filteredAndSortedOrders,
@@ -198,7 +209,7 @@ export default function OrderManagement() {
         variant: "destructive",
       });
     } finally {
-      setIsLoading(false);
+      setIsActionLoading(false);
     }
   };
 
@@ -217,7 +228,7 @@ export default function OrderManagement() {
   };
 
   const handleDownloadInvoice = (order: Order) => {
-    setIsLoading(true);
+    setIsActionLoading(true);
     try {
       // Convert Order to OrderDetail format for PDF generation
       const orderDetail = {
@@ -274,7 +285,7 @@ export default function OrderManagement() {
         variant: "destructive",
       });
     } finally {
-      setIsLoading(false);
+      setIsActionLoading(false);
     }
   };
 
@@ -283,7 +294,7 @@ export default function OrderManagement() {
       return;
     }
     
-    setIsLoading(true);
+    setIsActionLoading(true);
     try {
       // In a real app, this would be an API call to cancel the order
       await new Promise(resolve => setTimeout(resolve, 1000)); // Mock API call
@@ -307,7 +318,7 @@ export default function OrderManagement() {
         variant: "destructive",
       });
     } finally {
-      setIsLoading(false);
+      setIsActionLoading(false);
     }
   };
 
@@ -436,7 +447,7 @@ export default function OrderManagement() {
                     mode="range"
                     defaultMonth={dateRange.from}
                     selected={dateRange}
-                    onSelect={setDateRange}
+                    onSelect={(range) => setDateRange(range || { from: undefined, to: undefined })}
                     numberOfMonths={2}
                   />
                 </PopoverContent>
@@ -481,16 +492,16 @@ export default function OrderManagement() {
                 <Button
                   variant="outline"
                   onClick={() => window.location.reload()}
-                  disabled={isLoading}
+                  disabled={isLoading || isActionLoading}
                   className="h-8"
                 >
-                  <RefreshCw className={cn("mr-2 h-4 w-4", isLoading && "animate-spin")} />
+                  <RefreshCw className={cn("mr-2 h-4 w-4", (isLoading || isActionLoading) && "animate-spin")} />
                   Refresh
                 </Button>
                 
                 <Button
                   onClick={handleExportOrders}
-                  disabled={isLoading || filteredAndSortedOrders.length === 0}
+                  disabled={isLoading || isActionLoading || filteredAndSortedOrders.length === 0}
                   className="h-8"
                 >
                   <FileSpreadsheet className="mr-2 h-4 w-4" />

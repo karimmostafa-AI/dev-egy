@@ -2,7 +2,7 @@ import { Router, Request, Response, NextFunction } from "express";
 import { CartService } from "../services/cartService";
 import { AuthService } from "../services/authService";
 import { InferSelectModel } from "drizzle-orm";
-import { carts } from "@shared/schema";
+import { carts } from "@shared/schema-sqlite";
 
 type Cart = InferSelectModel<typeof carts>;
 

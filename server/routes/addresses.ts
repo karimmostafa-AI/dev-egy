@@ -2,7 +2,7 @@ import { Router, Request, Response } from "express";
 import { AddressService } from "../services/addressService";
 import { AuthService } from "../services/authService";
 import { createInsertSchema } from "drizzle-zod";
-import { addresses } from "@shared/schema";
+import { addresses } from "@shared/schema-sqlite";
 import { z } from "zod";
 
 const router = Router();

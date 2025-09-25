@@ -69,6 +69,7 @@ const mockProducts = [
   {
     id: '1',
     name: 'Professional V-Neck Scrub Top - Navy',
+    slug: 'professional-v-neck-scrub-top-navy',
     brand: 'Cherokee',
     price: 49.99,
     comparePrice: 59.99,
@@ -82,6 +83,7 @@ const mockProducts = [
   {
     id: '2',
     name: 'Tailored Scrub Pants - Navy',
+    slug: 'tailored-scrub-pants-navy',
     brand: 'Cherokee',
     price: 39.99,
     comparePrice: 49.99,
@@ -95,6 +97,7 @@ const mockProducts = [
   {
     id: '3',
     name: 'Premium Lab Coat - White',
+    slug: 'premium-lab-coat-white',
     brand: 'FIGS',
     price: 79.99,
     image: '/images/products/lab-coat-white.jpg',
@@ -107,6 +110,7 @@ const mockProducts = [
   {
     id: '4',
     name: 'Professional Cardigan - Burgundy',
+    slug: 'professional-cardigan-burgundy',
     brand: 'WonderWink',
     price: 69.99,
     image: '/images/products/cardigan-burgundy.jpg',

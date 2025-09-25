@@ -31,9 +31,9 @@ export default function EditCategory() {
   // Load category data when it's available
   useEffect(() => {
     if (category?.data) {
-      const categoryData = category.data;
-      setName(categoryData.name || "");
-      setDescription(categoryData.description || "");
+      const categoryData = category.data as any;
+      setName(categoryData?.name || "");
+      setDescription(categoryData?.description || "");
     }
   }, [category]);
 

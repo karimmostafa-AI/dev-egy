@@ -36,6 +36,7 @@ interface Product {
   images?: { url: string }[];
   isOnSale?: boolean;
   isNew?: boolean;
+  slug?: string;
 }
 
 const fetchProducts = async (filters: any) => {

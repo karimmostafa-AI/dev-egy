@@ -1,7 +1,7 @@
 import express, { type Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertUserSchema } from "../shared/schema";
+import { insertUserSchema } from "../shared/schema-sqlite";
 import { sampleProducts } from "../client/src/data/products"; // Temporary for mock data
 import authRoutes from "./routes/auth";
 import userRoutes from "./routes/users";

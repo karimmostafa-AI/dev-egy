@@ -22,6 +22,7 @@ const mockWishlistItems = [
   {
     id: '1',
     name: 'Cherokee Workwear Scrub Set',
+    slug: 'cherokee-workwear-scrub-set',
     brand: 'Cherokee',
     price: 49.99,
     comparePrice: 59.99,
@@ -34,6 +35,7 @@ const mockWishlistItems = [
   {
     id: '2',
     name: 'FIGS Technical Collection Scrubs',
+    slug: 'figs-technical-collection-scrubs',
     brand: 'FIGS',
     price: 75.00,
     image: '/images/scrub-set-2.jpg',
@@ -45,6 +47,7 @@ const mockWishlistItems = [
   {
     id: '3',
     name: 'Crocs Medical Professional Clogs',
+    slug: 'crocs-medical-professional-clogs',
     brand: 'Crocs',
     price: 54.99,
     comparePrice: 64.99,
@@ -57,6 +60,7 @@ const mockWishlistItems = [
   {
     id: '4',
     name: 'Littmann Classic III Stethoscope',
+    slug: 'littmann-classic-iii-stethoscope',
     brand: 'Littmann',
     price: 189.99,
     image: '/images/stethoscope.jpg',

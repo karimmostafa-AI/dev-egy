@@ -1,4 +1,4 @@
-import { type User, type InsertUser } from "@shared/schema";
+import { type User, type InsertUser } from "@shared/schema-sqlite";
 import { randomUUID } from "crypto";
 
 // modify the interface with any CRUD methods
@@ -36,6 +36,7 @@ export class MemStorage implements IStorage {
       ...insertUser,
       id,
       passwordHash,
+      role: 'customer', // Default role for new users
       createdAt: now,
       updatedAt: now
     } as User;
