@@ -46,10 +46,11 @@ export default function EditSubCategory() {
 
   // Load sub-category data when it's available
   useEffect(() => {
-    if (subCategory) {
-      setName(subCategory.name || "");
-      setParentCategory(subCategory.parentId || "");
-      setDescription(subCategory.description || "");
+    if (subCategory?.data) {
+      const subCategoryData = subCategory.data;
+      setName(subCategoryData.name || "");
+      setParentCategory(subCategoryData.parentId || "");
+      setDescription(subCategoryData.description || "");
     }
   }, [subCategory]);
 

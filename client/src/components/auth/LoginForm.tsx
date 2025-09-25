@@ -67,7 +67,16 @@ export function LoginForm() {
             <Input data-testid="input-email" id="email" type="email" placeholder="m@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="password">Password</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="password">Password</Label>
+              <button
+                type="button"
+                onClick={() => setLocation('/forgot-password')}
+                className="text-sm text-primary hover:text-primary/80 underline"
+              >
+                Forgot password?
+              </button>
+            </div>
             <Input data-testid="input-password" id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
           </div>
         </CardContent>

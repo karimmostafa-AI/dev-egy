@@ -79,7 +79,7 @@ router.post("/items", getOrCreateCartMiddleware, async (req: CartRequest, res: R
     if (!req.cart) {
       return res.status(400).json({ message: "Cart not found" });
     }
-    const { productId, quantity } = req.body;
+    const { productId, quantity, variantId } = req.body;
     
     if (!productId) {
       return res.status(400).json({ message: "Product ID is required" });
@@ -88,7 +88,8 @@ router.post("/items", getOrCreateCartMiddleware, async (req: CartRequest, res: R
     const cartItem = await cartService.addItemToCart(
       req.cart.id, 
       productId, 
-      quantity || 1
+      quantity || 1,
+      variantId
     );
     
     res.status(201).json({ cartItem });

@@ -36,7 +36,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useCategories, useDeleteCategory } from "@/hooks/admin/useAdmin";
-import type { Category } from "../../shared/schema";
+import type { Category } from "../../../shared/schema";
 
 export default function AllCategories() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -48,7 +48,7 @@ export default function AllCategories() {
   const deleteCategoryMutation = useDeleteCategory();
 
   // Extract categories from API response
-  const categories = categoriesResponse?.categories || [];
+  const categories = Array.isArray(categoriesResponse?.data) ? categoriesResponse.data : [];
 
   const filteredCategories = categories.filter((category: Category) => 
     category.name.toLowerCase().includes(searchTerm.toLowerCase())

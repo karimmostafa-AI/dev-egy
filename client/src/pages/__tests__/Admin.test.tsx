@@ -1,6 +1,7 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi } from "vitest";
-import { MemoryLocation } from "wouter/memory-location";
+import { memoryLocation } from "wouter/memory-location";
+import { Router } from "wouter";
 import AdminDashboard from "../AdminDashboard";
 import AllProducts from "../AllProducts";
 import AddProduct from "../AddProduct";
@@ -28,12 +29,39 @@ describe("Admin System", () => {
                 { id: 1, name: "Product 1", sku: "P001", price: "10.00", inventoryQuantity: 100, isAvailable: true, category: { name: "Category 1" } },
                 { id: 2, name: "Product 2", sku: "P002", price: "20.00", inventoryQuantity: 50, isAvailable: true, category: { name: "Category 2" } },
             ];
-            vi.spyOn(useAdmin, 'useProducts').mockReturnValue({ data: { products: mockProducts, pagination: { page: 1, limit: 10, total: 2, totalPages: 1 } }, isLoading: false, error: null });
+            vi.spyOn(useAdmin, 'useProducts').mockReturnValue({ 
+                data: { success: true, data: { data: mockProducts, pagination: { page: 1, limit: 10, total: 2, totalPages: 1, hasNext: false, hasPrev: false } } }, 
+                isLoading: false, 
+                error: null,
+                isError: false,
+                isPending: false,
+                isLoadingError: false,
+                isRefetchError: false,
+                isSuccess: true,
+                status: 'success' as const,
+                fetchStatus: 'idle' as const,
+                dataUpdatedAt: Date.now(),
+                errorUpdatedAt: 0,
+                failureCount: 0,
+                failureReason: null,
+                errorUpdateCount: 0,
+                isFetched: true,
+                isFetchedAfterMount: true,
+                isFetching: false,
+                isInitialLoading: false,
+                isPaused: false,
+                isPlaceholderData: false,
+                isRefetching: false,
+                isStale: false,
+                refetch: vi.fn(),
+                remove: vi.fn()
+            } as any);
 
+            const { hook } = memoryLocation({ path: "/admin/products" });
             render(
-                <MemoryLocation initialPath="/admin/products">
+                <Router hook={hook}>
                     <AllProducts />
-                </MemoryLocation>
+                </Router>
             );
 
             expect(await screen.findByText("Product 1")).toBeInTheDocument();
@@ -41,12 +69,13 @@ describe("Admin System", () => {
         });
 
         it("should add a new product", async () => {
-            vi.spyOn(useAdmin, 'useProducts').mockReturnValue({ data: { products: [], pagination: { page: 1, limit: 10, total: 0, totalPages: 1 } }, isLoading: false, error: null });
+            vi.spyOn(useAdmin, 'useProducts').mockReturnValue({ data: { success: true, data: { data: [], pagination: { page: 1, limit: 10, total: 0, totalPages: 1, hasNext: false, hasPrev: false } } }, isLoading: false, error: null });
 
+            const { hook } = memoryLocation({ path: "/admin/products/add" });
             render(
-                <MemoryLocation initialPath="/admin/products/add">
+                <Router hook={hook}>
                     <AddProduct />
-                </MemoryLocation>
+                </Router>
             );
         
             const newProduct = { id: 1, name: "New Product" };
@@ -62,12 +91,13 @@ describe("Admin System", () => {
 
         it("should edit an existing product", async () => {
             const mockProduct = { id: 1, name: "Product 1" };
-            vi.spyOn(useAdmin, 'useProducts').mockReturnValue({ data: { products: [mockProduct], pagination: { page: 1, limit: 10, total: 1, totalPages: 1 } }, isLoading: false, error: null });
+            vi.spyOn(useAdmin, 'useProducts').mockReturnValue({ data: { success: true, data: { data: [mockProduct], pagination: { page: 1, limit: 10, total: 1, totalPages: 1, hasNext: false, hasPrev: false } } }, isLoading: false, error: null });
 
+            const { hook } = memoryLocation({ path: "/admin/products/edit/1" });
             render(
-                <MemoryLocation initialPath="/admin/products/edit/1">
-                    <EditProduct params={{ id: "1" }} />
-                </MemoryLocation>
+                <Router hook={hook}>
+                    <EditProduct />
+                </Router>
             );
         
             const updatedProduct = { ...mockProduct, name: "Updated Product" };
@@ -83,12 +113,13 @@ describe("Admin System", () => {
 
         it("should delete an existing product", async () => {
             const mockProduct = { id: 1, name: "Product 1" };
-            vi.spyOn(useAdmin, 'useProducts').mockReturnValue({ data: { products: [mockProduct], pagination: { page: 1, limit: 10, total: 1, totalPages: 1 } }, isLoading: false, error: null });
+            vi.spyOn(useAdmin, 'useProducts').mockReturnValue({ data: { success: true, data: { data: [mockProduct], pagination: { page: 1, limit: 10, total: 1, totalPages: 1, hasNext: false, hasPrev: false } } }, isLoading: false, error: null });
 
+            const { hook } = memoryLocation({ path: "/admin/products" });
             render(
-                <MemoryLocation initialPath="/admin/products">
+                <Router hook={hook}>
                     <AllProducts />
-                </MemoryLocation>
+                </Router>
             );
         
             const deleteButton = await screen.findByRole('button', { name: /delete/i });
@@ -110,12 +141,13 @@ describe("Admin System", () => {
                 { id: 1, name: "Category 1", description: "Description 1", productsCount: 1 },
                 { id: 2, name: "Category 2", description: "Description 2", productsCount: 1 },
             ];
-            vi.spyOn(useAdmin, 'useCategories').mockReturnValue({ data: mockCategories, isLoading: false, error: null });
+            vi.spyOn(useAdmin, 'useCategories').mockReturnValue({ data: { success: true, data: mockCategories }, isLoading: false, error: null });
 
+            const { hook } = memoryLocation({ path: "/admin/categories" });
             render(
-                <MemoryLocation initialPath="/admin/categories">
+                <Router hook={hook}>
                     <AllCategories />
-                </MemoryLocation>
+                </Router>
             );
 
             expect(await screen.findByText("Category 1")).toBeInTheDocument();
@@ -123,12 +155,13 @@ describe("Admin System", () => {
         });
 
         it("should add a new category", async () => {
-            vi.spyOn(useAdmin, 'useCategories').mockReturnValue({ data: [], isLoading: false, error: null });
+            vi.spyOn(useAdmin, 'useCategories').mockReturnValue({ data: { success: true, data: [] }, isLoading: false, error: null });
 
+            const { hook } = memoryLocation({ path: "/admin/categories/add" });
             render(
-                <MemoryLocation initialPath="/admin/categories/add">
+                <Router hook={hook}>
                     <AddCategory />
-                </MemoryLocation>
+                </Router>
             );
         
             const newCategory = { id: 1, name: "New Category" };
@@ -144,12 +177,13 @@ describe("Admin System", () => {
 
         it("should edit an existing category", async () => {
             const mockCategory = { id: 1, name: "Category 1" };
-            vi.spyOn(useAdmin, 'useCategories').mockReturnValue({ data: [mockCategory], isLoading: false, error: null });
+            vi.spyOn(useAdmin, 'useCategories').mockReturnValue({ data: { success: true, data: [mockCategory] }, isLoading: false, error: null });
 
+            const { hook } = memoryLocation({ path: "/admin/categories/edit/1" });
             render(
-                <MemoryLocation initialPath="/admin/categories/edit/1">
-                    <EditCategory params={{ id: "1" }} />
-                </MemoryLocation>
+                <Router hook={hook}>
+                    <EditCategory />
+                </Router>
             );
         
             const updatedCategory = { ...mockCategory, name: "Updated Category" };
@@ -165,12 +199,13 @@ describe("Admin System", () => {
 
         it("should delete an existing category", async () => {
             const mockCategory = { id: 1, name: "Category 1" };
-            vi.spyOn(useAdmin, 'useCategories').mockReturnValue({ data: [mockCategory], isLoading: false, error: null });
+            vi.spyOn(useAdmin, 'useCategories').mockReturnValue({ data: { success: true, data: [mockCategory] }, isLoading: false, error: null });
 
+            const { hook } = memoryLocation({ path: "/admin/categories" });
             render(
-                <MemoryLocation initialPath="/admin/categories">
+                <Router hook={hook}>
                     <AllCategories />
-                </MemoryLocation>
+                </Router>
             );
         
             const deleteButton = await screen.findByRole('button', { name: /delete/i });
@@ -192,12 +227,13 @@ describe("Admin System", () => {
                 { id: 1, orderNumber: "123", customer: { name: "John Doe" }, total: "100.00", status: "pending" },
                 { id: 2, orderNumber: "456", customer: { name: "Jane Doe" }, total: "200.00", status: "shipped" },
             ];
-            vi.spyOn(useAdmin, 'useOrders').mockReturnValue({ data: { orders: mockOrders, pagination: { page: 1, limit: 10, total: 2, totalPages: 1 } }, isLoading: false, error: null });
+            vi.spyOn(useAdmin, 'useOrders').mockReturnValue({ data: { success: true, data: { data: mockOrders, pagination: { page: 1, limit: 10, total: 2, totalPages: 1, hasNext: false, hasPrev: false } } }, isLoading: false, error: null });
 
+            const { hook } = memoryLocation({ path: "/admin/orders" });
             render(
-                <MemoryLocation initialPath="/admin/orders">
+                <Router hook={hook}>
                     <AdminDashboard />
-                </MemoryLocation>
+                </Router>
             );
 
             const ordersLink = screen.getByRole('link', { name: /orders/i });
@@ -214,12 +250,13 @@ describe("Admin System", () => {
                 { id: 1, name: "John Doe", email: "john.doe@example.com" },
                 { id: 2, name: "Jane Doe", email: "jane.doe@example.com" },
             ];
-            vi.spyOn(useAdmin, 'useCustomers').mockReturnValue({ data: { customers: mockCustomers, pagination: { page: 1, limit: 10, total: 2, totalPages: 1 } }, isLoading: false, error: null });
+            vi.spyOn(useAdmin, 'useCustomers').mockReturnValue({ data: { success: true, data: { data: mockCustomers, pagination: { page: 1, limit: 10, total: 2, totalPages: 1, hasNext: false, hasPrev: false } } }, isLoading: false, error: null });
 
+            const { hook } = memoryLocation({ path: "/admin/customers" });
             render(
-                <MemoryLocation initialPath="/admin/customers">
+                <Router hook={hook}>
                     <AdminDashboard />
-                </MemoryLocation>
+                </Router>
             );
 
             const customersLink = screen.getByRole('link', { name: /customers/i });
@@ -236,12 +273,13 @@ describe("Admin System", () => {
                 { id: 1, code: "SUMMER10", type: "percentage", value: 10 },
                 { id: 2, code: "FALL20", type: "fixed", value: 20 },
             ];
-            vi.spyOn(useAdmin, 'useCoupons').mockReturnValue({ data: { coupons: mockCoupons, pagination: { page: 1, limit: 10, total: 2, totalPages: 1 } }, isLoading: false, error: null });
+            vi.spyOn(useAdmin, 'useCoupons').mockReturnValue({ data: { success: true, data: { data: mockCoupons, pagination: { page: 1, limit: 10, total: 2, totalPages: 1, hasNext: false, hasPrev: false } } }, isLoading: false, error: null });
 
+            const { hook } = memoryLocation({ path: "/admin/coupons" });
             render(
-                <MemoryLocation initialPath="/admin/coupons">
+                <Router hook={hook}>
                     <AdminDashboard />
-                </MemoryLocation>
+                </Router>
             );
 
             const couponsLink = screen.getByRole('link', { name: /coupons/i });

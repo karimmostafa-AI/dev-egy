@@ -62,8 +62,8 @@ export default function CustomerManagement() {
   const { toast } = useToast();
 
   // Extract customers from API response
-  const customers = customersResponse?.data || [];
-  const pagination = customersResponse?.pagination;
+  const customers = customersResponse?.data?.data || [];
+  const pagination = customersResponse?.data?.pagination;
 
   const filteredCustomers = customers.filter((customer: any) => 
     customer.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||

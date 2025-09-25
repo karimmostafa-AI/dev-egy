@@ -88,24 +88,25 @@ export default function EditProduct() {
 
   // Load product data when it's available
   useEffect(() => {
-    if (product) {
-      setName(product.name || "");
-      setDescription(product.description || "");
-      setCategory(product.categoryId?.toString() || "");
-      setSubCategory(product.subCategoryId?.toString() || "");
-      setBrand(product.brandId?.toString() || "");
-      setSellingPrice(product.price?.toString() || "");
-      setDiscountPrice(product.comparePrice?.toString() || "");
-      setStockQuantity(product.inventoryQuantity?.toString() || "");
-      setMinimumOrder(product.minimumOrder?.toString() || "1");
-      setSelectedColors(product.selectedColors || []);
-      setSelectedSizes(product.selectedSizes || []);
+    if (product?.data) {
+      const productData = product.data as any;
+      setName(productData.name || "");
+      setDescription(productData.description || "");
+      setCategory(productData.categoryId?.toString() || "");
+      setSubCategory(productData.subCategoryId?.toString() || "");
+      setBrand(productData.brandId?.toString() || "");
+      setSellingPrice(productData.price?.toString() || "");
+      setDiscountPrice(productData.comparePrice?.toString() || "");
+      setStockQuantity(productData.inventoryQuantity?.toString() || "");
+      setMinimumOrder(productData.minimumOrder?.toString() || "1");
+      setSelectedColors(productData.selectedColors || []);
+      setSelectedSizes(productData.selectedSizes || []);
       
       // Set up color images if they exist
-      if (product.colorImages) {
+      if (productData.colorImages) {
         const images: Record<string, {file: File | null, preview: string | null}> = {};
-        Object.keys(product.colorImages).forEach(color => {
-          images[color] = { file: null, preview: product.colorImages[color] };
+        Object.keys(productData.colorImages).forEach(color => {
+          images[color] = { file: null, preview: productData.colorImages[color] };
         });
         setColorImages(images);
       }
@@ -184,10 +185,10 @@ export default function EditProduct() {
     
     try {
       // Upload thumbnail image if available
-      let thumbnailUrl = product?.thumbnailUrl || null;
+      let thumbnailUrl = (product?.data as any)?.thumbnailUrl || null;
       if (thumbnail) {
         const imageData = await uploadImageMutation.mutateAsync(thumbnail);
-        thumbnailUrl = imageData.url;
+        thumbnailUrl = imageData.data?.url;
       }
       
       // Upload color images if available
@@ -195,7 +196,9 @@ export default function EditProduct() {
       for (const [colorName, imageData] of Object.entries(colorImages)) {
         if (imageData.file) {
           const uploadedImage = await uploadImageMutation.mutateAsync(imageData.file);
-          colorImageUrls[colorName] = uploadedImage.url;
+          if (uploadedImage.data?.url) {
+            colorImageUrls[colorName] = uploadedImage.data.url;
+          }
         } else if (imageData.preview) {
           // Keep existing image URL
           colorImageUrls[colorName] = imageData.preview;
@@ -417,9 +420,9 @@ export default function EditProduct() {
                       alt="Thumbnail preview"
                       className="h-32 w-32 rounded-md object-cover border"
                     />
-                  ) : product.thumbnailUrl ? (
+                  ) : (product?.data as any)?.thumbnailUrl ? (
                     <img
-                      src={product.thumbnailUrl}
+                      src={(product?.data as any)?.thumbnailUrl}
                       alt="Current thumbnail"
                       className="h-32 w-32 rounded-md object-cover border"
                     />

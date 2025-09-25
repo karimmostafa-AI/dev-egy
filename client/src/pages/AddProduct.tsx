@@ -152,7 +152,7 @@ export default function AddProduct() {
       let thumbnailUrl = null;
       if (thumbnail) {
         const imageData = await uploadImageMutation.mutateAsync(thumbnail);
-        thumbnailUrl = imageData.url;
+        thumbnailUrl = imageData.data?.url;
       }
       
       // Upload color images if available
@@ -160,7 +160,9 @@ export default function AddProduct() {
       for (const [colorName, imageData] of Object.entries(colorImages)) {
         if (imageData.file) {
           const uploadedImage = await uploadImageMutation.mutateAsync(imageData.file);
-          colorImageUrls[colorName] = uploadedImage.url;
+          if (uploadedImage.data?.url) {
+            colorImageUrls[colorName] = uploadedImage.data.url;
+          }
         }
       }
       

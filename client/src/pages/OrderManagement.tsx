@@ -97,8 +97,8 @@ export default function OrderManagement() {
   });
 
   // Extract orders from API response
-  const ordersData = ordersResponse?.orders || [];
-  const pagination = ordersResponse?.pagination;
+  const ordersData = ordersResponse?.data?.data || [];
+  const pagination = ordersResponse?.data?.pagination;
 
   // Client-side filtering for search and payment method (API handles status filter)
   const filteredAndSortedOrders = useMemo(() => {

@@ -168,7 +168,7 @@ export const generatePDFInvoice = (orderData: OrderDetail) => {
         fontStyle: 'bold'
       }
     },
-    didParseCell: function (data) {
+    didParseCell: function (data: any) {
       // Style the grand total row differently
       if (data.row.index === summaryData.length - 1) {
         data.cell.styles.fillColor = [240, 240, 240];

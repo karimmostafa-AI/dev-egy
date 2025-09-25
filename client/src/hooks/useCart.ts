@@ -61,7 +61,7 @@ const fetchCart = async (): Promise<{ cartItems: CartItem[]; cart: Cart; applied
   return await res.json();
 };
 
-const addItemToCart = async (data: { productId: string; quantity: number }): Promise<{ cartItem: CartItem }> => {
+const addItemToCart = async (data: { productId: string; quantity: number; variantId?: string }): Promise<{ cartItem: CartItem }> => {
   const res = await apiRequest("POST", "/api/cart/items", data);
   return await res.json();
 };

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,10 +15,8 @@ import CategoryNavigation from '@/components/CategoryNavigation';
 import Footer from '@/components/Footer';
 
 const resetPasswordSchema = z.object({
-  password: z.string()
-    .min(8, 'Password must be at least 8 characters')
-    .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, 'Password must contain at least one uppercase letter, one lowercase letter, and one number'),
-  confirmPassword: z.string(),
+  password: z.string().min(6, 'Password must be at least 6 characters long'),
+  confirmPassword: z.string().min(6, 'Please confirm your password'),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
@@ -33,11 +31,9 @@ export default function ResetPassword() {
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  
-  // Get token from URL params
-  const urlParams = new URLSearchParams(window.location.search);
-  const token = urlParams.get('token');
-  const email = urlParams.get('email');
+  const [token, setToken] = useState<string | null>(null);
+  const [isValidToken, setIsValidToken] = useState<boolean | null>(null);
+  const [email, setEmail] = useState<string>('');
 
   const {
     register,
@@ -50,11 +46,42 @@ export default function ResetPassword() {
 
   const password = watch('password', '');
 
-  // Check if token is valid
-  const isValidToken = token && token.length > 10; // Basic validation
+  // Get token from URL params and verify it
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const tokenParam = urlParams.get('token');
+    const emailParam = urlParams.get('email');
+    
+    if (!tokenParam) {
+      setError('Invalid reset link. Please request a new password reset.');
+      setIsValidToken(false);
+      return;
+    }
+    
+    setToken(tokenParam);
+    if (emailParam) setEmail(emailParam);
+    verifyToken(tokenParam);
+  }, []);
+
+  const verifyToken = async (resetToken: string) => {
+    try {
+      const response = await fetch(`/api/auth/verify-reset-token?token=${encodeURIComponent(resetToken)}`);
+      const result = await response.json();
+      
+      if (response.ok && result.valid) {
+        setIsValidToken(true);
+      } else {
+        setIsValidToken(false);
+        setError(result.message || 'Invalid or expired reset token');
+      }
+    } catch (error) {
+      setIsValidToken(false);
+      setError('Failed to verify reset token');
+    }
+  };
 
   const onSubmit = async (data: ResetPasswordForm) => {
-    if (!isValidToken) {
+    if (!isValidToken || !token) {
       setError('Invalid or expired reset token. Please request a new password reset.');
       return;
     }
@@ -63,16 +90,26 @@ export default function ResetPassword() {
     setError(null);
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const response = await fetch('/api/auth/reset-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          token, 
+          password: data.password 
+        }),
+      });
       
-      // In a real app, this would reset password via backend API
-      console.log('Resetting password with token:', token);
-      console.log('New password data:', { ...data, password: '[REDACTED]', confirmPassword: '[REDACTED]' });
+      const result = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(result.message || 'Failed to reset password');
+      }
       
       setIsSubmitted(true);
     } catch (error) {
-      setError('Failed to reset password. Please try again.');
+      setError(error instanceof Error ? error.message : 'Failed to reset password. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -93,7 +130,29 @@ export default function ResetPassword() {
   const strengthLabels = ['Very Weak', 'Weak', 'Fair', 'Good', 'Strong'];
   const strengthColors = ['bg-red-500', 'bg-orange-500', 'bg-yellow-500', 'bg-blue-500', 'bg-green-500'];
 
-  if (!isValidToken) {
+  // Loading state while verifying token
+  if (isValidToken === null) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="sticky top-0 z-40 bg-background">
+          <TopNavigationBar />
+          <MainHeader />
+          <CategoryNavigation />
+        </div>
+
+        <div className="flex items-center justify-center min-h-[calc(100vh-200px)] py-12">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4" />
+            <p className="text-muted-foreground">Verifying reset link...</p>
+          </div>
+        </div>
+
+        <Footer />
+      </div>
+    );
+  }
+
+  if (isValidToken === false) {
     return (
       <div className="min-h-screen bg-background">
         {/* Navigation */}
@@ -118,7 +177,7 @@ export default function ResetPassword() {
               </CardHeader>
               <CardContent className="space-y-4 text-center">
                 <p className="text-sm text-red-700">
-                  Password reset links expire after 24 hours for security reasons.
+                  {error || 'Password reset links expire after 24 hours for security reasons.'}
                 </p>
                 
                 <div className="space-y-3 pt-4">
@@ -312,20 +371,8 @@ export default function ResetPassword() {
                   <p className="text-xs font-medium text-muted-foreground mb-2">Password Requirements:</p>
                   <ul className="text-xs text-muted-foreground space-y-1">
                     <li className="flex items-center gap-1">
-                      <div className={`w-1 h-1 rounded-full ${password.length >= 8 ? 'bg-green-500' : 'bg-gray-300'}`} />
-                      At least 8 characters
-                    </li>
-                    <li className="flex items-center gap-1">
-                      <div className={`w-1 h-1 rounded-full ${/[A-Z]/.test(password) ? 'bg-green-500' : 'bg-gray-300'}`} />
-                      One uppercase letter
-                    </li>
-                    <li className="flex items-center gap-1">
-                      <div className={`w-1 h-1 rounded-full ${/[a-z]/.test(password) ? 'bg-green-500' : 'bg-gray-300'}`} />
-                      One lowercase letter
-                    </li>
-                    <li className="flex items-center gap-1">
-                      <div className={`w-1 h-1 rounded-full ${/\d/.test(password) ? 'bg-green-500' : 'bg-gray-300'}`} />
-                      One number
+                      <div className={`w-1 h-1 rounded-full ${password.length >= 6 ? 'bg-green-500' : 'bg-gray-300'}`} />
+                      At least 6 characters
                     </li>
                   </ul>
                 </div>

@@ -38,7 +38,7 @@ export default function InventoryManagement() {
   const { data: productsData, isLoading, error } = useProducts();
   const updateProductMutation = useUpdateProduct();
   
-  const products = productsData?.products || [];
+  const products = productsData?.data?.data || [];
   
   // Filter products based on search term
   const filteredProducts = products.filter((product: any) =>

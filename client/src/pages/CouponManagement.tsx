@@ -60,8 +60,8 @@ export default function CouponManagement() {
   const { toast } = useToast();
 
   // Extract coupons from API response
-  const coupons = couponsResponse?.data || couponsResponse?.coupons || [];
-  const pagination = couponsResponse?.pagination;
+  const coupons = couponsResponse?.data?.data || [];
+  const pagination = couponsResponse?.data?.pagination;
 
   const filteredCoupons = coupons.filter((coupon: any) => 
     coupon.code?.toLowerCase().includes(searchTerm.toLowerCase()) ||

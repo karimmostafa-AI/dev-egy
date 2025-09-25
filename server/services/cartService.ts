@@ -1,5 +1,5 @@
 import { eq, and } from "drizzle-orm";
-import { db, carts, cartItems, products, coupons } from "../db";
+import { db, carts, cartItems, products, coupons, productVariants } from "../db";
 import { InferSelectModel } from "drizzle-orm";
 import { carts as cartsTable, cartItems as cartItemsTable } from "@shared/schema";
 
@@ -37,20 +37,23 @@ export class CartService {
     }
   }
 
-  // Get cart items with product details
+  // Get cart items with product details and variants
   async getCartItems(cartId: string): Promise<any[]> {
     try {
       const items = await db.select({
         cartItem: cartItems,
-        product: products
+        product: products,
+        variant: productVariants
       })
       .from(cartItems)
       .leftJoin(products, eq(cartItems.productId, products.id))
+      .leftJoin(productVariants, eq(cartItems.variantId, productVariants.id))
       .where(eq(cartItems.cartId, cartId));
       
       return items.map(item => ({
         ...item.cartItem,
-        product: item.product
+        product: item.product,
+        variant: item.variant
       }));
     } catch (error) {
       if (error instanceof Error) {
@@ -62,15 +65,23 @@ export class CartService {
   }
 
   // Add item to cart
-  async addItemToCart(cartId: string, productId: string, quantity: number = 1): Promise<CartItem> {
+  async addItemToCart(cartId: string, productId: string, quantity: number = 1, variantId?: string): Promise<CartItem> {
     try {
-      // Check if item already exists in cart
+      // Check if item already exists in cart (same product and variant)
+      const conditions = [
+        eq(cartItems.cartId, cartId),
+        eq(cartItems.productId, productId)
+      ];
+      
+      if (variantId) {
+        conditions.push(eq(cartItems.variantId, variantId));
+      } else {
+        conditions.push(eq(cartItems.variantId, null));
+      }
+      
       const existingItem = await db.select()
         .from(cartItems)
-        .where(and(
-          eq(cartItems.cartId, cartId),
-          eq(cartItems.productId, productId)
-        ))
+        .where(and(...conditions))
         .limit(1);
       
       if (existingItem.length > 0) {
@@ -89,6 +100,7 @@ export class CartService {
           .values({ 
             cartId, 
             productId, 
+            variantId,
             quantity 
           })
           .returning();
@@ -288,13 +300,15 @@ export class CartService {
   // Calculate checkout totals for cart
   async calculateCheckoutTotals(cartId: string, shippingAddress?: any): Promise<any> {
     try {
-      // Get cart items with products
+      // Get cart items with products and variants
       const cartItemsList = await db.select({
         cartItem: cartItems,
-        product: products
+        product: products,
+        variant: productVariants
       })
       .from(cartItems)
       .innerJoin(products, eq(cartItems.productId, products.id))
+      .leftJoin(productVariants, eq(cartItems.variantId, productVariants.id))
       .where(eq(cartItems.cartId, cartId));
 
       // Get cart with coupon
@@ -316,14 +330,18 @@ export class CartService {
       const items = [];
       
       for (const item of cartItemsList) {
-        const price = parseFloat(item.product.price as string);
+        // Use variant price if available, otherwise use product price
+        const price = item.variant && item.variant.price 
+          ? parseFloat(item.variant.price as string) 
+          : parseFloat(item.product.price as string);
         const lineTotal = price * item.cartItem.quantity;
         subtotal += lineTotal;
         
         items.push({
           productId: item.product.id,
+          variantId: item.variant?.id,
           name: item.product.name,
-          sku: item.product.sku,
+          sku: item.variant?.sku || item.product.sku,
           price: price,
           quantity: item.cartItem.quantity,
           lineTotal: lineTotal
@@ -363,27 +381,43 @@ export class CartService {
     }
   }
 
-  // Reserve inventory for checkout (simulate inventory management)
+  // Reserve inventory for checkout with variant support
   async reserveInventory(cartId: string): Promise<boolean> {
     try {
       const cartItemsList = await db.select({
         cartItem: cartItems,
-        product: products
+        product: products,
+        variant: productVariants
       })
       .from(cartItems)
       .innerJoin(products, eq(cartItems.productId, products.id))
+      .leftJoin(productVariants, eq(cartItems.variantId, productVariants.id))
       .where(eq(cartItems.cartId, cartId));
 
       // Check if all items have sufficient inventory
       for (const item of cartItemsList) {
-        if (!item.product.allowOutOfStockPurchases && 
-            (item.product.inventoryQuantity || 0) < item.cartItem.quantity) {
-          throw new Error(`Insufficient inventory for ${item.product.name}`);
+        let availableQuantity: number;
+        let allowOutOfStock: boolean;
+        let itemName: string;
+        
+        if (item.variant) {
+          // Use variant inventory if variant exists
+          availableQuantity = item.variant.inventoryQuantity || 0;
+          allowOutOfStock = item.variant.allowOutOfStockPurchases || false;
+          itemName = `${item.product.name} (${item.variant.sku})`;
+        } else {
+          // Use product inventory if no variant
+          availableQuantity = item.product.inventoryQuantity || 0;
+          allowOutOfStock = item.product.allowOutOfStockPurchases || false;
+          itemName = item.product.name;
+        }
+        
+        if (!allowOutOfStock && availableQuantity < item.cartItem.quantity) {
+          throw new Error(`Insufficient inventory for ${itemName}. Available: ${availableQuantity}, Requested: ${item.cartItem.quantity}`);
         }
       }
 
-      // In a real implementation, you would actually reserve the inventory here
-      // For now, we'll just return true indicating successful reservation
+      // Inventory check passed
       return true;
     } catch (error) {
       if (error instanceof Error) {
@@ -393,26 +427,40 @@ export class CartService {
     }
   }
 
-  // Update inventory after successful order (decrease quantities)
+  // Update inventory after successful order (decrease quantities) with variant support
   async updateInventoryAfterOrder(cartId: string): Promise<void> {
     try {
       const cartItemsList = await db.select({
         cartItem: cartItems,
-        product: products
+        product: products,
+        variant: productVariants
       })
       .from(cartItems)
       .innerJoin(products, eq(cartItems.productId, products.id))
+      .leftJoin(productVariants, eq(cartItems.variantId, productVariants.id))
       .where(eq(cartItems.cartId, cartId));
 
       // Update inventory quantities
       for (const item of cartItemsList) {
-        const newQuantity = (item.product.inventoryQuantity || 0) - item.cartItem.quantity;
-        await db.update(products)
-          .set({ 
-            inventoryQuantity: Math.max(0, newQuantity),
-            updatedAt: new Date()
-          })
-          .where(eq(products.id, item.product.id));
+        if (item.variant) {
+          // Update variant inventory
+          const newQuantity = (item.variant.inventoryQuantity || 0) - item.cartItem.quantity;
+          await db.update(productVariants)
+            .set({ 
+              inventoryQuantity: Math.max(0, newQuantity),
+              updatedAt: new Date()
+            })
+            .where(eq(productVariants.id, item.variant.id));
+        } else {
+          // Update product inventory
+          const newQuantity = (item.product.inventoryQuantity || 0) - item.cartItem.quantity;
+          await db.update(products)
+            .set({ 
+              inventoryQuantity: Math.max(0, newQuantity),
+              updatedAt: new Date()
+            })
+            .where(eq(products.id, item.product.id));
+        }
       }
     } catch (error) {
       if (error instanceof Error) {

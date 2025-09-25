@@ -12,6 +12,7 @@ import Footer from '@/components/Footer';
 import SEO from '@/components/SEO';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { useTrackEvent } from '@/hooks/useTracking';
+import { useAuth } from '@/hooks/useAuth';
 
 const ProductDetail: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -19,6 +20,7 @@ const ProductDetail: React.FC = () => {
   const { trackProductView, trackAddToCart } = useTrackEvent();
   const { addItem, isAddingItem } = useCart();
   const { toast } = useToast();
+  const { user } = useAuth();
   
   // Get product by slug using React Query
   const { data: productData, isLoading, error } = useQuery({
@@ -47,15 +49,56 @@ const ProductDetail: React.FC = () => {
   
   const product = productData.product;
   
-  const [selectedColor, setSelectedColor] = useState('');
-  const [selectedSize, setSelectedSize] = useState('');
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [isFavorite, setIsFavorite] = useState(false);
   
-  // Mock data for colors and sizes since they're not in the backend schema yet
-  const mockColors = ['Black', 'Navy', 'White', 'Royal Blue'];
-  const mockSizes = ['S', 'M', 'L', 'XL', '2XL'];
+  // Review form state
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewTitle, setReviewTitle] = useState('');
+  const [reviewComment, setReviewComment] = useState('');
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+  
+  // Fetch product options and variants
+  const { data: optionsData } = useQuery({
+    queryKey: ['productOptions', product?.id],
+    queryFn: async () => {
+      if (!product?.id) return null;
+      const response = await fetch(`/api/products/${product.id}/options`);
+      if (!response.ok) return null;
+      return response.json();
+    },
+    enabled: !!product?.id,
+  });
+  
+  const { data: variantsData } = useQuery({
+    queryKey: ['productVariants', product?.id],
+    queryFn: async () => {
+      if (!product?.id) return null;
+      const response = await fetch(`/api/products/${product.id}/variants`);
+      if (!response.ok) return null;
+      return response.json();
+    },
+    enabled: !!product?.id,
+  });
+  
+  const productOptions = optionsData?.options || [];
+  const productVariants = variantsData?.variants || [];
+  
+  // Fetch product reviews
+  const { data: reviewsData } = useQuery({
+    queryKey: ['productReviews', product?.id],
+    queryFn: async () => {
+      if (!product?.id) return null;
+      const response = await fetch(`/api/products/${product.id}/reviews`);
+      if (!response.ok) return null;
+      return response.json();
+    },
+    enabled: !!product?.id,
+  });
+  
+  // Mock images for now - in production, these would come from product images
   const mockImages = [
     '/images/scrub-top.jpg',
     '/images/scrub-top.jpg',
@@ -63,12 +106,30 @@ const ProductDetail: React.FC = () => {
     '/images/scrub-top.jpg'
   ];
   
-  // Set default color when component mounts
+  // Find selected variant based on selected options
+  const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({});
+  const selectedVariant = productVariants.find(variant => {
+    if (!variant.optionValues || variant.optionValues.length === 0) return false;
+    
+    return variant.optionValues.every(optionValue => {
+      const optionName = optionValue.option.name;
+      const selectedValue = selectedOptions[optionName];
+      return selectedValue === optionValue.optionValue.id;
+    });
+  });
+  
+  // Set default selections when options load
   useEffect(() => {
-    if (mockColors.length > 0 && !selectedColor) {
-      setSelectedColor(mockColors[0]);
+    if (productOptions.length > 0) {
+      const defaultSelections: Record<string, string> = {};
+      productOptions.forEach(option => {
+        if (option.values && option.values.length > 0) {
+          defaultSelections[option.name] = option.values[0].id;
+        }
+      });
+      setSelectedOptions(defaultSelections);
     }
-  }, [selectedColor]);
+  }, [productOptions]);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -78,12 +139,136 @@ const ProductDetail: React.FC = () => {
       trackProductView(product.id, product.name, 'Brand Name');
     }
   }, [product, trackProductView]);
+  
+  // Availability helper functions
+  const isAvailable = () => {
+    if (selectedVariant) {
+      return selectedVariant.isAvailable && 
+             (selectedVariant.inventoryQuantity > 0 || selectedVariant.allowOutOfStockPurchases);
+    }
+    return product.isAvailable && 
+           (product.inventoryQuantity > 0 || product.allowOutOfStockPurchases);
+  };
+  
+  const getAvailabilityText = () => {
+    if (selectedVariant) {
+      if (!selectedVariant.isAvailable) return 'Unavailable';
+      if (selectedVariant.inventoryQuantity > 0) return `In Stock (${selectedVariant.inventoryQuantity} available)`;
+      if (selectedVariant.allowOutOfStockPurchases) return 'Available (Backorder)';
+      return 'Out of Stock';
+    }
+    
+    if (!product.isAvailable) return 'Unavailable';
+    if (product.inventoryQuantity > 0) return `In Stock (${product.inventoryQuantity} available)`;
+    if (product.allowOutOfStockPurchases) return 'Available (Backorder)';
+    return 'Out of Stock';
+  };
+  
+  const getAvailabilityColor = () => {
+    return isAvailable() ? 'text-green-600' : 'text-red-600';
+  };
+  
+  // Price helper functions
+  const getCurrentPrice = () => {
+    if (selectedVariant && selectedVariant.price) {
+      return parseFloat(selectedVariant.price);
+    }
+    return parseFloat(product.price);
+  };
+  
+  const getCurrentComparePrice = () => {
+    if (selectedVariant && selectedVariant.comparePrice) {
+      return parseFloat(selectedVariant.comparePrice);
+    }
+    if (product.comparePrice) {
+      return parseFloat(product.comparePrice);
+    }
+    return null;
+  };
+  
+  // Rating helper function
+  const calculateAverageRating = () => {
+    if (!reviewsData?.reviews || reviewsData.reviews.length === 0) {
+      return 0;
+    }
+    const totalRating = reviewsData.reviews.reduce((sum, review) => sum + review.rating, 0);
+    return totalRating / reviewsData.reviews.length;
+  };
+  
+  // Review form helpers
+  const resetReviewForm = () => {
+    setReviewRating(5);
+    setReviewTitle('');
+    setReviewComment('');
+  };
+  
+  const handleSubmitReview = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!user) {
+      toast({
+        title: 'Authentication Required',
+        description: 'Please log in to submit a review.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    setIsSubmittingReview(true);
+    
+    try {
+      const response = await fetch(`/api/products/${product.id}/reviews`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          rating: reviewRating,
+          title: reviewTitle,
+          comment: reviewComment
+        })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to submit review');
+      }
+      
+      toast({
+        title: 'Review Submitted',
+        description: 'Thank you for your feedback! Your review will be visible after moderation.',
+      });
+      
+      // Reset form and close
+      resetReviewForm();
+      setShowReviewForm(false);
+      
+      // Refetch reviews
+      // Note: In a real app, you might want to use React Query's invalidateQueries
+      window.location.reload();
+      
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to submit review',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubmittingReview(false);
+    }
+  };
 
   const handleAddToCart = () => {
-    if (!selectedSize) {
+    // Check if all required options are selected
+    const missingOptions = productOptions.filter(option => 
+      !selectedOptions[option.name] && option.values && option.values.length > 0
+    );
+    
+    if (missingOptions.length > 0) {
       toast({
-        title: 'Size Required',
-        description: 'Please select a size before adding to cart.',
+        title: 'Options Required',
+        description: `Please select ${missingOptions.map(opt => opt.displayName).join(', ')} before adding to cart.`,
         variant: 'destructive',
       });
       return;
@@ -97,10 +282,11 @@ const ProductDetail: React.FC = () => {
       parseFloat(product.price)
     );
     
-    // Add to cart using the useCart hook
+    // Add to cart using the useCart hook with variant if selected
     addItem(
       {
         productId: product.id,
+        variantId: selectedVariant?.id,
         quantity: quantity,
       },
       {
@@ -208,19 +394,25 @@ const ProductDetail: React.FC = () => {
               {/* Rating - Mock data */}
               <div className="flex items-center gap-2 mt-3">
                 <div className="flex">
-                  {Array.from({ length: 5 }, (_, i) => (
-                    <Star
-                      key={i}
-                      className={`h-5 w-5 ${
-                        i < 4 
-                          ? 'fill-yellow-400 text-yellow-400' 
-                          : 'text-gray-300'
-                      }`}
-                    />
-                  ))}
+                  {Array.from({ length: 5 }, (_, i) => {
+                    const averageRating = calculateAverageRating();
+                    const isFilled = i < Math.floor(averageRating);
+                    const isHalfFilled = i === Math.floor(averageRating) && averageRating % 1 >= 0.5;
+                    
+                    return (
+                      <Star
+                        key={i}
+                        className={`h-5 w-5 ${
+                          isFilled || isHalfFilled
+                            ? 'fill-yellow-400 text-yellow-400' 
+                            : 'text-gray-300'
+                        }`}
+                      />
+                    );
+                  })}
                 </div>
                 <span className="text-sm text-muted-foreground" data-testid="product-rating">
-                  4.5 (150 reviews)
+                  {calculateAverageRating().toFixed(1)} ({reviewsData?.reviews?.length || 0} reviews)
                 </span>
               </div>
               
@@ -228,63 +420,68 @@ const ProductDetail: React.FC = () => {
               <div className="mt-4">
                 <div className="flex items-baseline gap-2">
                   <span className="text-3xl font-bold text-primary" data-testid="product-price">
-                    ${parseFloat(product.price).toFixed(2)}
+                    ${getCurrentPrice().toFixed(2)}
                   </span>
-                  {product.comparePrice && (
+                  {getCurrentComparePrice() && (
                     <span className="text-xl text-muted-foreground line-through" data-testid="product-compare-price">
-                      ${parseFloat(product.comparePrice).toFixed(2)}
+                      ${getCurrentComparePrice()!.toFixed(2)}
                     </span>
                   )}
                 </div>
-                {product.comparePrice && (
+                {getCurrentComparePrice() && (
                   <div className="mt-1 text-sm text-green-600 font-medium" data-testid="product-savings">
-                    You save ${(parseFloat(product.comparePrice) - parseFloat(product.price)).toFixed(2)} ({Math.round(((parseFloat(product.comparePrice) - parseFloat(product.price)) / parseFloat(product.comparePrice)) * 100)}%)
+                    You save ${(getCurrentComparePrice()! - getCurrentPrice()).toFixed(2)} ({Math.round(((getCurrentComparePrice()! - getCurrentPrice()) / getCurrentComparePrice()!) * 100)}%)
                   </div>
                 )}
               </div>
             </div>
 
-            {/* Colors */}
-            <div>
-              <h3 className="font-medium mb-2">Colors</h3>
-              <div className="flex flex-wrap gap-2">
-                {mockColors.map((color) => (
-                  <button
-                    key={color}
-                    onClick={() => setSelectedColor(color)}
-                    className={`h-8 w-8 rounded-full border-2 ${
-                      selectedColor === color 
-                        ? 'border-black ring-2 ring-offset-2 ring-primary' 
-                        : 'border-gray-300'
-                    }`}
-                    style={{ backgroundColor: color.toLowerCase() }}
-                    aria-label={color}
-                    data-testid={`color-${color}`}
-                  />
-                ))}
+            {/* Product Options */}
+            {productOptions.map((option) => (
+              <div key={option.id}>
+                <h3 className="font-medium mb-2">{option.displayName}</h3>
+                <div className="flex flex-wrap gap-2">
+                  {option.values?.map((value) => {
+                    const isSelected = selectedOptions[option.name] === value.id;
+                    
+                    if (option.name.toLowerCase().includes('color')) {
+                      // Render color swatches
+                      return (
+                        <button
+                          key={value.id}
+                          onClick={() => setSelectedOptions(prev => ({ ...prev, [option.name]: value.id }))}
+                          className={`h-8 w-8 rounded-full border-2 ${
+                            isSelected 
+                              ? 'border-black ring-2 ring-offset-2 ring-primary' 
+                              : 'border-gray-300'
+                          }`}
+                          style={{ backgroundColor: value.value.toLowerCase() }}
+                          aria-label={value.displayValue}
+                          data-testid={`${option.name}-${value.value}`}
+                          title={value.displayValue}
+                        />
+                      );
+                    } else {
+                      // Render text-based options (sizes, etc.)
+                      return (
+                        <button
+                          key={value.id}
+                          onClick={() => setSelectedOptions(prev => ({ ...prev, [option.name]: value.id }))}
+                          className={`px-4 py-2 rounded-md border ${
+                            isSelected
+                              ? 'border-black bg-black text-white'
+                              : 'border-gray-300 hover:border-gray-400'
+                          }`}
+                          data-testid={`${option.name}-${value.value}`}
+                        >
+                          {value.displayValue}
+                        </button>
+                      );
+                    }
+                  })}
+                </div>
               </div>
-            </div>
-
-            {/* Sizes */}
-            <div>
-              <h3 className="font-medium mb-2">Sizes</h3>
-              <div className="flex flex-wrap gap-2">
-                {mockSizes.map((size) => (
-                  <button
-                    key={size}
-                    onClick={() => setSelectedSize(size)}
-                    className={`h-10 w-10 rounded-md border ${
-                      selectedSize === size
-                        ? 'border-black bg-black text-white'
-                        : 'border-gray-300 hover:border-gray-400'
-                    }`}
-                    data-testid={`size-${size}`}
-                  >
-                    {size}
-                  </button>
-                ))}
-              </div>
-            </div>
+            ))}
 
             {/* Quantity Selector */}
             <div>
@@ -364,12 +561,12 @@ const ProductDetail: React.FC = () => {
             </div>
 
             {/* Availability */}
-            <div className="flex items-center space-x-2 text-green-600">
-              <CheckCircle className="h-5 w-5" />
-              <span className="font-medium" data-testid="product-availability">
-                {product.isAvailable && product.inventoryQuantity > 0 ? 'In Stock' : 'Out of Stock'}
+            <div className="flex items-center space-x-2">
+              <CheckCircle className={`h-5 w-5 ${getAvailabilityColor()}`} />
+              <span className={`font-medium ${getAvailabilityColor()}`} data-testid="product-availability">
+                {getAvailabilityText()}
               </span>
-              <span className="text-gray-600">• Ships in 1-2 business days</span>
+              {isAvailable() && <span className="text-gray-600">• Ships in 1-2 business days</span>}
             </div>
           </div>
         </div>
@@ -385,7 +582,7 @@ const ProductDetail: React.FC = () => {
                 Specifications
               </button>
               <button className="py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700">
-                Reviews (150)
+                Reviews ({reviewsData?.reviews?.length || 0})
               </button>
               <button className="py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700">
                 Size Guide
@@ -442,6 +639,135 @@ const ProductDetail: React.FC = () => {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+        
+        {/* Reviews Section */}
+        <div className="mt-12">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold">Customer Reviews</h2>
+            {user && (
+              <button 
+                onClick={() => setShowReviewForm(!showReviewForm)}
+                className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90"
+              >
+                Write a Review
+              </button>
+            )}
+          </div>
+          
+          {/* Review Form */}
+          {showReviewForm && user && (
+            <div className="bg-gray-50 p-6 rounded-lg mb-6">
+              <h3 className="text-lg font-semibold mb-4">Write Your Review</h3>
+              <form onSubmit={handleSubmitReview}>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium mb-2">Rating</label>
+                  <div className="flex space-x-1">
+                    {Array.from({ length: 5 }, (_, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => setReviewRating(i + 1)}
+                        className={`p-1`}
+                      >
+                        <Star
+                          className={`h-6 w-6 ${
+                            i < reviewRating
+                              ? 'fill-yellow-400 text-yellow-400'
+                              : 'text-gray-300 hover:text-yellow-300'
+                          }`}
+                        />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                
+                <div className="mb-4">
+                  <label className="block text-sm font-medium mb-2">Review Title</label>
+                  <input
+                    type="text"
+                    value={reviewTitle}
+                    onChange={(e) => setReviewTitle(e.target.value)}
+                    className="w-full p-2 border rounded-md"
+                    placeholder="Give your review a title"
+                    required
+                  />
+                </div>
+                
+                <div className="mb-4">
+                  <label className="block text-sm font-medium mb-2">Review</label>
+                  <textarea
+                    value={reviewComment}
+                    onChange={(e) => setReviewComment(e.target.value)}
+                    className="w-full p-2 border rounded-md h-32"
+                    placeholder="Share your experience with this product"
+                    required
+                  />
+                </div>
+                
+                <div className="flex space-x-3">
+                  <button
+                    type="submit"
+                    disabled={isSubmittingReview}
+                    className="bg-primary text-white px-6 py-2 rounded-md hover:bg-primary/90 disabled:opacity-50"
+                  >
+                    {isSubmittingReview ? 'Submitting...' : 'Submit Review'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowReviewForm(false);
+                      resetReviewForm();
+                    }}
+                    className="bg-gray-300 text-gray-700 px-6 py-2 rounded-md hover:bg-gray-400"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+          
+          {/* Reviews List */}
+          <div className="space-y-6">
+            {reviewsData?.reviews && reviewsData.reviews.length > 0 ? (
+              reviewsData.reviews.map((review) => (
+                <div key={review.id} className="border-b border-gray-200 pb-6">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center space-x-2">
+                      <div className="flex">
+                        {Array.from({ length: 5 }, (_, i) => (
+                          <Star
+                            key={i}
+                            className={`h-4 w-4 ${
+                              i < review.rating
+                                ? 'fill-yellow-400 text-yellow-400'
+                                : 'text-gray-300'
+                            }`}
+                          />
+                        ))}
+                      </div>
+                      <span className="font-medium">{review.user?.fullName || 'Anonymous'}</span>
+                      {review.isVerifiedPurchase && (
+                        <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                          Verified Purchase
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-sm text-gray-500">
+                      {new Date(review.createdAt).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <h4 className="font-semibold mb-2">{review.title}</h4>
+                  <p className="text-gray-600">{review.comment}</p>
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                No reviews yet. Be the first to review this product!
+              </div>
+            )}
           </div>
         </div>
       </div>

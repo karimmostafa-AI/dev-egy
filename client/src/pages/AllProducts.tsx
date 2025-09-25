@@ -72,8 +72,8 @@ export default function AllProducts() {
   const { toast } = useToast();
 
   // Extract products from API response
-  const products = productsResponse?.data || [];
-  const pagination = productsResponse?.pagination;
+  const products = productsResponse?.data?.data || [];
+  const pagination = productsResponse?.data?.pagination;
 
   const filteredProducts = products.filter((product: any) => 
     product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||

@@ -68,6 +68,7 @@ export class OrderService {
           await tx.insert(orderItems).values({
             orderId: order.id,
             productId: item.productId,
+            variantId: item.variantId,
             name: item.name,
             sku: item.sku,
             price: item.price.toString(),
