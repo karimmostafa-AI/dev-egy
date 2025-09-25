@@ -164,9 +164,26 @@ export default function AddProduct() {
         }
       }
       
+      // Generate SKU and slug
+      const generateSKU = (name: string) => {
+        const prefix = name.replace(/[^a-zA-Z0-9]/g, '').substring(0, 3).toUpperCase();
+        const timestamp = Date.now().toString().slice(-6);
+        return `${prefix}-${timestamp}`;
+      };
+      
+      const generateSlug = (name: string) => {
+        return name.toLowerCase()
+          .replace(/[^a-z0-9\s-]/g, '')
+          .replace(/\s+/g, '-')
+          .replace(/-+/g, '-')
+          .trim();
+      };
+
       // Prepare product data
       const productData = {
         name,
+        slug: generateSlug(name),
+        sku: generateSKU(name),
         description,
         categoryId: category,
         brandId: brand,
@@ -185,8 +202,38 @@ export default function AddProduct() {
       // Track product creation
       trackEvent('create_product', 'admin', name);
       
-      // In a real app, you would send this to your backend API
-      handleSuccess("Product Created!", "The product has been created successfully.");
+      // Submit to backend API
+      const response = await fetch('/api/admin/products', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
+        },
+        body: JSON.stringify(productData)
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        handleSuccess("Product Created!", "The product has been created successfully.");
+        
+        // Reset form
+        setName("");
+        setDescription("");
+        setCategory("");
+        setBrand("");
+        setSellingPrice("");
+        setDiscountPrice("");
+        setStockQuantity("");
+        setMinimumOrder("1");
+        setThumbnail(null);
+        setThumbnailPreview(null);
+        setSelectedColors([]);
+        setSelectedSizes([]);
+        setColorImages({});
+      } else {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to create product');
+      }
     } catch (error) {
       handleApiError(error, "Failed to create product");
     }

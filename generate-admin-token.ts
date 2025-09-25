@@ -3,7 +3,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { eq } from "drizzle-orm";
 
-const JWT_SECRET = process.env.JWT_SECRET || "dev-egypt-secret-key";
+const JWT_SECRET = process.env.JWT_SECRET || "dev-egypt-secret-key-for-development-only";
 
 const generateAdminToken = async () => {
   try {
