@@ -4,13 +4,13 @@ This file provides guidance to WARP (warp.dev) when working with code in this re
 
 ## Project Overview
 
-DEV Egypt is a full-stack e-commerce platform for medical uniforms built with React/TypeScript frontend and Node.js/Express backend using SQLite database. The architecture follows a clear separation of concerns with shared TypeScript schemas.
+DEV Egypt is a full-stack e-commerce platform for medical uniforms built with React/TypeScript frontend and Node.js/Express backend using SQLite database. The architecture follows a clear separation of concerns with shared TypeScript schemas and PostgreSQL-compatible schema definitions (though currently running on SQLite).
 
 ## Essential Development Commands
 
 ### Core Development
 ```powershell
-# Start development server (runs both frontend and backend)
+# Start development server (runs both frontend and backend on port 5000)
 npm run dev
 
 # Build for production (bundles client with Vite, server with esbuild)
@@ -19,17 +19,32 @@ npm run build
 # Start production server
 npm start
 
-# Type checking
+# Type checking across entire project
 npm run check
 ```
 
 ### Database Operations
 ```powershell
-# Push schema changes to database
+# Push schema changes to database (uses Drizzle migrations)
 npm run db:push
 
 # Seed database with sample data
 npm run db:seed
+
+# Initialize SQLite database (first-time setup)
+npm run db:init-sqlite
+```
+
+### Development Utilities
+```powershell
+# Create admin user for testing
+tsx create-admin-user.ts
+
+# Generate admin authentication token
+tsx generate-admin-token.ts
+
+# Test API endpoints
+tsx test-admin-apis.ts
 ```
 
 ### Testing

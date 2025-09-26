@@ -38,9 +38,7 @@ import OrderManagement from "./OrderManagement";
 import OrderDetails from "./OrderDetails";
 
 // Import real admin management components
-import AllProducts from "./AllProducts";
-import AddProduct from "./AddProduct";
-import EditProduct from "./EditProduct";
+import ProductManagement from "./ProductManagement";
 import AllCategories from "./AllCategories";
 import CustomerManagement from "./CustomerManagement";
 import CouponManagement from "./CouponManagement";
@@ -253,9 +251,9 @@ function AdminDashboard() {
               <Route path="/admin/" component={DashboardContent} />
               <Route path="/admin/orders" component={OrderManagement} />
               <Route path="/admin/orders*" component={OrderManagement} />
-              <Route path="/admin/products/add" component={AddProduct} />
-              <Route path="/admin/products/edit/:id" component={EditProduct} />
-              <Route path="/admin/products" component={AllProducts} />
+              <Route path="/admin/products" component={ProductManagement} />
+              <Route path="/admin/products*" component={ProductManagement} />
+              {/* Other routes */}
               <Route path="/admin/categories" component={AllCategories} />
               <Route path="/admin/customers" component={CustomerManagement} />
               <Route path="/admin/coupons" component={CouponManagement} />

@@ -1,249 +1,182 @@
 import { Request, Response, NextFunction } from "express";
-import jwt from "jsonwebtoken";
-import { db, users } from "../db";
-import { eq } from "drizzle-orm";
+import { AuthService } from "../services/authService";
 
-// Admin role constants
-export const ADMIN_ROLES = {
-  SUPER_ADMIN: 'super_admin',
-  ADMIN: 'admin',
-  MANAGER: 'manager'
-} as const;
-
-// Helper to format decimal values
-export function formatDecimal(value: any): number {
-  if (value === null || value === undefined) return 0;
-  if (typeof value === 'number') return value;
-  if (typeof value === 'string') return parseFloat(value);
-  return parseFloat(value.toString());
+// Extend Request interface to include user
+interface AuthenticatedRequest extends Request {
+  user?: { userId: string; email: string };
 }
 
-// Helper to format date for SQLite
-export function formatDateForSQLite(date: Date): string {
-  return date.toISOString();
-}
+const authService = new AuthService();
 
-// Helper to get date range for SQLite queries
-export function getDateRange(period: 'today' | 'week' | 'month') {
-  const now = new Date();
-  let startDate: Date;
+// Middleware to require admin authentication  
+export const requireAdmin = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  try {
+    // Get token ONLY from Authorization header (not cookies) for security
+    const authHeader = req.headers.authorization;
+    const token = authHeader && authHeader.startsWith('Bearer ') 
+      ? authHeader.substring(7) 
+      : null;
 
-  switch (period) {
-    case 'today':
-      startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      break;
-    case 'week':
-      startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-      break;
-    case 'month':
-      startDate = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
-      break;
-    default:
-      startDate = new Date();
+    if (!token) {
+      return res.status(401).json({ 
+        error: "Authentication required",
+        details: "No token provided" 
+      });
+    }
+
+    // Verify token
+    const decoded = authService.verifyToken(token);
+    if (!decoded) {
+      return res.status(401).json({ 
+        error: "Invalid token",
+        details: "Token verification failed" 
+      });
+    }
+
+    // Check if user is admin
+    const isUserAdmin = await authService.isAdmin(decoded.userId);
+    if (!isUserAdmin) {
+      return res.status(403).json({ 
+        error: "Access denied",
+        details: "Admin privileges required" 
+      });
+    }
+
+    // Add user info to request
+    req.user = decoded;
+    next();
+  } catch (error) {
+    console.error("Admin authentication error:", error);
+    return res.status(500).json({ 
+      error: "Internal server error",
+      details: "Authentication check failed" 
+    });
   }
+};
 
-  return {
-    start: startDate, // Return Date objects for Drizzle timestamp compatibility
-    end: now // Return Date objects for Drizzle timestamp compatibility
-  };
-}
-
-// Standardized API response format
-export interface ApiResponse<T = any> {
-  success: boolean;
-  data?: T;
-  error?: string;
-  message?: string;
-}
-
-// Pagination response format
-export interface PaginatedResponse<T = any> {
-  data: T[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-    hasNext: boolean;
-    hasPrev: boolean;
-  };
-}
-
-// Helper to create success response
-export function successResponse<T>(data: T, message?: string): ApiResponse<T> {
+// Helper function for standardized success responses
+export const successResponse = (data: any, message?: string) => {
   return {
     success: true,
     data,
-    message
+    message: message || "Operation successful"
   };
-}
+};
 
-// Helper to create error response
-export function errorResponse(error: string, statusCode?: number): ApiResponse {
+// Helper function for standardized error responses
+export const errorResponse = (message: string, details?: string) => {
   return {
     success: false,
-    error
+    error: message,
+    details: details || undefined
   };
-}
+};
 
-// Helper to create paginated response
-export function paginatedResponse<T>(
-  data: T[],
-  page: number,
-  limit: number,
-  total: number
-): PaginatedResponse<T> {
-  const totalPages = Math.ceil(total / limit);
-  
+// Helper function for paginated responses
+export const paginatedResponse = (data: any[], page: number, limit: number, total: number) => {
   return {
     data,
     pagination: {
       page,
       limit,
       total,
-      totalPages,
-      hasNext: page < totalPages,
+      totalPages: Math.ceil(total / limit),
+      hasNext: page < Math.ceil(total / limit),
       hasPrev: page > 1
     }
   };
-}
+};
 
-// JWT Secret with consistent fallback
-const JWT_SECRET = process.env.JWT_SECRET || (() => {
-  if (process.env.NODE_ENV === 'development') {
-    return "dev-egypt-secret-key-for-development-only";
+// Helper function to format decimal values
+export const formatDecimal = (value: number | string): number => {
+  const num = typeof value === 'string' ? parseFloat(value) : value;
+  return isNaN(num) ? 0 : Math.round(num * 100) / 100;
+};
+
+// Helper function to get date ranges
+export const getDateRange = (period: 'today' | 'week' | 'month') => {
+  const now = new Date();
+  const start = new Date(now);
+  const end = new Date(now);
+
+  switch (period) {
+    case 'today':
+      start.setHours(0, 0, 0, 0);
+      end.setHours(23, 59, 59, 999);
+      break;
+    case 'week':
+      start.setDate(now.getDate() - 7);
+      start.setHours(0, 0, 0, 0);
+      break;
+    case 'month':
+      start.setMonth(now.getMonth() - 1);
+      start.setHours(0, 0, 0, 0);
+      break;
   }
-  throw new Error("JWT_SECRET environment variable is required for security");
-})();
 
-// Improved admin authentication middleware
-export async function requireAdmin(req: Request, res: Response, next: NextFunction) {
-  try {
-    // For development, check for admin bypass header
-    if (process.env.NODE_ENV === 'development' && req.headers['x-admin-bypass'] === 'true') {
-      console.log("Admin authentication bypassed for development");
-      // Set a mock admin user for development
-      (req as any).user = {
-        id: 'admin-dev',
-        email: 'admin@dev.com',
-        role: ADMIN_ROLES.SUPER_ADMIN
-      };
-      return next();
-    }
+  return {
+    start: start.getTime(),
+    end: end.getTime()
+  };
+};
 
-    // Check for authorization header
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json(errorResponse('No token provided'));
-    }
-
-    // Extract and verify token
-    const token = authHeader.substring(7);
-    const decoded = jwt.verify(token, JWT_SECRET) as any;
-
-    // Fetch user from database
-    const userResult = await db.select().from(users).where(eq(users.id, decoded.userId));
-    
-    if (userResult.length === 0) {
-      return res.status(401).json(errorResponse('User not found'));
-    }
-
-    const user = userResult[0];
-
-    // Check if user has admin role
-    if (!user.role || !['admin', 'super_admin', 'manager'].includes(user.role)) {
-      return res.status(403).json(errorResponse('Access denied. Admin privileges required'));
-    }
-
-    // Attach user to request
-    (req as any).user = {
-      id: user.id,
-      email: user.email,
-      role: user.role,
-      fullName: user.fullName
-    };
-
-    next();
-  } catch (error) {
-    console.error("Admin authentication error:", error);
-    
-    if (error instanceof jwt.JsonWebTokenError) {
-      return res.status(401).json(errorResponse('Invalid token'));
-    }
-    
-    if (error instanceof jwt.TokenExpiredError) {
-      return res.status(401).json(errorResponse('Token expired'));
-    }
-    
-    return res.status(500).json(errorResponse('Authentication error'));
-  }
-}
-
-// Helper to validate request parameters
-export function validatePaginationParams(req: Request): { page: number; limit: number } {
+// Helper function to validate pagination parameters
+export const validatePaginationParams = (req: Request) => {
   const page = Math.max(1, parseInt(req.query.page as string) || 1);
   const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 10));
-  
   return { page, limit };
-}
+};
 
-// Helper to apply pagination to query results
-export function applyPagination<T>(data: T[], page: number, limit: number): T[] {
+// Helper function to apply pagination to data
+export const applyPagination = <T>(data: T[], page: number, limit: number): T[] => {
   const startIndex = (page - 1) * limit;
-  return data.slice(startIndex, startIndex + limit);
-}
+  const endIndex = startIndex + limit;
+  return data.slice(startIndex, endIndex);
+};
 
-// Helper to format order status for consistency
-export function formatOrderStatus(status: string): string {
+// Helper function to format order status
+export const formatOrderStatus = (status: string): string => {
   const statusMap: Record<string, string> = {
-    'pending': 'pending',
-    'confirmed': 'confirmed',
-    'processing': 'processing',
-    'pickup': 'pick-up',
-    'on_the_way': 'on-the-way',
-    'delivered': 'delivered',
-    'cancelled': 'cancelled'
+    'pending': 'Pending',
+    'confirmed': 'Confirmed',
+    'processing': 'Processing',
+    'delivered': 'Delivered',
+    'cancelled': 'Cancelled'
   };
-  
   return statusMap[status] || status;
-}
+};
 
-// Helper to sanitize input data
-export function sanitizeInput(data: any): any {
+// Helper function to sanitize input
+export const sanitizeInput = (data: any): any => {
   if (typeof data === 'string') {
     return data.trim();
   }
-  
   if (Array.isArray(data)) {
-    return data.map(item => sanitizeInput(item));
+    return data.map(sanitizeInput);
   }
-  
   if (data && typeof data === 'object') {
     const sanitized: any = {};
-    for (const key in data) {
-      if (data.hasOwnProperty(key)) {
-        sanitized[key] = sanitizeInput(data[key]);
-      }
+    for (const [key, value] of Object.entries(data)) {
+      sanitized[key] = sanitizeInput(value);
     }
     return sanitized;
   }
-  
   return data;
-}
+};
 
-// Helper to validate required fields
-export function validateRequiredFields(data: any, fields: string[]): string | null {
-  for (const field of fields) {
-    if (!data[field]) {
+// Helper function to validate required fields
+export const validateRequiredFields = (data: any, requiredFields: string[]): string | null => {
+  for (const field of requiredFields) {
+    if (!data[field] || (typeof data[field] === 'string' && data[field].trim() === '')) {
       return `${field} is required`;
     }
   }
   return null;
-}
+};
 
-// Helper to handle async route errors
-export function asyncHandler(fn: Function) {
+// Async handler wrapper
+export const asyncHandler = (fn: Function) => {
   return (req: Request, res: Response, next: NextFunction) => {
     Promise.resolve(fn(req, res, next)).catch(next);
   };
-}
+};

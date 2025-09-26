@@ -381,7 +381,7 @@ export const useDeleteCollection = () => {
 // Upload image
 export const useUploadImage = () => {
   return useMutation({
-    mutationFn: adminApi.uploadImage,
+    mutationFn: adminApi.uploadImage.bind(adminApi),
   });
 };
 

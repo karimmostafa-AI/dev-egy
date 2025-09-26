@@ -14,7 +14,14 @@
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:run": "vitest run",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "npm run test:setup && playwright test",
+    "test:e2e:ui": "npm run test:setup && playwright test --ui",
+    "test:e2e:debug": "npm run test:setup && playwright test --debug",
+    "test:e2e:report": "playwright show-report",
+    "test:setup": "tsx tests/setup/test-setup.ts setup",
+    "test:create-admin": "tsx tests/setup/test-setup.ts create-admin",
+    "test:cleanup": "tsx tests/setup/test-setup.ts cleanup"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -99,6 +106,7 @@
     "zod-validation-error": "^3.4.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.55.1",
     "@replit/vite-plugin-cartographer": "^0.3.0",
     "@replit/vite-plugin-runtime-error-modal": "^0.0.3",
     "@tailwindcss/typography": "^0.5.15",
@@ -117,7 +125,7 @@
     "@vitejs/plugin-react": "^4.3.2",
     "autoprefixer": "^10.4.20",
     "cross-env": "^10.0.0",
-    "drizzle-kit": "^0.30.4",
+    "drizzle-kit": "^0.31.4",
     "esbuild": "^0.25.0",
     "jsdom": "^27.0.0",
     "postcss": "^8.4.47",

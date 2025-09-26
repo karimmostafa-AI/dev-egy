@@ -35,6 +35,7 @@ const BlogPost = lazy(() => import("@/pages/BlogPost"));
 const BrandPage = lazy(() => import("@/pages/BrandPage"));
 const AdminDashboard = lazy(() => import("@/pages/AdminDashboard"));
 const AdminLogin = lazy(() => import("@/pages/AdminLogin"));
+const ProductManagement = lazy(() => import("@/pages/ProductManagement"));
 const Search = lazy(() => import("@/pages/Search"));
 const Wishlist = lazy(() => import("@/pages/Wishlist"));
 const OrderDetails = lazy(() => import("@/pages/OrderDetails"));
@@ -112,6 +113,30 @@ function Router() {
           <Route path="/reset-password" component={ResetPassword} />
           <Route path="/order-tracking" component={OrderTracking} />
           <Route path="/admin/login" component={AdminLogin} />
+          <Route path="/admin/debug" component={() => {
+            const token = localStorage.getItem('admin_token');
+            const user = localStorage.getItem('admin_user');
+            let parsedUser = null;
+            try {
+              parsedUser = user ? JSON.parse(user) : null;
+            } catch (e) {
+              parsedUser = 'INVALID JSON';
+            }
+            return (
+              <div style={{padding: '20px', backgroundColor: 'yellow'}}>
+                <h1>DEBUG: Admin Route Working</h1>
+                <p>Current path: {window.location.pathname}</p>
+                <p>Admin token exists: {token ? 'YES' : 'NO'}</p>
+                <p>Admin token value: {token ? token.substring(0, 20) + '...' : 'null'}</p>
+                <p>Admin user exists: {user ? 'YES' : 'NO'}</p>
+                <p>Admin user role: {parsedUser?.role || 'NO ROLE'}</p>
+                <p>isAuthenticated would be: {!!(parsedUser && token) ? 'TRUE' : 'FALSE'}</p>
+                <pre>{JSON.stringify(parsedUser, null, 2)}</pre>
+              </div>
+            );
+          }} />
+          <Route path="/admin/products" component={ProductManagement} />
+          <Route path="/admin/products/*" component={ProductManagement} />
           <Route path="/admin/:rest*" component={AdminDashboard} />
           <Route path="/admin" component={AdminDashboard} />
           <Route component={NotFound} />
