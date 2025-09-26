@@ -98,13 +98,50 @@ const ProductDetail: React.FC = () => {
     enabled: !!product?.id,
   });
   
-  // Mock images for now - in production, these would come from product images
-  const mockImages = [
-    '/images/scrub-top.jpg',
-    '/images/scrub-top.jpg',
-    '/images/scrub-top.jpg',
-    '/images/scrub-top.jpg'
-  ];
+  // Fetch product images
+  const { data: imagesData } = useQuery({
+    queryKey: ['productImages', product?.id],
+    queryFn: async () => {
+      if (!product?.id) return null;
+      const response = await fetch(`/api/products/${product.id}/images`);
+      if (!response.ok) return null;
+      return response.json();
+    },
+    enabled: !!product?.id,
+  });
+
+  const productImages = imagesData?.images || [];
+
+  // Get images for the currently selected color
+  const getImagesForSelectedColor = () => {
+    const colorOption = productOptions.find((option: any) => 
+      option.name.toLowerCase().includes('color')
+    );
+    
+    if (!colorOption || !selectedOptions[colorOption.name]) {
+      // If no color selected or no color option, return primary images
+      return productImages.filter((img: any) => !img.optionValueId || img.isPrimary);
+    }
+
+    const selectedColorValueId = selectedOptions[colorOption.name];
+    const colorImages = productImages.filter((img: any) => 
+      img.optionValueId === selectedColorValueId
+    );
+
+    // If no color-specific images found, fall back to primary images
+    if (colorImages.length === 0) {
+      return productImages.filter((img: any) => !img.optionValueId || img.isPrimary);
+    }
+
+    return colorImages;
+  };
+
+  const currentImages = getImagesForSelectedColor();
+  
+  // Fallback to default images if no images available
+  const displayImages = currentImages.length > 0 
+    ? currentImages.map((img: any) => img.url)
+    : [product?.thumbnailUrl || '/images/scrub-top.jpg'];
   
   // Find selected variant based on selected options
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({});
@@ -130,6 +167,11 @@ const ProductDetail: React.FC = () => {
       setSelectedOptions(defaultSelections);
     }
   }, [productOptions]);
+
+  // Reset selected image when colors change
+  useEffect(() => {
+    setSelectedImage(0);
+  }, [selectedOptions]);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -308,11 +350,11 @@ const ProductDetail: React.FC = () => {
   };
 
   const nextImage = () => {
-    setSelectedImage((prev) => (prev + 1) % mockImages.length);
+    setSelectedImage((prev) => (prev + 1) % displayImages.length);
   };
 
   const prevImage = () => {
-    setSelectedImage((prev) => (prev - 1 + mockImages.length) % mockImages.length);
+    setSelectedImage((prev) => (prev - 1 + displayImages.length) % displayImages.length);
   };
 
   return (
@@ -338,7 +380,7 @@ const ProductDetail: React.FC = () => {
             {/* Main Image */}
             <div className="relative aspect-[4/5] bg-gray-100 rounded-lg overflow-hidden group">
               <img
-                src={mockImages[selectedImage]}
+                src={displayImages[selectedImage]}
                 alt={product.name}
                 className="w-full h-full object-cover"
                 data-testid="product-main-image"
@@ -366,7 +408,7 @@ const ProductDetail: React.FC = () => {
 
             {/* Thumbnail Images */}
             <div className="flex space-x-2 overflow-x-auto">
-              {mockImages.map((image, index) => (
+              {displayImages.map((image, index) => (
                 <button
                   key={index}
                   onClick={() => setSelectedImage(index)}

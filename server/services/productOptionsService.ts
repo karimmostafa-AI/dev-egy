@@ -489,4 +489,108 @@ export class ProductOptionsService {
       throw new Error("Failed to get variant with options due to an unexpected error.");
     }
   }
+
+  /**
+   * Update product colors with associated images
+   */
+  async updateProductColors(productId: string, colorsData: Array<{
+    name: string;
+    hex: string;
+    imageUrl: string;
+  }>): Promise<any> {
+    try {
+      // Verify product exists
+      const product = await db.select().from(products).where(eq(products.id, productId)).limit(1);
+      if (!product.length) {
+        throw new Error("Product not found");
+      }
+
+      // Find or create "Color" option for this product
+      let colorOption = await db
+        .select()
+        .from(productOptions)
+        .where(and(
+          eq(productOptions.productId, productId),
+          eq(productOptions.name, "Color")
+        ))
+        .limit(1);
+
+      if (!colorOption.length) {
+        // Create Color option
+        const [newOption] = await db
+          .insert(productOptions)
+          .values({
+            productId,
+            name: "Color",
+            displayName: "Color",
+            sortOrder: 0
+          })
+          .returning();
+        colorOption = [newOption];
+      }
+
+      const optionId = colorOption[0].id;
+
+      // Delete existing color option values and their associated images
+      const existingValues = await db
+        .select()
+        .from(productOptionValues)
+        .where(eq(productOptionValues.optionId, optionId));
+
+      for (const value of existingValues) {
+        // Delete associated images
+        await db
+          .delete(productImages)
+          .where(eq(productImages.optionValueId, value.id));
+      }
+
+      // Delete existing option values
+      await db
+        .delete(productOptionValues)
+        .where(eq(productOptionValues.optionId, optionId));
+
+      // Create new color option values and their associated images
+      const createdColors = [];
+      for (let i = 0; i < colorsData.length; i++) {
+        const color = colorsData[i];
+        
+        // Create option value
+        const [optionValue] = await db
+          .insert(productOptionValues)
+          .values({
+            optionId,
+            value: color.name,
+            displayValue: color.name,
+            hex: color.hex,
+            sortOrder: i
+          })
+          .returning();
+
+        // Create associated image
+        const [image] = await db
+          .insert(productImages)
+          .values({
+            productId,
+            url: color.imageUrl,
+            alt: `${color.name} variant of ${product[0].name}`,
+            isPrimary: i === 0, // First color image as primary
+            sortOrder: i,
+            optionValueId: optionValue.id
+          })
+          .returning();
+
+        createdColors.push({
+          ...optionValue,
+          image
+        });
+      }
+
+      return createdColors;
+    } catch (error) {
+      if (error instanceof Error) {
+        throw new Error(`Failed to update product colors: ${error.message}`);
+      }
+      throw new Error("Failed to update product colors due to an unexpected error.");
+    }
+  }
 }

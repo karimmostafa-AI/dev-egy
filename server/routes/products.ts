@@ -352,6 +352,91 @@ router.delete("/:id/options/:optionId", async (req, res) => {
   }
 });
 
+// ===== PRODUCT IMAGES ENDPOINTS =====
+
+// Get all images for a product
+router.get("/:id/images", async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    if (!id) {
+      return res.status(400).json({ message: "Product ID is required" });
+    }
+    
+    const images = await productService.getProductImages(id);
+    res.json({ images });
+  } catch (error) {
+    let errorMessage = "An unexpected error occurred.";
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    }
+    res.status(500).json({ message: errorMessage });
+  }
+});
+
+// ===== PRODUCT COLOR MANAGEMENT ENDPOINTS =====
+
+// Update product colors with images (admin only)
+router.put("/:id/colors", async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    if (!id) {
+      return res.status(400).json({ message: "Product ID is required" });
+    }
+    
+    // Verify admin authentication
+    verifyAdminAuth(req);
+    
+    // Validate request body
+    const colorsData = req.body.colors; // Array of { name, hex, imageUrl }
+    
+    if (!Array.isArray(colorsData)) {
+      return res.status(400).json({ message: "Colors array is required" });
+    }
+    
+    // Validate each color
+    for (const color of colorsData) {
+      if (!color.name || !color.hex || !color.imageUrl) {
+        return res.status(400).json({ 
+          message: "Each color must have name, hex, and imageUrl" 
+        });
+      }
+      
+      // Validate URL format
+      try {
+        const url = new URL(color.imageUrl);
+        if (!['http:', 'https:'].includes(url.protocol)) {
+          return res.status(400).json({ 
+            message: "Image URLs must use http or https protocol" 
+          });
+        }
+      } catch (e) {
+        return res.status(400).json({ 
+          message: `Invalid image URL: ${color.imageUrl}` 
+        });
+      }
+    }
+    
+    const result = await productOptionsService.updateProductColors(id, colorsData);
+    res.json({ success: true, colors: result });
+  } catch (error) {
+    let errorMessage = "An unexpected error occurred.";
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    }
+    
+    let statusCode = 500;
+    if (errorMessage.includes("Admin access required") || errorMessage.includes("Authorization")) {
+      statusCode = 401;
+    } else if (errorMessage.includes("not found")) {
+      statusCode = 404;
+    }
+    
+    res.status(statusCode).json({ message: errorMessage });
+  }
+});
+
 // ===== PRODUCT VARIANTS ENDPOINTS =====
 
 // Get all variants for a product

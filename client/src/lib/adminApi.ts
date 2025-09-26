@@ -122,6 +122,17 @@ class AdminApiClient {
     });
   }
 
+  async updateProductColors(productId: string, colors: Array<{
+    name: string;
+    hex: string;
+    imageUrl: string;
+  }>) {
+    return this.request(`/products/${productId}/colors`, {
+      method: 'PUT',
+      body: JSON.stringify({ colors }),
+    });
+  }
+
   // Categories Management
   async getCategories(params: { page?: number; limit?: number } = {}) {
     const queryParams = new URLSearchParams(params as any).toString();
@@ -150,6 +161,16 @@ class AdminApiClient {
     return this.request(`/categories/${categoryId}`, {
       method: 'DELETE',
     });
+  }
+
+  // Brands Management
+  async getBrands(params: { page?: number; limit?: number } = {}) {
+    const queryParams = new URLSearchParams(params as any).toString();
+    return this.request(`/brands?${queryParams}`);
+  }
+
+  async getBrand(brandId: string) {
+    return this.request(`/brands/${brandId}`);
   }
 
   // Customers Management

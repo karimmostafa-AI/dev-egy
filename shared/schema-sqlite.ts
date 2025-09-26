@@ -83,6 +83,7 @@ export const productImages = sqliteTable("product_images", {
   alt: text("alt"),
   isPrimary: integer("is_primary", { mode: "boolean" }).default(false),
   sortOrder: integer("sort_order").default(0),
+  optionValueId: text("option_value_id"), // Links to specific color/option value, null for generic images
   createdAt: integer("created_at", { mode: "timestamp" }).default(sql`CURRENT_TIMESTAMP`),
 });
 
@@ -103,6 +104,7 @@ export const productOptionValues = sqliteTable("product_option_values", {
   optionId: text("option_id").notNull(),
   value: text("value").notNull(), // e.g., "Small", "Red"
   displayValue: text("display_value").notNull(), // e.g., "Small", "Red"
+  hex: text("hex"), // For color options, stores the hex color value
   sortOrder: integer("sort_order").default(0),
   createdAt: integer("created_at", { mode: "timestamp" }).default(sql`CURRENT_TIMESTAMP`),
   updatedAt: integer("updated_at", { mode: "timestamp" }).default(sql`CURRENT_TIMESTAMP`),

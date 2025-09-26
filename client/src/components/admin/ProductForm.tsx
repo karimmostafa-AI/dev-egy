@@ -5,7 +5,8 @@ import {
   X,
   Save,
   ArrowLeft,
-  Loader2
+  Loader2,
+  Package
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,7 +24,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useUploadImage, useCategories } from '@/hooks/admin/useAdmin';
+import { useUploadImage, useCategories, useBrands, useUpdateProductColors } from '@/hooks/admin/useAdmin';
 import { handleApiError, handleSuccess } from '@/lib/errorHandler';
 import { useTrackEvent } from '@/hooks/useTracking';
 
@@ -74,30 +75,61 @@ export default function ProductForm({ mode, productId, onSuccess, onCancel }: Pr
   const [error, setError] = useState<string | null>(null);
   
   const uploadImageMutation = useUploadImage();
+  const updateProductColorsMutation = useUpdateProductColors();
   const { trackEvent } = useTrackEvent();
   
   // Fetch real categories from API
   const { data: categoriesResponse, isLoading: categoriesLoading } = useCategories();
-  const categories = categoriesResponse?.data || [];
+  const categories = Array.isArray(categoriesResponse?.data) ? categoriesResponse.data : [];
 
-  // Mock brands for now - in a real app, this would come from API
-  const brands = [
-    { id: '1', name: 'MediWear' },
-    { id: '2', name: 'NursePro' },
-    { id: '3', name: 'ComfortFeet' },
-    { id: '4', name: 'SafeGuard' },
-  ];
+  // Fetch real brands from API
+  const { data: brandsResponse, isLoading: brandsLoading } = useBrands();
+  const brands = Array.isArray(brandsResponse?.brands) ? brandsResponse.brands : 
+                Array.isArray(brandsResponse?.data) ? brandsResponse.data : [];
 
-  const availableColors = [
-    { name: 'Black', value: '#000000' },
-    { name: 'White', value: '#FFFFFF' },
-    { name: 'Blue', value: '#0000FF' },
-    { name: 'Green', value: '#00FF00' },
-    { name: 'Red', value: '#FF0000' },
-    { name: 'Pink', value: '#FFC0CB' },
-  ];
+  // State for custom color management
+  const [customColors, setCustomColors] = useState<Array<{
+    id: string;
+    name: string;
+    hex: string;
+    imageUrl: string;
+  }>>([]);
+  const [newColorName, setNewColorName] = useState('');
+  const [newColorHex, setNewColorHex] = useState('#000000');
 
   const availableSizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL'];
+
+  // Functions for color management
+  const addCustomColor = () => {
+    if (!newColorName.trim()) {
+      setError('Please enter a color name');
+      return;
+    }
+    
+    const newColor = {
+      id: `color-${Date.now()}`,
+      name: newColorName.trim(),
+      hex: newColorHex,
+      imageUrl: ''
+    };
+    
+    setCustomColors(prev => [...prev, newColor]);
+    setNewColorName('');
+    setNewColorHex('#000000');
+    setError(null);
+  };
+
+  const removeCustomColor = (colorId: string) => {
+    setCustomColors(prev => prev.filter(color => color.id !== colorId));
+  };
+
+  const updateColorImage = (colorId: string, imageUrl: string) => {
+    setCustomColors(prev => 
+      prev.map(color => 
+        color.id === colorId ? { ...color, imageUrl } : color
+      )
+    );
+  };
 
   // Load product data for edit mode
   useEffect(() => {
@@ -208,22 +240,19 @@ export default function ProductForm({ mode, productId, onSuccess, onCancel }: Pr
     setIsLoading(true);
 
     try {
+      // Validate custom colors - each must have an image URL
+      if (customColors.length > 0) {
+        const missingImages = customColors.filter(color => !color.imageUrl.trim());
+        if (missingImages.length > 0) {
+          throw new Error(`Please provide image URLs for: ${missingImages.map(c => c.name).join(', ')}`);
+        }
+      }
+
       // Upload thumbnail image if available
       let thumbnailUrl = formData.thumbnailUrl;
       if (thumbnail) {
         const imageData = await uploadImageMutation.mutateAsync(thumbnail);
         thumbnailUrl = imageData.data?.url || '';
-      }
-      
-      // Upload color images if available
-      const colorImageUrls: Record<string, string> = {};
-      for (const [colorName, imageData] of Object.entries(colorImages)) {
-        if (imageData.file) {
-          const uploadedImage = await uploadImageMutation.mutateAsync(imageData.file);
-          if (uploadedImage.data?.url) {
-            colorImageUrls[colorName] = uploadedImage.data.url;
-          }
-        }
       }
       
       // Generate SKU and slug
@@ -241,11 +270,10 @@ export default function ProductForm({ mode, productId, onSuccess, onCancel }: Pr
           .trim();
       };
 
-      // Prepare product data
+      // Prepare product data (without custom colors for now)
       const productData = {
         ...formData,
         thumbnailUrl,
-        colorImageUrls: { ...formData.colorImageUrls, ...colorImageUrls },
         sku: generateSKU(formData.name),
         slug: generateSlug(formData.name)
       };
@@ -253,7 +281,7 @@ export default function ProductForm({ mode, productId, onSuccess, onCancel }: Pr
       // Track product creation/update
       trackEvent(mode === 'add' ? 'create_product' : 'update_product', 'admin', formData.name);
       
-      // Submit to backend API
+      // Submit product to backend API
       const url = mode === 'add' ? '/api/admin/products' : `/api/admin/products/${productId}`;
       const method = mode === 'add' ? 'POST' : 'PUT';
       
@@ -266,16 +294,33 @@ export default function ProductForm({ mode, productId, onSuccess, onCancel }: Pr
         body: JSON.stringify(productData)
       });
 
-      if (response.ok) {
-        handleSuccess(
-          mode === 'add' ? "Product Created!" : "Product Updated!",
-          `The product has been ${mode === 'add' ? 'created' : 'updated'} successfully.`
-        );
-        onSuccess();
-      } else {
+      if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || `Failed to ${mode} product`);
       }
+
+      const productResult = await response.json();
+      const savedProductId = mode === 'add' ? productResult.product?.id : productId;
+
+      // Save custom colors if any
+      if (customColors.length > 0 && savedProductId) {
+        const colorsToSave = customColors.map(color => ({
+          name: color.name,
+          hex: color.hex,
+          imageUrl: color.imageUrl
+        }));
+
+        await updateProductColorsMutation.mutateAsync({
+          id: savedProductId,
+          colors: colorsToSave
+        });
+      }
+
+      handleSuccess(
+        mode === 'add' ? "Product Created!" : "Product Updated!",
+        `The product has been ${mode === 'add' ? 'created' : 'updated'} successfully.`
+      );
+      onSuccess();
     } catch (error) {
       handleApiError(error, `Failed to ${mode} product`);
       setError(error instanceof Error ? error.message : 'An error occurred');
@@ -504,30 +549,108 @@ export default function ProductForm({ mode, productId, onSuccess, onCancel }: Pr
               </div>
             </div>
 
-            {/* Colors */}
-            <div className="space-y-2">
-              <Label>Colors</Label>
-              <div className="flex flex-wrap gap-2">
-                {availableColors.map((color) => (
-                  <div key={color.name} className="flex items-center">
-                    <Checkbox
-                      id={`color-${color.name}`}
-                      checked={formData.selectedColors.includes(color.name)}
-                      onCheckedChange={() => handleColorSelect(color.name)}
+            {/* Custom Color Palette */}
+            <div className="space-y-4">
+              <Label>Custom Color Palette</Label>
+              
+              {/* Add New Color */}
+              <div className="border rounded-lg p-4 bg-gray-50">
+                <Label className="text-sm font-medium mb-3 block">Add New Color</Label>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                  <div>
+                    <Label htmlFor="color-name" className="text-xs">Color Name</Label>
+                    <Input
+                      id="color-name"
+                      placeholder="e.g., Navy Blue"
+                      value={newColorName}
+                      onChange={(e) => setNewColorName(e.target.value)}
                     />
-                    <Label 
-                      htmlFor={`color-${color.name}`} 
-                      className="ml-2 flex items-center gap-2"
-                    >
-                      <div 
-                        className="h-4 w-4 rounded-full border" 
-                        style={{ backgroundColor: color.value }}
-                      />
-                      {color.name}
-                    </Label>
                   </div>
-                ))}
+                  <div>
+                    <Label htmlFor="color-hex" className="text-xs">Hex Color</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        id="color-hex"
+                        type="color"
+                        value={newColorHex}
+                        onChange={(e) => setNewColorHex(e.target.value)}
+                        className="w-12 h-10 p-1 border rounded"
+                      />
+                      <Input
+                        value={newColorHex}
+                        onChange={(e) => setNewColorHex(e.target.value)}
+                        placeholder="#000000"
+                        className="flex-1"
+                      />
+                    </div>
+                  </div>
+                  <div className="md:col-span-2">
+                    <Label className="text-xs">&nbsp;</Label>
+                    <Button
+                      type="button"
+                      onClick={addCustomColor}
+                      className="w-full"
+                      data-testid="button-add-color"
+                    >
+                      <Plus className="mr-2 h-4 w-4" />
+                      Add Color
+                    </Button>
+                  </div>
+                </div>
               </div>
+
+              {/* Custom Colors List */}
+              {customColors.length > 0 && (
+                <div className="space-y-3">
+                  <Label className="text-sm font-medium">Selected Colors & Images</Label>
+                  {customColors.map((color) => (
+                    <div key={color.id} className="border rounded-lg p-4">
+                      <div className="grid grid-cols-1 md:grid-cols-6 gap-3 items-center">
+                        <div className="flex items-center gap-2">
+                          <div 
+                            className="h-6 w-6 rounded-full border-2 border-gray-300" 
+                            style={{ backgroundColor: color.hex }}
+                            data-testid={`color-swatch-${color.id}`}
+                          />
+                          <span className="text-sm font-medium">{color.name}</span>
+                        </div>
+                        <div className="text-xs text-gray-500">{color.hex}</div>
+                        <div className="md:col-span-3">
+                          <Label htmlFor={`image-${color.id}`} className="text-xs">Image URL for {color.name}</Label>
+                          <Input
+                            id={`image-${color.id}`}
+                            placeholder="https://example.com/image.jpg"
+                            value={color.imageUrl}
+                            onChange={(e) => updateColorImage(color.id, e.target.value)}
+                            data-testid={`input-color-image-${color.id}`}
+                          />
+                          {!color.imageUrl && (
+                            <p className="text-xs text-red-500 mt-1">Image URL is required for each color</p>
+                          )}
+                        </div>
+                        <div>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => removeCustomColor(color.id)}
+                            data-testid={`button-remove-color-${color.id}`}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              
+              {customColors.length === 0 && (
+                <div className="text-center py-6 text-gray-500 border rounded-lg border-dashed">
+                  <Package className="mx-auto h-8 w-8 mb-2 text-gray-400" />
+                  <p className="text-sm">No colors added yet. Add your first color above.</p>
+                </div>
+              )}
             </div>
 
             {/* Sizes */}

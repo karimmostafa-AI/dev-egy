@@ -141,6 +141,24 @@ export class ProductService {
     }
   }
 
+  // Get product images
+  async getProductImages(productId: string): Promise<any[]> {
+    try {
+      const images = await db
+        .select()
+        .from(productImages)
+        .where(eq(productImages.productId, productId))
+        .orderBy(asc(productImages.sortOrder), desc(productImages.isPrimary));
+      
+      return images;
+    } catch (error) {
+      if (error instanceof Error) {
+        throw new Error(`Failed to get product images: ${error.message}`);
+      }
+      throw new Error("Failed to get product images due to an unexpected error.");
+    }
+  }
+
   // Create a new product
   async createProduct(productData: any): Promise<Product> {
     try {

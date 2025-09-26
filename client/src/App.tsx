@@ -135,8 +135,6 @@ function Router() {
               </div>
             );
           }} />
-          <Route path="/admin/products" component={ProductManagement} />
-          <Route path="/admin/products/*" component={ProductManagement} />
           <Route path="/admin/:rest*" component={AdminDashboard} />
           <Route path="/admin" component={AdminDashboard} />
           <Route component={NotFound} />

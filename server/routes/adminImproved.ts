@@ -1152,4 +1152,50 @@ router.post("/upload", requireAdmin, upload.single('file'), asyncHandler(async (
   }, 'File uploaded successfully'));
 }));
 
+// Product color management endpoints
+import { ProductOptionsService } from "../services/productOptionsService";
+const productOptionsService = new ProductOptionsService();
+
+// Update product colors with images (admin only)
+router.put("/products/:id/colors", requireAdmin, asyncHandler(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  
+  if (!id) {
+    return res.status(400).json(errorResponse("Product ID is required"));
+  }
+  
+  // Validate request body
+  const colorsData = req.body.colors; // Array of { name, hex, imageUrl }
+  
+  if (!Array.isArray(colorsData)) {
+    return res.status(400).json(errorResponse("Colors array is required"));
+  }
+  
+  // Validate each color
+  for (const color of colorsData) {
+    if (!color.name || !color.hex || !color.imageUrl) {
+      return res.status(400).json(errorResponse("Each color must have name, hex, and imageUrl"));
+    }
+    
+    // Validate hex color format
+    const hexPattern = /^#?[0-9A-Fa-f]{6}$/;
+    if (!hexPattern.test(color.hex)) {
+      return res.status(400).json(errorResponse(`Invalid hex color format: ${color.hex}`));
+    }
+    
+    // Validate URL format
+    try {
+      const url = new URL(color.imageUrl);
+      if (!['http:', 'https:'].includes(url.protocol)) {
+        return res.status(400).json(errorResponse("Image URLs must use http or https protocol"));
+      }
+    } catch (e) {
+      return res.status(400).json(errorResponse(`Invalid image URL: ${color.imageUrl}`));
+    }
+  }
+  
+  const result = await productOptionsService.updateProductColors(id, colorsData);
+  res.json(successResponse(result, "Colors updated successfully"));
+}));
+
 export default router;

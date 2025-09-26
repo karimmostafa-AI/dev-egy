@@ -83,6 +83,7 @@ export const productImages = pgTable("product_images", {
   alt: text("alt"),
   isPrimary: boolean("is_primary").default(false),
   sortOrder: integer("sort_order").default(0),
+  optionValueId: uuid("option_value_id").references(() => productOptionValues.id), // Links to specific color/option value, null for generic images
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -103,6 +104,7 @@ export const productOptionValues = pgTable("product_option_values", {
   optionId: uuid("option_id").references(() => productOptions.id).notNull(),
   value: text("value").notNull(), // e.g., "Small", "Red"
   displayValue: text("display_value").notNull(), // e.g., "Small", "Red"
+  hex: text("hex"), // For color options, stores the hex color value
   sortOrder: integer("sort_order").default(0),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),

@@ -86,6 +86,21 @@ export const useDeleteCategory = () => {
   });
 };
 
+// Brands
+export const useBrands = () => {
+  return useQuery({
+    queryKey: ["admin", "brands"],
+    queryFn: () => adminApi.getBrands(),
+  });
+};
+
+export const useBrand = (id: string) => {
+  return useQuery({
+    queryKey: ["admin", "brands", id],
+    queryFn: () => adminApi.getBrand(id),
+  });
+};
+
 // Products
 export const useProducts = (params: { 
   page?: number; 
@@ -134,6 +149,20 @@ export const useDeleteProduct = () => {
     mutationFn: adminApi.deleteProduct.bind(adminApi),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "products"] });
+    },
+  });
+};
+
+export const useUpdateProductColors = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, colors }: { 
+      id: string; 
+      colors: Array<{ name: string; hex: string; imageUrl: string }> 
+    }) => adminApi.updateProductColors(id, colors),
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "products"] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "products", variables.id] });
     },
   });
 };
