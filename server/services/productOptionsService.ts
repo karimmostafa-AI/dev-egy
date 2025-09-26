@@ -19,7 +19,7 @@ import {
   ProductVariant,
   InsertProductVariantOptionValue,
   ProductVariantOptionValue
-} from "@shared/schema";
+} from "@shared/schema-sqlite";
 
 export interface ProductOptionWithValues extends ProductOption {
   values: ProductOptionValue[];
@@ -274,12 +274,7 @@ export class ProductOptionsService {
         .insert(productVariants)
         .values({
           ...variantCreateData,
-          productId,
-          // Convert numeric fields to strings for database
-          price: variantCreateData.price ? variantCreateData.price.toString() : undefined,
-          comparePrice: variantCreateData.comparePrice ? variantCreateData.comparePrice.toString() : undefined,
-          costPerItem: variantCreateData.costPerItem ? variantCreateData.costPerItem.toString() : undefined,
-          weight: variantCreateData.weight ? variantCreateData.weight.toString() : undefined
+          productId
         })
         .returning();
 
@@ -322,14 +317,7 @@ export class ProductOptionsService {
 
       const [updatedVariant] = await db
         .update(productVariants)
-        .set({
-          ...variantData,
-          // Convert numeric fields to strings for database
-          price: variantData.price ? variantData.price.toString() : undefined,
-          comparePrice: variantData.comparePrice ? variantData.comparePrice.toString() : undefined,
-          costPerItem: variantData.costPerItem ? variantData.costPerItem.toString() : undefined,
-          weight: variantData.weight ? variantData.weight.toString() : undefined
-        })
+        .set(variantData)
         .where(eq(productVariants.id, variantId))
         .returning();
 

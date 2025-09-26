@@ -45,20 +45,20 @@ export class CouponService {
       
       let cartTotal = 0;
       for (const item of cartItemsList) {
-        cartTotal += parseFloat(item.product.price as string) * item.cartItem.quantity;
+        cartTotal += item.product.price * item.cartItem.quantity;
       }
       
       // Check minimum amount requirement
-      if (coupon.minimumAmount && cartTotal < parseFloat(coupon.minimumAmount as string)) {
+      if (coupon.minimumAmount && cartTotal < coupon.minimumAmount) {
         throw new Error("Cart total does not meet minimum amount requirement");
       }
       
       // Calculate discount
       let discount = 0;
       if (coupon.type === "percentage") {
-        discount = cartTotal * (parseFloat(coupon.value as string) / 100);
+        discount = cartTotal * (coupon.value / 100);
       } else if (coupon.type === "fixed_amount") {
-        discount = parseFloat(coupon.value as string);
+        discount = coupon.value;
       }
       
       // Ensure discount doesn't exceed cart total

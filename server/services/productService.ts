@@ -1,7 +1,7 @@
 import { eq, like, and, desc, asc, gte, lte } from "drizzle-orm";
 import { db, products, categories, brands, productImages, reviews, users } from "../db";
 import { InferSelectModel } from "drizzle-orm";
-import { products as productsTable } from "@shared/schema";
+import { products as productsTable } from "@shared/schema-sqlite";
 
 type Product = InferSelectModel<typeof productsTable>;
 
@@ -43,11 +43,11 @@ export class ProductService {
       }
       
       if (minPrice !== undefined) {
-        conditions.push(gte(products.price, minPrice.toString()));
+        conditions.push(gte(products.price, minPrice));
       }
       
       if (maxPrice !== undefined) {
-        conditions.push(lte(products.price, maxPrice.toString()));
+        conditions.push(lte(products.price, maxPrice));
       }
       
       if (search) {

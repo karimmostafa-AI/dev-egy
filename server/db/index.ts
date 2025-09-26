@@ -1,12 +1,13 @@
-import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
-import * as schema from "../../shared/schema";
+import 'dotenv/config';
+import { drizzle } from "drizzle-orm/better-sqlite3";
+import Database from "better-sqlite3";
+import * as schema from "../../shared/schema-sqlite";
 
-// Create PostgreSQL database connection
-const sql = postgres(process.env.DATABASE_URL!);
+// Create SQLite database connection
+const sqlite = new Database(process.env.DATABASE_URL!.replace('file:', ''));
 
 // Create drizzle instance
-export const db = drizzle(sql, { schema });
+export const db = drizzle(sqlite, { schema });
 
 export type DB = typeof db;
 

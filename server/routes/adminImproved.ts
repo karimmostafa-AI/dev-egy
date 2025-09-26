@@ -101,15 +101,15 @@ router.get("/dashboard/analytics", requireAdmin, asyncHandler(async (req: Reques
   .orderBy(desc(orders.createdAt))
   .limit(5);
   
-  // Get sales trends for the last 7 months (PostgreSQL compatible)
+  // Get sales trends for the last 7 months (SQLite compatible)
   const salesTrends = await db.select({
-    month: sql<string>`to_char(${orders.createdAt}, 'YYYY-MM')`,
+    month: sql<string>`strftime('%Y-%m', ${orders.createdAt})`,
     total: sql<number>`COALESCE(SUM(CAST(${orders.total} AS DECIMAL)), 0)`
   })
   .from(orders)
   .where(eq(orders.status, "delivered"))
-  .groupBy(sql`to_char(${orders.createdAt}, 'YYYY-MM')`)
-  .orderBy(sql`to_char(${orders.createdAt}, 'YYYY-MM') DESC`)
+  .groupBy(sql`strftime('%Y-%m', ${orders.createdAt})`)
+  .orderBy(sql`strftime('%Y-%m', ${orders.createdAt}) DESC`)
   .limit(7);
   
   // Format the response data

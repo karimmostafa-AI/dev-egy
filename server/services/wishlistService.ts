@@ -1,7 +1,7 @@
 import { eq, and } from "drizzle-orm";
 import { db, wishlists, wishlistItems, products } from "../db";
 import { InferSelectModel } from "drizzle-orm";
-import { wishlists as wishlistsTable, wishlistItems as wishlistItemsTable } from "@shared/schema";
+import { wishlists as wishlistsTable, wishlistItems as wishlistItemsTable } from "@shared/schema-sqlite";
 
 type Wishlist = InferSelectModel<typeof wishlistsTable>;
 type WishlistItem = InferSelectModel<typeof wishlistItemsTable>;

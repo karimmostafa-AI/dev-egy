@@ -16,7 +16,7 @@ import {
   insertCollectionSchema,
   updateCollectionSchema,
   paginationSchema
-} from "../../shared/schema";
+} from "../../shared/schema-sqlite";
 
 // Extend Request interface to include user
 interface AuthenticatedRequest extends Request {

@@ -1,6 +1,6 @@
 import { eq, and } from "drizzle-orm";
 import { db, users, addresses, orders, orderItems, wishlists, wishlistItems, products } from "../db";
-import { InsertUser, User } from "@shared/schema";
+import { InsertUser, User } from "@shared/schema-sqlite";
 import bcrypt from "bcrypt";
 
 const SALT_ROUNDS = 10;

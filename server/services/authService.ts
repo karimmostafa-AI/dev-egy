@@ -3,7 +3,7 @@ import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import { db, users, passwordResetTokens } from "../db";
 import { eq, and, lt, isNull } from "drizzle-orm";
-import { InsertUser } from "@shared/schema";
+import { InsertUser } from "@shared/schema-sqlite";
 
 const JWT_SECRET = process.env.JWT_SECRET || (() => {
   // In development, provide a fallback but warn

@@ -1,7 +1,7 @@
 import { eq, and } from "drizzle-orm";
 import { db, addresses } from "../db";
 import { InferSelectModel } from "drizzle-orm";
-import { addresses as addressesTable } from "@shared/schema";
+import { addresses as addressesTable } from "@shared/schema-sqlite";
 
 type Address = InferSelectModel<typeof addressesTable>;
 

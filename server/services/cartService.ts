@@ -1,7 +1,7 @@
 import { eq, and, isNull } from "drizzle-orm";
 import { db, carts, cartItems, products, coupons, productVariants } from "../db";
 import { InferSelectModel } from "drizzle-orm";
-import { carts as cartsTable, cartItems as cartItemsTable } from "@shared/schema";
+import { carts as cartsTable, cartItems as cartItemsTable } from "@shared/schema-sqlite";
 
 type Cart = InferSelectModel<typeof cartsTable>;
 type CartItem = InferSelectModel<typeof cartItemsTable>;
@@ -202,20 +202,20 @@ export class CartService {
       
       let cartTotal = 0;
       for (const item of cartItemsList) {
-        cartTotal += parseFloat(item.product.price as string) * item.cartItem.quantity;
+        cartTotal += item.product.price * item.cartItem.quantity;
       }
       
       // Check minimum amount requirement
-      if (coupon.minimumAmount && cartTotal < parseFloat(coupon.minimumAmount as string)) {
+      if (coupon.minimumAmount && cartTotal < coupon.minimumAmount) {
         throw new Error(`Cart total must be at least $${coupon.minimumAmount} to use this coupon`);
       }
       
       // Calculate discount
       let discount = 0;
       if (coupon.type === "percentage") {
-        discount = cartTotal * (parseFloat(coupon.value as string) / 100);
+        discount = cartTotal * (coupon.value / 100);
       } else if (coupon.type === "fixed_amount") {
-        discount = parseFloat(coupon.value as string);
+        discount = coupon.value;
       }
       
       // Ensure discount doesn't exceed cart total
@@ -225,7 +225,7 @@ export class CartService {
       const [updatedCart] = await db.update(carts)
         .set({ 
           appliedCouponId: coupon.id,
-          discountAmount: discount.toString(),
+          discountAmount: discount,
           updatedAt: new Date(Math.floor(Date.now() / 1000) * 1000)
         })
         .where(eq(carts.id, cartId))
@@ -258,7 +258,7 @@ export class CartService {
       const [updatedCart] = await db.update(carts)
         .set({ 
           appliedCouponId: null,
-          discountAmount: "0",
+          discountAmount: 0,
           updatedAt: new Date(Math.floor(Date.now() / 1000) * 1000)
         })
         .where(eq(carts.id, cartId))
@@ -333,8 +333,8 @@ export class CartService {
       for (const item of cartItemsList) {
         // Use variant price if available, otherwise use product price
         const price = item.variant && item.variant.price 
-          ? parseFloat(item.variant.price as string) 
-          : parseFloat(item.product.price as string);
+          ? item.variant.price 
+          : item.product.price;
         const lineTotal = price * item.cartItem.quantity;
         subtotal += lineTotal;
         

@@ -7,7 +7,7 @@ import {
   updateProductOptionSchema,
   insertProductVariantSchema,
   updateProductVariantSchema
-} from "@shared/schema";
+} from "@shared/schema-sqlite";
 
 const router = Router();
 const productService = new ProductService();

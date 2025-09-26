@@ -30,7 +30,7 @@ export class CheckoutService {
         // Calculate totals
         let subtotal = 0;
         for (const item of cartItemsList) {
-          subtotal += parseFloat(item.product.price as string) * item.cartItem.quantity;
+          subtotal += item.product.price * item.cartItem.quantity;
         }
         
         const shippingCost = checkoutData.shippingCost || 0;
@@ -42,10 +42,10 @@ export class CheckoutService {
           userId: checkoutData.userId,
           orderNumber: `ORD-${Date.now()}`,
           status: "pending",
-          subtotal: subtotal.toString(),
-          shippingCost: shippingCost.toString(),
-          tax: tax.toString(),
-          total: total.toString(),
+          subtotal: subtotal,
+          shippingCost: shippingCost,
+          tax: tax,
+          total: total,
           currency: checkoutData.currency || "USD",
           firstName: checkoutData.firstName,
           lastName: checkoutData.lastName,

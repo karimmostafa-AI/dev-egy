@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import { db, brands } from "../db";
 import { InferSelectModel } from "drizzle-orm";
-import { brands as brandsTable } from "@shared/schema";
+import { brands as brandsTable } from "@shared/schema-sqlite";
 
 type Brand = InferSelectModel<typeof brandsTable>;
 

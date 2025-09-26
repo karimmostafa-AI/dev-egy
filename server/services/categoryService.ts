@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import { db, categories } from "../db";
-// Remove this import if Category type doesn't exist in @shared/schema
-// import { Category } from "@shared/schema";
+// Remove this import if Category type doesn't exist in @shared/schema-sqlite
+// import { Category } from "@shared/schema-sqlite";
 
 // Define Category type locally or import from correct location
 // You might need to infer it from your database schema

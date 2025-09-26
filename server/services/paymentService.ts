@@ -60,7 +60,7 @@ export class PaymentService {
       
       // Create a Stripe payment intent
       const paymentIntent = await this.stripe.paymentIntents.create({
-        amount: Math.round(parseFloat(order.total) * 100), // Convert to cents
+        amount: Math.round(order.total * 100), // Convert to cents
         currency: order.currency || 'usd',
         payment_method_types: ['card'],
         metadata: {
@@ -73,7 +73,7 @@ export class PaymentService {
       const [payment] = await db.insert(payments).values({
         orderId: order.id,
         paymentIntentId: paymentIntent.id,
-        amount: parseFloat(order.total).toString(),
+        amount: order.total,
         currency: order.currency || 'usd',
         status: 'pending',
         method: paymentData.method || 'card',
